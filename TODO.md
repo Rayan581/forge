@@ -1,0 +1,1 @@
+- Align how the project satisfies each of the six interconnected elements of the core standard. 

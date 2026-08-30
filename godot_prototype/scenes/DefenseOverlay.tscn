@@ -1,0 +1,335 @@
+[gd_scene load_steps=4 format=3 uid="uid://defense_overlay_forge_001"]
+
+[ext_resource type="Script" path="res://scripts/DefenseOverlay.gd" id="1_defense"]
+[ext_resource type="Script" path="res://scripts/MiniMap.gd" id="2_minimap"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.08, 0.09, 0.13, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.25, 0.35, 0.55, 0.8)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 10
+
+[node name="DefenseOverlay" type="CanvasLayer"]
+script = ExtResource("1_defense")
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TopBar" type="HBoxContainer" parent="Control"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 16.0
+offset_right = -20.0
+offset_bottom = 54.0
+grow_horizontal = 2
+theme_override_constants/separation = 16
+
+[node name="HPBar" type="ProgressBar" parent="Control/TopBar"]
+custom_minimum_size = Vector2(180, 24)
+layout_mode = 2
+size_flags_vertical = 4
+value = 100.0
+show_percentage = false
+
+[node name="HPText" type="Label" parent="Control/TopBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "100 / 100 HP"
+
+[node name="VSeparator" type="VSeparator" parent="Control/TopBar"]
+layout_mode = 2
+
+[node name="RoomLabel" type="Label" parent="Control/TopBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.88, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "Dungeon: 1 | Room: (0,0)"
+
+[node name="VSeparator2" type="VSeparator" parent="Control/TopBar"]
+layout_mode = 2
+
+[node name="DifficultyBadge" type="Label" parent="Control/TopBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.75, 0.3, 1)
+theme_override_font_sizes/font_size = 14
+text = "Challenge: Balanced (60/100)"
+
+[node name="Spacer" type="Control" parent="Control/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TogglePanelBtn" type="Button" parent="Control/TopBar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "⚙ Defense Panel (Tab)"
+
+[node name="MiniMap" type="Control" parent="Control"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -140.0
+offset_right = 170.0
+offset_bottom = -20.0
+grow_vertical = 0
+script = ExtResource("2_minimap")
+
+[node name="DefensePanel" type="PanelContainer" parent="Control"]
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -390.0
+offset_top = 65.0
+offset_right = -15.0
+offset_bottom = -15.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="Control/DefensePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/DefensePanel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HeaderLabel" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.75, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "FORGE · Adaptive Defense Panel"
+
+[node name="PresetsHBox" type="HBoxContainer" parent="Control/DefensePanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BtnNovice" type="Button" parent="Control/DefensePanel/MarginContainer/VBoxContainer/PresetsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Novice"
+
+[node name="BtnIntermediate" type="Button" parent="Control/DefensePanel/MarginContainer/VBoxContainer/PresetsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Intermediate"
+
+[node name="BtnExpert" type="Button" parent="Control/DefensePanel/MarginContainer/VBoxContainer/PresetsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Expert"
+
+[node name="HSeparator1" type="HSeparator" parent="Control/DefensePanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ParamsLabel" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.85, 0.9, 1)
+theme_override_font_sizes/font_size = 13
+text = "Continuous Parameter Vectors (E & M):"
+
+[node name="ParamGrid" type="GridContainer" parent="Control/DefensePanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 6
+columns = 3
+
+[node name="LblHP" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ParamGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Enemy HP:"
+
+[node name="SliderHP" type="HSlider" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ParamGrid"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 20.0
+max_value = 120.0
+value = 60.0
+
+[node name="LabelHPValue" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ParamGrid"]
+custom_minimum_size = Vector2(38, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "60"
+
+[node name="LblDmg" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ParamGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Damage:"
+
+[node name="SliderDmg" type="HSlider" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ParamGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 5.0
+max_value = 50.0
+value = 20.0
+
+[node name="LabelDmgValue" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ParamGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "20"
+
+[node name="LblSpd" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ParamGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Velocity:"
+
+[node name="SliderSpd" type="HSlider" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ParamGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 60.0
+max_value = 220.0
+value = 125.0
+
+[node name="LabelSpdValue" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ParamGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "125"
+
+[node name="LblAggro" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ParamGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Aggro Rad:"
+
+[node name="SliderAggro" type="HSlider" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ParamGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 100.0
+max_value = 450.0
+value = 240.0
+
+[node name="LabelAggroValue" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ParamGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "240"
+
+[node name="LblHaz" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ParamGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Hazards:"
+
+[node name="SliderHaz" type="HSlider" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ParamGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 5.0
+max_value = 80.0
+value = 35.0
+
+[node name="LabelHazValue" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ParamGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "35%"
+
+[node name="LblScarce" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ParamGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Scarcity:"
+
+[node name="SliderScarce" type="HSlider" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ParamGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 10.0
+max_value = 90.0
+value = 40.0
+
+[node name="LabelScarceValue" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ParamGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "40%"
+
+[node name="BtnRegenerate" type="Button" parent="Control/DefensePanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "🔄 Rebuild Entire Dungeon"
+
+[node name="HSeparator2" type="HSeparator" parent="Control/DefensePanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ReportBox" type="VBoxContainer" parent="Control/DefensePanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ReportHeader" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ReportBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "📊 Design Insight Report (Explainability)"
+
+[node name="ScoreHBox" type="HBoxContainer" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ReportBox"]
+layout_mode = 2
+
+[node name="ScoreLabel" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ReportBox/ScoreHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "Difficulty: 60/100"
+
+[node name="TierLabel" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ReportBox/ScoreHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.5, 0.85, 0.6, 1)
+theme_override_font_sizes/font_size = 13
+text = "Balanced / Moderate"
+horizontal_alignment = 2
+
+[node name="DriversTitle" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ReportBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 11
+text = "Top Model Attribution Drivers:"
+
+[node name="DriversList" type="VBoxContainer" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ReportBox"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="HSeparator3" type="HSeparator" parent="Control/DefensePanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="TelemetryBox" type="VBoxContainer" parent="Control/DefensePanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="TelemetryHeader" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer/TelemetryBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 12
+text = "Session Telemetry (user://session_telemetry.json):"
+
+[node name="TelemetrySummaryLabel" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer/TelemetryBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.85, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "Time: 0s | Deaths: 0 | Kills: 0"
+autowrap_mode = 2

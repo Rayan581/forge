@@ -1,0 +1,32 @@
+[gd_scene load_steps=5 format=3 uid="uid://room_forge_001"]
+
+[ext_resource type="Script" path="res://scripts/Room.gd" id="1_room"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_trigger"]
+size = Vector2(820, 460)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_portal"]
+radius = 36.0
+
+[node name="Room" type="Node2D"]
+script = ExtResource("1_room")
+
+[node name="StaticWalls" type="StaticBody2D" parent="."]
+collision_layer = 4
+collision_mask = 3
+
+[node name="RoomTrigger" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="RoomTrigger"]
+shape = SubResource("RectangleShape2D_trigger")
+
+[node name="ExitPortal" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ExitPortal"]
+shape = SubResource("CircleShape2D_portal")
+
+[node name="EntitiesContainer" type="Node2D" parent="."]

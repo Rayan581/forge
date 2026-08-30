@@ -94,6 +94,24 @@ def get_json_from_user():
             root.destroy()
             return clipboard_data
 
+    # Check entry.json file in script directory as fallback
+    entry_file = Path(__file__).resolve().parent / "entry.json"
+    if entry_file.exists():
+        try:
+            with open(entry_file, "r", encoding="utf-8") as f:
+                file_data = json.load(f)
+            if isinstance(file_data, dict):
+                response = messagebox.askyesno(
+                    "AI Usage Log",
+                    f"Found entry data in {entry_file.name}!\n\n"
+                    "Would you like to use this entry?"
+                )
+                if response:
+                    root.destroy()
+                    return file_data
+        except Exception:
+            pass
+
     messagebox.showinfo(
         "AI Usage Log",
         "Copy the JSON produced by the AI.\n\n"

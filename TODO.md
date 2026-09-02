@@ -1,1 +1,4 @@
-- Align how the project satisfies each of the six interconnected elements of the core standard. 
+- Align how the project satisfies each of the six interconnected elements of the core standard.
+- Refine the research question
+- include the existing research component
+- 

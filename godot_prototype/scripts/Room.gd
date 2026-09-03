@@ -40,7 +40,7 @@ func initialize_room(data: DungeonGenerator.RoomData, p_diff: DifficultyManager)
 	for child in static_walls.get_children():
 		child.queue_free()
 		
-	# Build dynamic collision walls with door openings
+	# Build dynamic collision walls with door openings and corridor walls
 	build_walls()
 	
 	# Spawn entities based on room data and difficulty parameters
@@ -59,40 +59,52 @@ func build_walls() -> void:
 	var w = room_width
 	var h = room_height
 	var dw = door_width
-	var wall_thick = 24.0
+	var wall_thick = 32.0
+	var half_spacing = 60.0 # spacing / 2.0 (corridor length per room side)
 	
 	# Top Wall
 	if room_data.doors["N"]:
-		# Left segment & Right segment
 		var seg_w = (w - dw) / 2.0
-		_create_wall_segment(Vector2(-w/2 + seg_w/2, -h/2), Vector2(seg_w, wall_thick))
-		_create_wall_segment(Vector2(w/2 - seg_w/2, -h/2), Vector2(seg_w, wall_thick))
+		_create_wall_segment(Vector2(-w/2 + seg_w/2 - wall_thick/2, -h/2), Vector2(seg_w + wall_thick, wall_thick))
+		_create_wall_segment(Vector2(w/2 - seg_w/2 + wall_thick/2, -h/2), Vector2(seg_w + wall_thick, wall_thick))
+		# North Corridor Walls
+		_create_wall_segment(Vector2(-dw/2 - wall_thick/2, -h/2 - half_spacing/2), Vector2(wall_thick, half_spacing + wall_thick))
+		_create_wall_segment(Vector2(dw/2 + wall_thick/2, -h/2 - half_spacing/2), Vector2(wall_thick, half_spacing + wall_thick))
 	else:
-		_create_wall_segment(Vector2(0, -h/2), Vector2(w, wall_thick))
+		_create_wall_segment(Vector2(0, -h/2), Vector2(w + wall_thick * 2, wall_thick))
 		
 	# Bottom Wall
 	if room_data.doors["S"]:
 		var seg_w = (w - dw) / 2.0
-		_create_wall_segment(Vector2(-w/2 + seg_w/2, h/2), Vector2(seg_w, wall_thick))
-		_create_wall_segment(Vector2(w/2 - seg_w/2, h/2), Vector2(seg_w, wall_thick))
+		_create_wall_segment(Vector2(-w/2 + seg_w/2 - wall_thick/2, h/2), Vector2(seg_w + wall_thick, wall_thick))
+		_create_wall_segment(Vector2(w/2 - seg_w/2 + wall_thick/2, h/2), Vector2(seg_w + wall_thick, wall_thick))
+		# South Corridor Walls
+		_create_wall_segment(Vector2(-dw/2 - wall_thick/2, h/2 + half_spacing/2), Vector2(wall_thick, half_spacing + wall_thick))
+		_create_wall_segment(Vector2(dw/2 + wall_thick/2, h/2 + half_spacing/2), Vector2(wall_thick, half_spacing + wall_thick))
 	else:
-		_create_wall_segment(Vector2(0, h/2), Vector2(w, wall_thick))
+		_create_wall_segment(Vector2(0, h/2), Vector2(w + wall_thick * 2, wall_thick))
 		
 	# Left Wall
 	if room_data.doors["W"]:
 		var seg_h = (h - dw) / 2.0
-		_create_wall_segment(Vector2(-w/2, -h/2 + seg_h/2), Vector2(wall_thick, seg_h))
-		_create_wall_segment(Vector2(-w/2, h/2 - seg_h/2), Vector2(wall_thick, seg_h))
+		_create_wall_segment(Vector2(-w/2, -h/2 + seg_h/2 - wall_thick/2), Vector2(wall_thick, seg_h + wall_thick))
+		_create_wall_segment(Vector2(-w/2, h/2 - seg_h/2 + wall_thick/2), Vector2(wall_thick, seg_h + wall_thick))
+		# West Corridor Walls
+		_create_wall_segment(Vector2(-w/2 - half_spacing/2, -dw/2 - wall_thick/2), Vector2(half_spacing + wall_thick, wall_thick))
+		_create_wall_segment(Vector2(-w/2 - half_spacing/2, dw/2 + wall_thick/2), Vector2(half_spacing + wall_thick, wall_thick))
 	else:
-		_create_wall_segment(Vector2(-w/2, 0), Vector2(wall_thick, h))
+		_create_wall_segment(Vector2(-w/2, 0), Vector2(wall_thick, h + wall_thick * 2))
 		
 	# Right Wall
 	if room_data.doors["E"]:
 		var seg_h = (h - dw) / 2.0
-		_create_wall_segment(Vector2(w/2, -h/2 + seg_h/2), Vector2(wall_thick, seg_h))
-		_create_wall_segment(Vector2(w/2, h/2 - seg_h/2), Vector2(wall_thick, seg_h))
+		_create_wall_segment(Vector2(w/2, -h/2 + seg_h/2 - wall_thick/2), Vector2(wall_thick, seg_h + wall_thick))
+		_create_wall_segment(Vector2(w/2, h/2 - seg_h/2 + wall_thick/2), Vector2(wall_thick, seg_h + wall_thick))
+		# East Corridor Walls
+		_create_wall_segment(Vector2(w/2 + half_spacing/2, -dw/2 - wall_thick/2), Vector2(half_spacing + wall_thick, wall_thick))
+		_create_wall_segment(Vector2(w/2 + half_spacing/2, dw/2 + wall_thick/2), Vector2(half_spacing + wall_thick, wall_thick))
 	else:
-		_create_wall_segment(Vector2(w/2, 0), Vector2(wall_thick, h))
+		_create_wall_segment(Vector2(w/2, 0), Vector2(wall_thick, h + wall_thick * 2))
 
 func _create_wall_segment(pos: Vector2, size: Vector2) -> void:
 	var col = CollisionShape2D.new()
@@ -160,7 +172,8 @@ func _draw() -> void:
 	var h = room_height
 	var rect = Rect2(-w/2, -h/2, w, h)
 	var dw = door_width
-	var spacing = 120.0
+	var wall_thick = 32.0
+	var half_spacing = 60.0
 	
 	# Floor styling based on room type
 	var floor_color = Color(0.11, 0.13, 0.17)
@@ -177,7 +190,7 @@ func _draw() -> void:
 	
 	# Grid Lines
 	var grid_size = 48.0
-	var grid_color = Color(0.16, 0.19, 0.25, 0.4)
+	var grid_color = Color(0.16, 0.19, 0.25, 0.35)
 	var x = -w/2
 	while x <= w/2:
 		draw_line(Vector2(x, -h/2), Vector2(x, h/2), grid_color, 1.0)
@@ -187,57 +200,67 @@ func _draw() -> void:
 		draw_line(Vector2(-w/2, y), Vector2(w/2, y), grid_color, 1.0)
 		y += grid_size
 		
-	# Draw Corridors Connecting Adjacent Rooms
-	var corridor_color = Color(0.15, 0.17, 0.22)
+	# Draw Corridor Floors
+	var corridor_floor_color = Color(0.13, 0.15, 0.20)
 	if room_data.doors["N"]:
-		draw_rect(Rect2(-dw/2, -h/2 - spacing, dw, spacing), corridor_color)
-		draw_line(Vector2(-dw/2, -h/2), Vector2(-dw/2, -h/2 - spacing), Color(0.25, 0.3, 0.4), 4.0)
-		draw_line(Vector2(dw/2, -h/2), Vector2(dw/2, -h/2 - spacing), Color(0.25, 0.3, 0.4), 4.0)
+		draw_rect(Rect2(-dw/2, -h/2 - half_spacing, dw, half_spacing), corridor_floor_color)
 	if room_data.doors["S"]:
-		draw_rect(Rect2(-dw/2, h/2, dw, spacing), corridor_color)
-		draw_line(Vector2(-dw/2, h/2), Vector2(-dw/2, h/2 + spacing), Color(0.25, 0.3, 0.4), 4.0)
-		draw_line(Vector2(dw/2, h/2), Vector2(dw/2, h/2 + spacing), Color(0.25, 0.3, 0.4), 4.0)
+		draw_rect(Rect2(-dw/2, h/2, dw, half_spacing), corridor_floor_color)
 	if room_data.doors["E"]:
-		draw_rect(Rect2(w/2, -dw/2, spacing, dw), corridor_color)
-		draw_line(Vector2(w/2, -dw/2), Vector2(w/2 + spacing, -dw/2), Color(0.25, 0.3, 0.4), 4.0)
-		draw_line(Vector2(w/2, dw/2), Vector2(w/2 + spacing, dw/2), Color(0.25, 0.3, 0.4), 4.0)
+		draw_rect(Rect2(w/2, -dw/2, half_spacing, dw), corridor_floor_color)
 	if room_data.doors["W"]:
-		draw_rect(Rect2(-w/2 - spacing, -dw/2, spacing, dw), corridor_color)
-		draw_line(Vector2(-w/2, -dw/2), Vector2(-w/2 - spacing, -dw/2), Color(0.25, 0.3, 0.4), 4.0)
-		draw_line(Vector2(-w/2, dw/2), Vector2(-w/2 - spacing, dw/2), Color(0.25, 0.3, 0.4), 4.0)
+		draw_rect(Rect2(-w/2 - half_spacing, -dw/2, half_spacing, dw), corridor_floor_color)
 		
-	# Draw Outer Boundary Walls
-	var wall_color = Color(0.25, 0.3, 0.38)
+	# Draw Solid Walls with Bevel/Trim
+	var wall_color = Color(0.22, 0.26, 0.34)
+	var trim_color = Color(0.34, 0.40, 0.52)
 	var seg_w = (w - dw) / 2.0
 	var seg_h = (h - dw) / 2.0
 	
+	var draw_wall_box = func(pos: Vector2, size: Vector2):
+		var r = Rect2(pos.x - size.x/2.0, pos.y - size.y/2.0, size.x, size.y)
+		draw_rect(r, wall_color)
+		draw_rect(r, trim_color, false, 1.5)
+	
 	# Top Wall
 	if room_data.doors["N"]:
-		draw_line(Vector2(-w/2, -h/2), Vector2(-dw/2, -h/2), wall_color, 8.0)
-		draw_line(Vector2(dw/2, -h/2), Vector2(w/2, -h/2), wall_color, 8.0)
+		draw_wall_box.call(Vector2(-w/2 + seg_w/2 - wall_thick/2, -h/2), Vector2(seg_w + wall_thick, wall_thick))
+		draw_wall_box.call(Vector2(w/2 - seg_w/2 + wall_thick/2, -h/2), Vector2(seg_w + wall_thick, wall_thick))
+		# North Corridor Walls
+		draw_wall_box.call(Vector2(-dw/2 - wall_thick/2, -h/2 - half_spacing/2), Vector2(wall_thick, half_spacing + wall_thick))
+		draw_wall_box.call(Vector2(dw/2 + wall_thick/2, -h/2 - half_spacing/2), Vector2(wall_thick, half_spacing + wall_thick))
 	else:
-		draw_line(Vector2(-w/2, -h/2), Vector2(w/2, -h/2), wall_color, 8.0)
+		draw_wall_box.call(Vector2(0, -h/2), Vector2(w + wall_thick * 2, wall_thick))
 		
 	# Bottom Wall
 	if room_data.doors["S"]:
-		draw_line(Vector2(-w/2, h/2), Vector2(-dw/2, h/2), wall_color, 8.0)
-		draw_line(Vector2(dw/2, h/2), Vector2(w/2, h/2), wall_color, 8.0)
+		draw_wall_box.call(Vector2(-w/2 + seg_w/2 - wall_thick/2, h/2), Vector2(seg_w + wall_thick, wall_thick))
+		draw_wall_box.call(Vector2(w/2 - seg_w/2 + wall_thick/2, h/2), Vector2(seg_w + wall_thick, wall_thick))
+		# South Corridor Walls
+		draw_wall_box.call(Vector2(-dw/2 - wall_thick/2, h/2 + half_spacing/2), Vector2(wall_thick, half_spacing + wall_thick))
+		draw_wall_box.call(Vector2(dw/2 + wall_thick/2, h/2 + half_spacing/2), Vector2(wall_thick, half_spacing + wall_thick))
 	else:
-		draw_line(Vector2(-w/2, h/2), Vector2(w/2, h/2), wall_color, 8.0)
+		draw_wall_box.call(Vector2(0, h/2), Vector2(w + wall_thick * 2, wall_thick))
 		
 	# Left Wall
 	if room_data.doors["W"]:
-		draw_line(Vector2(-w/2, -h/2), Vector2(-w/2, -dw/2), wall_color, 8.0)
-		draw_line(Vector2(-w/2, dw/2), Vector2(-w/2, h/2), wall_color, 8.0)
+		draw_wall_box.call(Vector2(-w/2, -h/2 + seg_h/2 - wall_thick/2), Vector2(wall_thick, seg_h + wall_thick))
+		draw_wall_box.call(Vector2(-w/2, h/2 - seg_h/2 + wall_thick/2), Vector2(wall_thick, seg_h + wall_thick))
+		# West Corridor Walls
+		draw_wall_box.call(Vector2(-w/2 - half_spacing/2, -dw/2 - wall_thick/2), Vector2(half_spacing + wall_thick, wall_thick))
+		draw_wall_box.call(Vector2(-w/2 - half_spacing/2, dw/2 + wall_thick/2), Vector2(half_spacing + wall_thick, wall_thick))
 	else:
-		draw_line(Vector2(-w/2, -h/2), Vector2(-w/2, h/2), wall_color, 8.0)
+		draw_wall_box.call(Vector2(-w/2, 0), Vector2(wall_thick, h + wall_thick * 2))
 		
 	# Right Wall
 	if room_data.doors["E"]:
-		draw_line(Vector2(w/2, -h/2), Vector2(w/2, -dw/2), wall_color, 8.0)
-		draw_line(Vector2(w/2, dw/2), Vector2(w/2, h/2), wall_color, 8.0)
+		draw_wall_box.call(Vector2(w/2, -h/2 + seg_h/2 - wall_thick/2), Vector2(wall_thick, seg_h + wall_thick))
+		draw_wall_box.call(Vector2(w/2, h/2 - seg_h/2 + wall_thick/2), Vector2(wall_thick, seg_h + wall_thick))
+		# East Corridor Walls
+		draw_wall_box.call(Vector2(w/2 + half_spacing/2, -dw/2 - wall_thick/2), Vector2(half_spacing + wall_thick, wall_thick))
+		draw_wall_box.call(Vector2(w/2 + half_spacing/2, dw/2 + wall_thick/2), Vector2(half_spacing + wall_thick, wall_thick))
 	else:
-		draw_line(Vector2(w/2, -h/2), Vector2(w/2, h/2), wall_color, 8.0)
+		draw_wall_box.call(Vector2(w/2, 0), Vector2(wall_thick, h + wall_thick * 2))
 		
 	# Exit Portal Icon if Exit Room
 	if room_data.room_type == DungeonGenerator.RoomType.EXIT:

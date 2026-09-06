@@ -1,20 +1,18 @@
-[gd_scene load_steps=4 format=3 uid="uid://main_forge_001"]
+[gd_scene format=3 uid="uid://bvetvjxlm6c6x"]
 
-[ext_resource type="Script" path="res://scripts/Main.gd" id="1_main"]
-[ext_resource type="PackedScene" uid="uid://player_forge_001" path="res://scenes/Player.tscn" id="2_player"]
-[ext_resource type="PackedScene" uid="uid://defense_overlay_forge_001" path="res://scenes/DefenseOverlay.tscn" id="3_defense"]
+[ext_resource type="Script" uid="uid://bucg0gx8icogp" path="res://scripts/Main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/Player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/DefenseOverlay.tscn" id="3_defense"]
 
-[node name="Main" type="Node2D"]
+[node name="Main" type="Node2D" unique_id=155563050]
 script = ExtResource("1_main")
 
-[node name="Camera2D" type="Camera2D" parent="."]
-zoom = Vector2(1.0, 1.0)
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1469445919]
 position_smoothing_enabled = true
 position_smoothing_speed = 7.0
 
-[node name="DungeonContainer" type="Node2D" parent="."]
+[node name="DungeonContainer" type="Node2D" parent="." unique_id=1637489288]
 
-[node name="Player" parent="." instance=ExtResource("2_player")]
-position = Vector2(0, 0)
+[node name="Player" parent="." unique_id=372100413 instance=ExtResource("2_player")]
 
-[node name="DefenseOverlay" parent="." instance=ExtResource("3_defense")]
+[node name="DefenseOverlay" parent="." unique_id=1068161410 instance=ExtResource("3_defense")]

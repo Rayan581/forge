@@ -275,6 +275,11 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "🔄 Rebuild Entire Dungeon"
 
+[node name="BtnAutoKill" type="CheckButton" parent="Control/DefensePanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "☠ Auto-Kill Enemies (Testing)"
+
 [node name="HSeparator2" type="HSeparator" parent="Control/DefensePanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
 
@@ -314,6 +319,13 @@ text = "Top Model Attribution Drivers:"
 [node name="DriversList" type="VBoxContainer" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ReportBox"]
 layout_mode = 2
 theme_override_constants/separation = 2
+
+[node name="PPOStatsLabel" type="Label" parent="Control/DefensePanel/MarginContainer/VBoxContainer/ReportBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 11
+text = "Next dungeon → Rooms: 6 | Enemy count ×1.00"
+autowrap_mode = 2
 
 [node name="HSeparator3" type="HSeparator" parent="Control/DefensePanel/MarginContainer/VBoxContainer"]
 layout_mode = 2

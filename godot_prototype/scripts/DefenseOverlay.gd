@@ -3,6 +3,7 @@ extends CanvasLayer
 
 signal parameters_updated
 signal regenerate_room_requested
+signal auto_kill_toggled(enabled: bool)
 
 var difficulty_manager: DifficultyManager
 var telemetry_logger: TelemetryLogger
@@ -12,6 +13,7 @@ var telemetry_logger: TelemetryLogger
 @onready var score_label: Label = $Control/DefensePanel/MarginContainer/VBoxContainer/ReportBox/ScoreHBox/ScoreLabel
 @onready var tier_label: Label = $Control/DefensePanel/MarginContainer/VBoxContainer/ReportBox/ScoreHBox/TierLabel
 @onready var drivers_container: VBoxContainer = $Control/DefensePanel/MarginContainer/VBoxContainer/ReportBox/DriversList
+@onready var ppo_stats_label: Label = $Control/DefensePanel/MarginContainer/VBoxContainer/ReportBox/PPOStatsLabel
 @onready var minimap: MiniMap = $Control/MiniMap
 
 # Sliders & Value Labels
@@ -33,6 +35,7 @@ var telemetry_logger: TelemetryLogger
 @onready var btn_inter: Button = $Control/DefensePanel/MarginContainer/VBoxContainer/PresetsHBox/BtnIntermediate
 @onready var btn_expert: Button = $Control/DefensePanel/MarginContainer/VBoxContainer/PresetsHBox/BtnExpert
 @onready var btn_regen: Button = $Control/DefensePanel/MarginContainer/VBoxContainer/BtnRegenerate
+@onready var btn_auto_kill: CheckButton = $Control/DefensePanel/MarginContainer/VBoxContainer/BtnAutoKill
 
 # HUD Elements
 @onready var hp_bar: ProgressBar = $Control/TopBar/HPBar
@@ -49,6 +52,7 @@ func _ready() -> void:
 	btn_inter.pressed.connect(func(): _on_preset_selected(DifficultyManager.ProfileTier.INTERMEDIATE))
 	btn_expert.pressed.connect(func(): _on_preset_selected(DifficultyManager.ProfileTier.EXPERT))
 	btn_regen.pressed.connect(func(): emit_signal("regenerate_room_requested"))
+	btn_auto_kill.toggled.connect(_on_auto_kill_toggled)
 	
 	slider_hp.value_changed.connect(_on_slider_changed)
 	slider_dmg.value_changed.connect(_on_slider_changed)
@@ -78,6 +82,14 @@ func set_panel_visible(p_visible: bool) -> void:
 
 func _on_toggle_panel_pressed() -> void:
 	toggle_panel()
+
+## Testing aid: instantly kills every enemy in every generated room so you can
+## walk straight to the exit and watch the PPO policy react to a fast, clean
+## clear on the very next level. Also reveals the exit room on the minimap.
+func _on_auto_kill_toggled(enabled: bool) -> void:
+	emit_signal("auto_kill_toggled", enabled)
+	if minimap:
+		minimap.set_reveal_exit(enabled)
 
 func _on_preset_selected(tier: DifficultyManager.ProfileTier) -> void:
 	difficulty_manager.apply_preset(tier)
@@ -138,6 +150,13 @@ func update_report_ui() -> void:
 		lbl.add_theme_font_size_override("font_size", 12)
 		lbl.add_theme_color_override("font_color", Color(0.85, 0.9, 0.95))
 		drivers_container.add_child(lbl)
+
+	# PPO-controlled values that aren't sliders (room count, enemy count scale)
+	# so the panel always reflects what the policy actually set — not just
+	# what a human last dragged.
+	ppo_stats_label.text = "Next dungeon → Rooms: %d | Enemy count ×%.2f" % [
+		difficulty_manager.room_count_target, difficulty_manager.enemy_count_scale
+	]
 
 func update_player_hp(current: float, max_val: float) -> void:
 	hp_bar.max_value = max_val

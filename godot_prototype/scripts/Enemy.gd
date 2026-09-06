@@ -93,6 +93,11 @@ func take_damage(amount: float, from_dir: Vector2 = Vector2.ZERO) -> void:
 		emit_signal("enemy_defeated", self)
 		queue_free()
 
+## Instantly defeats this enemy (used by the Defense Panel's testing toggle).
+## Routes through take_damage so telemetry/signals fire exactly as a normal kill would.
+func kill() -> void:
+	take_damage(current_health)
+
 func _draw() -> void:
 	# Calculate visual scaling based on parameters (higher HP = bulkier, higher Dmg = redder)
 	var radius = 13.0 + clampf((max_health - 20.0) / 100.0 * 7.0, 0.0, 8.0)

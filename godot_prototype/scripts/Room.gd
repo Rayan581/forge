@@ -154,6 +154,14 @@ func _on_enemy_defeated(_enemy_node: Enemy) -> void:
 		emit_signal("room_cleared", self)
 		queue_redraw()
 
+## Instantly defeats every living enemy currently in this room.
+## Used by the Defense Panel's "Auto-Kill Enemies" testing toggle so you can
+## walk straight to the exit and observe PPO's difficulty response quickly.
+func kill_all_enemies() -> void:
+	for child in entities_container.get_children():
+		if child is Enemy:
+			child.kill()
+
 func _on_player_entered_room(body: Node2D) -> void:
 	if body is Player:
 		room_data.is_visited = true

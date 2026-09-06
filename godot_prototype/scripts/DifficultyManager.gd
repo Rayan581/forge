@@ -16,6 +16,21 @@ var enemy_aggro: float = 240.0        # Range: 100 to 450
 var hazard_density: float = 0.35      # Range: 0.05 to 0.80 (5% to 80%)
 var resource_scarcity: float = 0.40   # Range: 0.10 to 0.90 (10% to 90%)
 
+# --- PPO-controlled additions ---
+var room_count_target: int = 6        # Range: 5 to 9 (rooms in next generated dungeon)
+var enemy_count_scale: float = 1.0    # Range: 0.6 to 1.6 (multiplies per-room enemy counts)
+
+# Real-value ranges used to map PPO's normalized [-1, 1] actions onto game parameters.
+const PARAM_RANGES = {
+	"enemy_health":      {"min": 20.0,  "max": 120.0},
+	"enemy_damage":      {"min": 5.0,   "max": 50.0},
+	"enemy_speed":       {"min": 60.0,  "max": 220.0},
+	"enemy_aggro":       {"min": 100.0, "max": 450.0},
+	"hazard_density":    {"min": 0.05,  "max": 0.80},
+	"resource_scarcity": {"min": 0.10,  "max": 0.90},
+	"room_count":        {"min": 5.0,   "max": 9.0},
+}
+
 # Presets matching Section 5 / Proposal Defense specifications
 const PRESETS = {
 	ProfileTier.NOVICE: {
@@ -60,6 +75,51 @@ func apply_preset(tier: ProfileTier) -> void:
 		enemy_aggro = p.aggro
 		hazard_density = p.hazard
 		resource_scarcity = p.scarcity
+
+# --- PPO integration ---
+
+func _normalize(value: float, key: String) -> float:
+	var r = PARAM_RANGES[key]
+	return clampf((value - r.min) / (r.max - r.min), 0.0, 1.0)
+
+func _denormalize(action_val: float, key: String) -> float:
+	var t = (clampf(action_val, -1.0, 1.0) + 1.0) / 2.0
+	var r = PARAM_RANGES[key]
+	return r.min + t * (r.max - r.min)
+
+## Builds the 8-dim observation vector fed to the PPO policy at the end of each level.
+## All values are normalized to roughly [0, 1] so the trained network sees consistent inputs.
+func build_observation(completion_time_sec: float, deaths_this_level: int, damage_taken_this_level: float, player_max_health: float, level_num: int) -> PackedFloat32Array:
+	var target_time = 45.0 # seconds — the "ideal pace" the policy was trained around
+	var norm_time = clampf(completion_time_sec / (target_time * 2.0), 0.0, 1.0)
+	var norm_deaths = clampf(float(deaths_this_level) / 3.0, 0.0, 1.0)
+	var norm_dmg_ratio = clampf(damage_taken_this_level / maxf(1.0, player_max_health), 0.0, 1.0)
+	var norm_hp = _normalize(enemy_health, "enemy_health")
+	var norm_dmg = _normalize(enemy_damage, "enemy_damage")
+	var norm_haz = _normalize(hazard_density, "hazard_density")
+	var norm_rooms = _normalize(float(room_count_target), "room_count")
+	var norm_level = clampf(float(level_num) / 10.0, 0.0, 1.0)
+
+	return PackedFloat32Array([
+		norm_time, norm_deaths, norm_dmg_ratio,
+		norm_hp, norm_dmg, norm_haz, norm_rooms, norm_level
+	])
+
+## Applies the 7-dim continuous action vector output by the PPO policy.
+## action = [enemy_health, enemy_damage, enemy_speed, enemy_aggro,
+##           hazard_density, resource_scarcity, room_count]  (each in [-1, 1])
+func apply_ppo_action(action: PackedFloat32Array) -> void:
+	if action.size() < 7:
+		push_warning("[DifficultyManager] PPO action vector too short, ignoring.")
+		return
+	current_profile = ProfileTier.CUSTOM
+	enemy_health = _denormalize(action[0], "enemy_health")
+	enemy_damage = _denormalize(action[1], "enemy_damage")
+	enemy_speed = _denormalize(action[2], "enemy_speed")
+	enemy_aggro = _denormalize(action[3], "enemy_aggro")
+	hazard_density = _denormalize(action[4], "hazard_density")
+	resource_scarcity = _denormalize(action[5], "resource_scarcity")
+	room_count_target = int(round(_denormalize(action[6], "room_count")))
 
 # Calculates a 0-100 predicted difficulty score
 func calculate_difficulty_score() -> Dictionary:

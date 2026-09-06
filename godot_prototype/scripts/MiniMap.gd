@@ -5,10 +5,15 @@ var rooms_data: Dictionary = {}
 var current_player_grid_pos: Vector2i = Vector2i.ZERO
 var cell_size: float = 24.0
 var cell_spacing: float = 6.0
+var reveal_exit: bool = false # set true by DefenseOverlay's Auto-Kill testing toggle
 
 func set_dungeon_data(p_rooms: Dictionary, p_start: Vector2i) -> void:
 	rooms_data = p_rooms
 	current_player_grid_pos = p_start
+	queue_redraw()
+
+func set_reveal_exit(enabled: bool) -> void:
+	reveal_exit = enabled
 	queue_redraw()
 
 func update_player_pos(p_pos: Vector2i) -> void:
@@ -61,8 +66,12 @@ func _draw() -> void:
 		var ry = offset_y + float(pos.y) * (cell_size + cell_spacing)
 		var r_rect = Rect2(rx, ry, cell_size, cell_size)
 		
+		# When Auto-Kill testing mode is on, reveal the exit room (the one with
+		# the door/portal) even before the player has ever set foot in it.
+		var is_exit_revealed = reveal_exit and r.room_type == DungeonGenerator.RoomType.EXIT
+		
 		var room_color = Color(0.2, 0.22, 0.28) # Unvisited
-		if r.is_visited:
+		if r.is_visited or is_exit_revealed:
 			if r.room_type == DungeonGenerator.RoomType.START:
 				room_color = Color(0.2, 0.55, 0.85)
 			elif r.room_type == DungeonGenerator.RoomType.EXIT:
@@ -78,6 +87,11 @@ func _draw() -> void:
 				
 		draw_rect(r_rect, room_color)
 		draw_rect(r_rect, Color(0.1, 0.12, 0.16), false, 1.0)
+		
+		# Ring marker so a revealed-but-unvisited exit room reads clearly as
+		# "the room with the door", distinct from one you've already explored.
+		if is_exit_revealed and not r.is_visited:
+			draw_arc(Vector2(rx + cell_size/2.0, ry + cell_size/2.0), cell_size * 0.32, 0, TAU, 12, Color(1, 1, 1, 0.9), 1.5)
 		
 		# Current player marker
 		if pos == current_player_grid_pos:

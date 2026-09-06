@@ -22,6 +22,9 @@ var room_width: float = 880.0
 var room_height: float = 520.0
 var corridor_spacing: float = 120.0 # Distance between room borders
 
+## target_room_count now normally comes from p_diff.room_count_target, which the
+## PPO policy sets after each level based on how the player performed. Main.gd
+## still passes it explicitly so this function stays testable in isolation.
 func generate_dungeon(p_diff: DifficultyManager, target_room_count: int = 6) -> Dictionary:
 	rooms.clear()
 	
@@ -102,19 +105,19 @@ func generate_dungeon(p_diff: DifficultyManager, target_room_count: int = 6) -> 
 		if i < num_hazard_rooms:
 			r.room_type = RoomType.HAZARD
 			r.hazards_count = clampi(int(p_diff.hazard_density * 10.0), 3, 10)
-			r.enemies_count = randi_range(1, 3)
+			r.enemies_count = _scale_enemies(randi_range(1, 3), p_diff)
 		elif i < num_hazard_rooms + num_treasure_rooms:
 			r.room_type = RoomType.TREASURE
 			r.pickups_count = randi_range(2, 4)
-			r.enemies_count = randi_range(1, 2)
+			r.enemies_count = _scale_enemies(randi_range(1, 2), p_diff)
 		else:
 			r.room_type = RoomType.COMBAT
-			r.enemies_count = randi_range(2, 5)
+			r.enemies_count = _scale_enemies(randi_range(2, 5), p_diff)
 			r.hazards_count = clampi(int(p_diff.hazard_density * 4.0), 0, 4)
 			r.pickups_count = 1 if randf() > p_diff.resource_scarcity else 0
 			
 	# Configure Exit Room
-	rooms[exit_room_pos].enemies_count = clampi(int(3 + p_diff.hazard_density * 3.0), 3, 6)
+	rooms[exit_room_pos].enemies_count = _scale_enemies(clampi(int(3 + p_diff.hazard_density * 3.0), 3, 6), p_diff)
 	rooms[exit_room_pos].hazards_count = clampi(int(p_diff.hazard_density * 6.0), 1, 6)
 	
 	# Calculate world positions for each room
@@ -125,3 +128,10 @@ func generate_dungeon(p_diff: DifficultyManager, target_room_count: int = 6) -> 
 		r.world_pos = Vector2(wx, wy)
 		
 	return rooms
+
+## Applies the PPO-controlled enemy_count_scale on top of the base random count,
+## keeping at least 1 enemy in rooms that were meant to have any.
+func _scale_enemies(base_count: int, p_diff: DifficultyManager) -> int:
+	if base_count <= 0:
+		return 0
+	return max(1, int(round(base_count * p_diff.enemy_count_scale)))

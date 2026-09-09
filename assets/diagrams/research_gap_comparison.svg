@@ -1,0 +1,227 @@
+<svg viewBox="0 0 1620 980" width="1620" height="980" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="shadow" x="-5%" y="-8%" width="110%" height="120%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.08"/>
+    </filter>
+    <filter id="glow-green" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#22c55e" flood-opacity="0.3"/>
+    </filter>
+
+    <!-- Arrow Markers -->
+    <marker id="arr-rose" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#e11d48"/>
+    </marker>
+    <marker id="arr-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#0d9488"/>
+    </marker>
+    <marker id="arr-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#d97706"/>
+    </marker>
+    <marker id="arr-cyan" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#0284c7"/>
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arr-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="1620" height="980" fill="#f8fafc"/>
+
+  <!-- Top Title Bar -->
+  <rect x="0" y="0" width="1620" height="58" fill="#0f172a"/>
+  <text x="36" y="26" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="800" fill="#ffffff" letter-spacing="0.5">FORGE: RESEARCH GAP &amp; ARCHITECTURAL NOVELTY COMPARISON (§2.4)</text>
+  <text x="36" y="45" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="500" fill="#94a3b8">Contrasting Coarse Commercial Difficulty Mechanics with FORGE's End-to-End Closed-Loop Telemetry Personalization</text>
+
+  <!-- Header Badges -->
+  <rect x="1170" y="15" width="140" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="1185" cy="29" r="4.5" fill="#f87171"/>
+  <text x="1198" y="33" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#e2e8f0">Existing Systems</text>
+
+  <rect x="1320" y="15" width="140" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="1335" cy="29" r="4.5" fill="#4ade80"/>
+  <text x="1348" y="33" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#e2e8f0">FORGE Closed-Loop</text>
+
+  <rect x="1470" y="15" width="114" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="1485" cy="29" r="4.5" fill="#38bdf8"/>
+  <text x="1498" y="33" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#e2e8f0">Novel SOTA</text>
+
+  <!-- ========================================================================= -->
+  <!-- LEFT COLUMN: EXISTING COMMERCIAL & LITERATURE PARADIGMS (x=36, w=514)    -->
+  <!-- ========================================================================= -->
+
+  <rect x="36" y="78" width="496" height="874" rx="12" fill="#fff1f2" stroke="#be123c" stroke-width="1.8" stroke-dasharray="6 4"/>
+  <path d="M 37,90 A 11 11 0 0 1 48,79 L 520,79 A 11 11 0 0 1 531,90 L 531,113 L 37,113 Z" fill="#e11d48"/>
+  <text x="52" y="101" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#ffffff" letter-spacing="0.5">EXISTING COMMERCIAL &amp; PCGRL MECHANISMS</text>
+  <text x="516" y="101" text-anchor="end" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#ffffff" opacity="0.9">Fragmented / Open-Loop</text>
+
+  <!-- Case 1: Hades -->
+  <rect x="48" y="126" width="472" height="124" rx="8" fill="#ffffff" stroke="#e11d48" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 49,134 A 8 8 0 0 1 56,127 L 53,127 L 53,248 L 56,248 A 8 8 0 0 1 49,241 Z" fill="#e11d48"/>
+  <rect x="408" y="133" width="120" height="18" rx="4" fill="#fee2e2" stroke="#b91c1c" stroke-width="0.8"/>
+  <text x="468" y="146" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#b91c1c">COMMERCIAL DDA</text>
+  <text x="62" y="148" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a">HADES (Supergiant Games) — &quot;God Mode&quot;</text>
+  <text x="62" y="167" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#dc2626">Player ──► Death Count ──► Hardcoded Formula (+2%/death) ──► Scalar Resistance</text>
+  <text x="62" y="188" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Only adjusts a scalar resistance percentage (up to +80% damage reduction)</text>
+  <text x="62" y="204" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Completely blind to playstyle, weapon selection, and combat pacing</text>
+  <text x="62" y="222" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#b91c1c">Critical Limitation: Zero spatial or enemy archetype adaptation; purely reactive scalar.</text>
+
+  <!-- Case 2: Deep Rock Galactic -->
+  <rect x="48" y="262" width="472" height="124" rx="8" fill="#ffffff" stroke="#e11d48" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 49,270 A 8 8 0 0 1 56,263 L 53,263 L 53,384 L 56,384 A 8 8 0 0 1 49,377 Z" fill="#e11d48"/>
+  <rect x="382" y="269" width="146" height="18" rx="4" fill="#fee2e2" stroke="#b91c1c" stroke-width="0.8"/>
+  <text x="455" y="282" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#b91c1c">STATIC LOOKUP TABLES</text>
+  <text x="62" y="284" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a">DEEP ROCK GALACTIC (Ghost Ship Games)</text>
+  <text x="62" y="303" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#dc2626">Player Count + Hazard 1–5 Preset ──► Static Table ──► Scaled Swarm Stats</text>
+  <text x="62" y="324" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Multi-parameter scaling (damage, velocity, attack intervals) exists but is static</text>
+  <text x="62" y="340" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Scaling is driven by co-op lobby size and manual hazard tier selection</text>
+  <text x="62" y="358" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#b91c1c">Critical Limitation: Unaware of individual player performance; static discrete presets.</text>
+
+  <!-- Case 3: Risk of Rain 2 -->
+  <rect x="48" y="398" width="472" height="124" rx="8" fill="#ffffff" stroke="#e11d48" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 49,406 A 8 8 0 0 1 56,399 L 53,399 L 53,520 L 56,520 A 8 8 0 0 1 49,513 Z" fill="#e11d48"/>
+  <rect x="398" y="405" width="130" height="18" rx="4" fill="#fee2e2" stroke="#b91c1c" stroke-width="0.8"/>
+  <text x="463" y="418" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#b91c1c">TIME MONOTONIC</text>
+  <text x="62" y="420" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a">RISK OF RAIN 2 (Hopoo Games)</text>
+  <text x="62" y="439" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#dc2626">Elapsed Session Clock ──► Monotonic Multiplier ──► Exponential Stat Inflation</text>
+  <text x="62" y="460" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Difficulty increases strictly as a function of continuous elapsed time</text>
+  <text x="62" y="476" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Disproportionately punishes methodical exploration and looting playstyles</text>
+  <text x="62" y="494" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#b91c1c">Critical Limitation: One-directional difficulty ramp; zero feedback on player distress.</text>
+
+  <!-- Case 4: Controllable PCGRL -->
+  <rect x="48" y="534" width="472" height="136" rx="8" fill="#ffffff" stroke="#e11d48" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 49,542 A 8 8 0 0 1 56,535 L 53,535 L 53,668 L 56,668 A 8 8 0 0 1 49,661 Z" fill="#e11d48"/>
+  <rect x="372" y="541" width="156" height="18" rx="4" fill="#fee2e2" stroke="#b91c1c" stroke-width="0.8"/>
+  <text x="450" y="554" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#b91c1c">LITERATURE BENCHMARK</text>
+  <text x="62" y="556" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#0f172a">CONTROLLABLE PCGRL (Earle et al. [2])</text>
+  <text x="62" y="575" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#dc2626">Handcrafted Designer Vector ──► Conditioned PPO ──► Generated 2D Grid</text>
+  <text x="62" y="596" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Pioneered conditioning RL generator policies on explicit target metric vectors</text>
+  <text x="62" y="612" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Operates in Sokoban/Zelda tile editing without combat physics or player loops</text>
+  <text x="62" y="628" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Target vector must be manually supplied by an external human designer</text>
+  <text x="62" y="646" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#b91c1c">Critical Limitation: NO autonomous inference from live player combat telemetry.</text>
+
+  <!-- Summary of the Gap -->
+  <rect x="48" y="682" width="472" height="254" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.2" filter="url(#shadow)"/>
+  <text x="64" y="706" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#f87171">THE THREE DISCONNECTED TRACKS IN EXISTING SOTA:</text>
+  
+  <rect x="64" y="720" width="440" height="48" rx="6" fill="#0f172a" stroke="#475569" stroke-width="0.8"/>
+  <text x="76" y="738" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#f8fafc">[A] Procedural Dungeon Generation (Dead Cells, Returnal)</text>
+  <text x="76" y="754" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#94a3b8">Static seeds, grammar rules, zero online telemetry adaptation.</text>
+
+  <rect x="64" y="776" width="440" height="48" rx="6" fill="#0f172a" stroke="#475569" stroke-width="0.8"/>
+  <text x="76" y="794" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#f8fafc">[B] Multi-Parameter Difficulty (Deep Rock Galactic, DRG)</text>
+  <text x="76" y="810" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#94a3b8">Rich parameter spaces, but set via static presets / co-op counts.</text>
+
+  <rect x="64" y="832" width="440" height="48" rx="6" fill="#0f172a" stroke="#475569" stroke-width="0.8"/>
+  <text x="76" y="850" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#f8fafc">[C] Coarse Adaptation (Hades God Mode, Left 4 Dead)</text>
+  <text x="76" y="866" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#94a3b8">Adapts to deaths/health, but 1D scalar rules; never reshapes levels.</text>
+
+  <rect x="64" y="888" width="440" height="36" rx="6" fill="#881337" stroke="#f43f5e" stroke-width="1"/>
+  <text x="293" y="910" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#ffffff">THE RESULT: No system autonomously closes the loop from telemetry to PCG.</text>
+
+  <!-- ========================================================================= -->
+  <!-- RIGHT COLUMN: FORGE CLOSED-LOOP SYNTHESIS (x=570, w=954)                  -->
+  <!-- ========================================================================= -->
+
+  <rect x="554" y="78" width="1030" height="874" rx="12" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.8" filter="url(#glow-green)"/>
+  <path d="M 555,90 A 11 11 0 0 1 566,79 L 1572,79 A 11 11 0 0 1 1583,90 L 1583,113 L 555,113 Z" fill="#16a34a"/>
+  <text x="620" y="101" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#ffffff" letter-spacing="0.5">THE FORGE CLOSED-LOOP ADAPTIVE PARADIGM (THE SYNTHESIS)</text>
+  <text x="1568" y="101" text-anchor="end" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#ffffff" opacity="0.9">Autonomous Telemetry Conditioning</text>
+
+  <!-- Top Synthesis Formula Banner -->
+  <rect x="622" y="126" width="940" height="74" rx="8" fill="#ffffff" stroke="#16a34a" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="638" y="146" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#15803d">FORGE UNIQUELY SYNTHESIZES PRIOR ART [A + B + C] WITH FOUR NOVEL CAPABILITIES:</text>
+  <text x="638" y="165" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#0f172a">[D] Continuous In-Process Telemetry Inference ──► [E] Conditioned PPO Generator Policy (Sub-0.5ms)</text>
+  <text x="638" y="183" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#0f172a">[F] Combinatorial Difficulty Vectors (E + M + Rooms) ──► [G] Dual Regressor &amp; Glass-Box Explainability</text>
+
+  <!-- STEP 1: PLAYER GAMEPLAY & CONTINUOUS COMBAT -->
+  <rect x="622" y="212" width="940" height="82" rx="8" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 585,220 A 8 8 0 0 1 592,213 L 589,213 L 589,293 L 592,293 A 8 8 0 0 1 585,286 Z" fill="#3b82f6"/>
+  <rect x="1472" y="219" width="104" height="18" rx="4" fill="#dbeafe" stroke="#1d4ed8" stroke-width="0.8"/>
+  <text x="1486" y="232" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#1d4ed8">STEP 1: INPUT</text>
+  <text x="640" y="234" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a">Human Player Combat Engagement (Player.gd &amp; Shop.gd)</text>
+  <text x="640" y="253" font-family="Inter, sans-serif" font-size="10.5" font-weight="500" fill="#475569">• Player maneuvers in 2D top-down dungeon, attacks enemy archetypes, triggers traps, purchases upgrades</text>
+  <text x="640" y="271" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#2563eb">Gear Progression (Shop.gd): Weapons, Armor, Boots normalize player combat power into Combat Rating (CR)</text>
+
+  <!-- Connector S1 -> S2 -->
+  <line x1="1092" y1="294" x2="1092" y2="308" stroke="#16a34a" stroke-width="2" marker-end="url(#arr-green)"/>
+
+  <!-- STEP 2: TELEMETRY INGESTION & 8D OBSERVATION -->
+  <rect x="622" y="308" width="940" height="98" rx="8" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 585,316 A 8 8 0 0 1 592,309 L 589,309 L 589,405 L 592,405 A 8 8 0 0 1 585,398 Z" fill="#0284c7"/>
+  <rect x="1380" y="315" width="120" height="18" rx="4" fill="#e0f2fe" stroke="#0369a1" stroke-width="0.8"/>
+  <text x="1440" y="328" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#0369a1">STEP 2: TELEMETRY</text>
+  <text x="640" y="330" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a">Telemetry Ingestion &amp; 8-Dim Observation Normalization (DifficultyManager.gd)</text>
+  <text x="640" y="349" font-family="Inter, sans-serif" font-size="10.5" font-weight="500" fill="#475569">• On Exit Portal reached: Computes level performance deltas (Δt vs T*=45s pace, Δdeaths, Δdamage)</text>
+  <text x="640" y="367" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0284c7">Synthesizes Observation Vector S_t ∈ [0, 1]^8: [norm_time, norm_deaths, norm_dmg_ratio, norm_hp,</text>
+  <text x="640" y="383" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0284c7">                                                 norm_dmg, norm_haz, norm_rooms, norm_level]</text>
+
+  <!-- Connector S2 -> S3 -->
+  <line x1="1092" y1="406" x2="1092" y2="420" stroke="#16a34a" stroke-width="2" marker-end="url(#arr-green)"/>
+
+  <!-- STEP 3: EMBEDDED NEURAL INFERENCE -->
+  <rect x="622" y="420" width="940" height="98" rx="8" fill="#ffffff" stroke="#0d9488" stroke-width="1.6" filter="url(#shadow)"/>
+  <path d="M 585,428 A 8 8 0 0 1 592,421 L 589,421 L 589,517 L 592,517 A 8 8 0 0 1 585,510 Z" fill="#0d9488"/>
+  <rect x="1400" y="427" width="138" height="18" rx="4" fill="#ccfbf1" stroke="#0f766e" stroke-width="0.8"/>
+  <text x="1469" y="440" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#0f766e">STEP 3: PPO INFERENCE</text>
+  <text x="640" y="442" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a">Pure GDScript PPO Forward Pass (PPOPolicy.gd — Latency &lt; 0.5ms)</text>
+  <text x="640" y="461" font-family="Inter, sans-serif" font-size="10.5" font-weight="500" fill="#475569">• Evaluates S_t through 3-layer MLP: 8 ──► Dense(64, Tanh) ──► Dense(64, Tanh) ──► Output(8)</text>
+  <text x="640" y="479" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0d9488">• Zero external Python/PyTorch runtime: Executed via native vector dot products in engine memory</text>
+  <text x="640" y="495" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#0f766e">• Outputs Continuous Action Vector a_t ∈ [-1.0, 1.0]^8 | Automated Fallback Heuristic if weights missing</text>
+
+  <!-- Connector S3 -> S4 -->
+  <line x1="1092" y1="518" x2="1092" y2="532" stroke="#16a34a" stroke-width="2" marker-end="url(#arr-green)"/>
+
+  <!-- STEP 4: COMBINATORIAL PARAMETER DENORMALIZATION -->
+  <rect x="622" y="532" width="940" height="106" rx="8" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 585,540 A 8 8 0 0 1 592,533 L 589,533 L 589,637 L 592,637 A 8 8 0 0 1 585,630 Z" fill="#f59e0b"/>
+  <rect x="1388" y="539" width="150" height="18" rx="4" fill="#fef3c7" stroke="#b45309" stroke-width="0.8"/>
+  <text x="1463" y="552" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#b45309">STEP 4: PARAMETER SPACE</text>
+  <text x="640" y="554" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a">Combinatorial Parameter Denormalization: x_k = L_k + ((a_k + 1)/2) · (U_k - L_k)</text>
+  <text x="640" y="573" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#b45309">• Adversary Vector (E): Health [20, 120 HP], Damage [5, 50 Dmg], Speed [60, 220 px/s], Aggro [100, 450 px]</text>
+  <text x="640" y="591" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#b45309">• Environmental Modifiers (M): Hazard Density [0.05, 0.80 Trap Ratio], Resource Scarcity [0.10, 0.90 Drop Inv]</text>
+  <text x="640" y="609" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">• Macro Topology &amp; Archetypes: Room Count Target [5, 9 Chambers], Softmax Archetype Distribution</text>
+
+  <!-- Connector S4 -> S5 -->
+  <line x1="1092" y1="638" x2="1092" y2="652" stroke="#16a34a" stroke-width="2" marker-end="url(#arr-green)"/>
+
+  <!-- STEP 5: PROCEDURAL GENERATION & VIEWPORT INSTANTIATION -->
+  <rect x="622" y="652" width="940" height="88" rx="8" fill="#ffffff" stroke="#16a34a" stroke-width="1.6" filter="url(#shadow)"/>
+  <path d="M 585,660 A 8 8 0 0 1 592,653 L 589,653 L 589,739 L 592,739 A 8 8 0 0 1 585,732 Z" fill="#16a34a"/>
+  <rect x="1400" y="659" width="138" height="18" rx="4" fill="#dcfce7" stroke="#15803d" stroke-width="0.8"/>
+  <text x="1469" y="672" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#15803d">STEP 5: GENERATION</text>
+  <text x="640" y="674" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a">Procedural Dungeon Synthesis (DungeonGenerator.gd — Solvability ≥ 95%)</text>
+  <text x="640" y="693" font-family="Inter, sans-serif" font-size="10.5" font-weight="500" fill="#475569">• Frontier random walk graph builds connected topology starting at (0, 0) [START] and ending at [EXIT]</text>
+  <text x="640" y="709" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#16a34a">• A* Pathfinding guarantees unbroken traversal | Archetype Softmax distributes 5 distinct enemy AI classes</text>
+  <text x="640" y="725" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">• Instantiates active TileMap and physics nodes directly into Godot engine viewport</text>
+
+  <!-- Connector S5 -> S6 -->
+  <line x1="1047" y1="740" x2="1047" y2="754" stroke="#16a34a" stroke-width="2" marker-end="url(#arr-green)"/>
+
+  <!-- STEP 6: DUAL REGRESSOR & GLASS-BOX EXPLAINABILITY -->
+  <rect x="622" y="754" width="940" height="92" rx="8" fill="#ffffff" stroke="#be123c" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 585,762 A 8 8 0 0 1 592,755 L 589,755 L 589,845 L 592,845 A 8 8 0 0 1 585,838 Z" fill="#be123c"/>
+  <rect x="1400" y="761" width="138" height="18" rx="4" fill="#ffe4e6" stroke="#be123c" stroke-width="0.8"/>
+  <text x="1469" y="774" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#be123c">STEP 6: EXPLAINABILITY</text>
+  <text x="640" y="776" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a">Difficulty Attribution &amp; Defense Suite (DefenseOverlay.gd / SHAP)</text>
+  <text x="640" y="795" font-family="Inter, sans-serif" font-size="10.5" font-weight="500" fill="#475569">• Glass-Box Linear Attribution: Difficulty Score DS ∈ [0, 100] = Σ w_k · x_k_norm</text>
+  <text x="640" y="813" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#be123c">• Surfaced on Live In-Game HUD: Top-3 parameter drivers (e.g. 35% Enemy Dmg, 25% Traps, 20% Speed)</text>
+  <text x="640" y="829" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#64748b">• Real-time transparent auditing for evaluators, eliminating black-box opacity</text>
+
+  <!-- STEP 7: CLOSED-LOOP RETURN ARC -->
+  <path d="M 622,794 L 588,794 L 588,253 L 622,253" fill="none" stroke="#16a34a" stroke-width="3" marker-end="url(#arr-green)"/>
+  <rect x="566" y="474" width="44" height="66" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.2" filter="url(#shadow)"/>
+  <text x="588" y="494" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="800" fill="#15803d">CLOSED</text>
+  <text x="588" y="509" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="800" fill="#15803d">LOOP</text>
+  <text x="588" y="527" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#15803d">&#x21ba;</text>
+
+  <!-- Bottom Final Takeaway Banner -->
+  <rect x="622" y="860" width="940" height="74" rx="8" fill="#0f172a" stroke="#334155" stroke-width="1" filter="url(#shadow)"/>
+  <text x="638" y="882" font-family="Inter, sans-serif" font-size="11.5" font-weight="800" fill="#86efac">CORE RESEARCH CONTRIBUTION (STATED PLAINLY):</text>
+  <text x="638" y="901" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#f8fafc">While existing titles force the human player to adapt to an indifferent, static world or coarse 1D presets,</text>
+  <text x="638" y="918" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#38bdf8">FORGE continuously observes live player combat capability and autonomously reshapes both the spatial topology and adversary ecology to preserve psychological flow.</text>
+
+</svg>

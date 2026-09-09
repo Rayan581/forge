@@ -1,0 +1,494 @@
+<svg viewBox="0 0 1600 1140" width="1600" height="1140" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Drop Shadow Filter -->
+    <filter id="shadow" x="-5%" y="-8%" width="110%" height="120%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.08"/>
+    </filter>
+    <filter id="glow-green" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#22c55e" flood-opacity="0.35"/>
+    </filter>
+
+    <!-- Arrow Markers -->
+    <marker id="arr-navy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#1e40af"/>
+    </marker>
+    <marker id="arr-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#0d9488"/>
+    </marker>
+    <marker id="arr-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#d97706"/>
+    </marker>
+    <marker id="arr-rose" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#e11d48"/>
+    </marker>
+    <marker id="arr-violet" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#7c3aed"/>
+    </marker>
+    <marker id="arr-slate" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arr-cyan" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#0284c7"/>
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#16a34a"/>
+    </marker>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="1600" height="1140" fill="#f8fafc"/>
+
+  <!-- Top Title Bar -->
+  <rect x="0" y="0" width="1600" height="58" fill="#0f172a"/>
+  <text x="36" y="26" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="800" fill="#ffffff" letter-spacing="0.5">FORGE: END-TO-END CLOSED-LOOP SYSTEM ARCHITECTURE &amp; RUNTIME BRIDGE</text>
+  <text x="36" y="45" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="500" fill="#94a3b8">Sub-Millisecond Telemetry-Conditioned Procedural Dungeon Personalization | Decoupled Offline SB3 Training &amp; Embedded Godot 4.x Inference</text>
+
+  <!-- Header Badges / Legend -->
+  <rect x="990" y="15" width="130" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="1005" cy="29" r="4.5" fill="#38bdf8"/>
+  <text x="1018" y="33" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#e2e8f0">Godot 4.x Client</text>
+
+  <rect x="1130" y="15" width="138" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="1145" cy="29" r="4.5" fill="#c084fc"/>
+  <text x="1158" y="33" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#e2e8f0">Offline Python ML</text>
+
+  <rect x="1278" y="15" width="138" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="1293" cy="29" r="4.5" fill="#2dd4bf"/>
+  <text x="1306" y="33" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#e2e8f0">GDScript Engine</text>
+
+  <rect x="1426" y="15" width="138" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="1441" cy="29" r="4.5" fill="#22c55e"/>
+  <text x="1454" y="33" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#e2e8f0">Closed Feedback</text>
+
+  <!-- TOP CLOSED-LOOP FEEDBACK CONNECTOR -->
+  <rect x="36" y="68" width="1528" height="34" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1.2" filter="url(#glow-green)"/>
+  <path d="M 1312,118 L 1312,85 L 140,85 L 140,118" fill="none" stroke="#16a34a" stroke-width="2.6" marker-end="url(#arr-green)"/>
+  <rect x="470" y="74" width="660" height="22" rx="5" fill="#dcfce7" stroke="#86efac" stroke-width="1.1" filter="url(#shadow)"/>
+  <text x="800" y="89" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#15803d">CLOSED-LOOP FEEDBACK: Real-Time Level Cleared ──► Telemetry Deltas ──► PPO Inference ──► Next Level Instantiation</text>
+
+  <!-- ========================================================================= -->
+  <!-- COLUMN 1: GAMEPLAY & TELEMETRY (x = 36 to 476, width = 440)             -->
+  <!-- ========================================================================= -->
+
+  <!-- SECTION 1: GAMEPLAY & PROGRESSION SESSION -->
+  <rect x="36" y="118" width="440" height="376" rx="12" fill="#eff6ff" stroke="#1e3a8a" stroke-width="1.8" stroke-dasharray="6 4"/>
+  <path d="M 37,130 A 11 11 0 0 1 48,119 L 464,119 A 11 11 0 0 1 475,130 L 475,153 L 37,153 Z" fill="#1e40af"/>
+  <text x="52" y="141" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#ffffff" letter-spacing="0.5">1. GAMEPLAY &amp; COMBAT SESSION</text>
+  <text x="460" y="141" text-anchor="end" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#ffffff" opacity="0.9">Godot 4.x Client</text>
+
+  <!-- Player Avatar Card (Top-Left Subcard) -->
+  <rect x="48" y="165" width="200" height="90" rx="8" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 49,173 A 8 8 0 0 1 56,166 L 53,166 L 53,254 L 56,254 A 8 8 0 0 1 49,247 Z" fill="#3b82f6"/>
+  <rect x="58" y="173" width="86" height="16" rx="3" fill="#dbeafe" stroke="#1d4ed8" stroke-width="0.8"/>
+  <text x="101" y="184" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="800" fill="#1d4ed8">PLAYER ENTITY</text>
+  <text x="58" y="205" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a">Player Avatar (Player.gd)</text>
+  <text x="58" y="222" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">8-Dir Movement, Sword Hurtbox</text>
+  <text x="58" y="238" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#2563eb">Base HP: 100 | Spd: 160 px/s</text>
+
+  <!-- Equipment Shop Card (Top-Right Subcard) -->
+  <rect x="258" y="165" width="206" height="90" rx="8" fill="#ffffff" stroke="#d97706" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 259,173 A 8 8 0 0 1 266,166 L 263,166 L 263,254 L 266,254 A 8 8 0 0 1 259,247 Z" fill="#d97706"/>
+  <rect x="268" y="173" width="94" height="16" rx="3" fill="#fef3c7" stroke="#b45309" stroke-width="0.8"/>
+  <text x="315" y="184" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="800" fill="#b45309">ECONOMY &amp; GEAR</text>
+  <text x="268" y="205" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a">Equipment Shop (Shop.gd)</text>
+  <text x="268" y="222" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Weapon, Armor, Boots Upgrade</text>
+  <text x="268" y="238" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#d97706">Normalizes Combat Rating (CR)</text>
+
+  <!-- Internal Economy Loop Arrows -->
+  <line x1="248" y1="205" x2="258" y2="205" stroke="#d97706" stroke-width="1.5" marker-end="url(#arr-amber)"/>
+  <line x1="258" y1="225" x2="248" y2="225" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arr-navy)"/>
+
+  <!-- Spatial Hazard System Card (Mid-Left Subcard) -->
+  <rect x="48" y="265" width="200" height="86" rx="8" fill="#ffffff" stroke="#b45309" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 49,273 A 8 8 0 0 1 56,266 L 53,266 L 53,350 L 56,350 A 8 8 0 0 1 49,343 Z" fill="#b45309"/>
+  <rect x="58" y="273" width="84" height="16" rx="3" fill="#fef3c7" stroke="#b45309" stroke-width="0.8"/>
+  <text x="100" y="284" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="800" fill="#b45309">MODIFIERS (M)</text>
+  <text x="58" y="305" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a">Hazard Placer (M)</text>
+  <text x="58" y="322" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Spike Traps &amp; Lava Density</text>
+  <text x="58" y="338" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#b45309">Trap Hazard Ratio: 0.05 – 0.80</text>
+
+  <!-- Adversary AI Card (Mid-Right Subcard) -->
+  <rect x="258" y="265" width="206" height="86" rx="8" fill="#ffffff" stroke="#b91c1c" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 259,273 A 8 8 0 0 1 266,266 L 263,266 L 263,350 L 266,350 A 8 8 0 0 1 259,343 Z" fill="#b91c1c"/>
+  <rect x="268" y="273" width="86" height="16" rx="3" fill="#fee2e2" stroke="#b91c1c" stroke-width="0.8"/>
+  <text x="311" y="284" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="800" fill="#b91c1c">ADVERSARY (E)</text>
+  <text x="268" y="305" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a">Enemy Spawns (Enemy.gd)</text>
+  <text x="268" y="322" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">5 Archetypes (Swarmers, Spitters..)</text>
+  <text x="268" y="338" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#b91c1c">Scaled HP, Dmg, Speed &amp; Aggro</text>
+
+  <!-- Combat Interaction Indicators -->
+  <line x1="148" y1="255" x2="148" y2="265" stroke="#b45309" stroke-width="1.5" marker-end="url(#arr-amber)"/>
+  <line x1="361" y1="255" x2="361" y2="265" stroke="#b91c1c" stroke-width="1.5" marker-end="url(#arr-rose)"/>
+
+  <!-- Exit Portal / Level Boundary Card -->
+  <rect x="48" y="363" width="416" height="76" rx="8" fill="#ffffff" stroke="#16a34a" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 49,371 A 8 8 0 0 1 56,364 L 53,364 L 53,438 L 56,438 A 8 8 0 0 1 49,431 Z" fill="#16a34a"/>
+  <rect x="338" y="371" width="116" height="18" rx="4" fill="#dcfce7" stroke="#15803d" stroke-width="0.8"/>
+  <text x="396" y="384" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#15803d">LEVEL BOUNDARY</text>
+  <text x="60" y="390" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#0f172a">Exit Portal Reached</text>
+  <text x="60" y="407" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Main._on_dungeon_escaped() triggers level transition</text>
+  <text x="60" y="423" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#16a34a">Emits Signals: dungeon_escaped, player_died, stat_changed</text>
+
+  <!-- SECTION 2: TELEMETRY INGESTION & FEATURE NORMALIZATION -->
+  <rect x="36" y="508" width="440" height="612" rx="12" fill="#f8fafc" stroke="#334155" stroke-width="1.8" stroke-dasharray="6 4"/>
+  <path d="M 37,520 A 11 11 0 0 1 48,509 L 464,509 A 11 11 0 0 1 475,520 L 475,543 L 37,543 Z" fill="#475569"/>
+  <text x="52" y="531" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#ffffff" letter-spacing="0.5">2. TELEMETRY &amp; OBSERVATION LAYER</text>
+  <text x="460" y="531" text-anchor="end" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#ffffff" opacity="0.9">In-Process Logging</text>
+
+  <!-- Connector from Level Boundary to Telemetry -->
+  <line x1="256" y1="439" x2="256" y2="556" stroke="#475569" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arr-slate)"/>
+  <rect x="175" y="468" width="162" height="20" rx="5" fill="#ffffff" stroke="#475569" stroke-width="1" filter="url(#shadow)"/>
+  <text x="256" y="482" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="700" fill="#475569">On Level Exit / Death Signal</text>
+
+  <!-- TelemetryLogger Card -->
+  <rect x="48" y="556" width="416" height="74" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 49,564 A 8 8 0 0 1 56,557 L 53,557 L 53,629 L 56,629 A 8 8 0 0 1 49,622 Z" fill="#64748b"/>
+  <rect x="344" y="563" width="110" height="18" rx="4" fill="#e2e8f0" stroke="#475569" stroke-width="0.8"/>
+  <text x="399" y="576" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#475569">IN-PROCESS LOG</text>
+  <text x="60" y="583" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#0f172a">TelemetryLogger.gd (Engine Signals)</text>
+  <text x="60" y="600" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Ticks msec, Damage Taken, Total Deaths, Trap Triggers</text>
+  <text x="60" y="616" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#64748b">Local Data Privacy: user://telemetry.db (SQLite Embedded)</text>
+
+  <!-- Performance Delta Extraction Card -->
+  <rect x="48" y="642" width="416" height="88" rx="8" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 49,650 A 8 8 0 0 1 56,643 L 53,643 L 53,729 L 56,729 A 8 8 0 0 1 49,722 Z" fill="#0284c7"/>
+  <rect x="334" y="649" width="120" height="18" rx="4" fill="#e0f2fe" stroke="#0369a1" stroke-width="0.8"/>
+  <text x="394" y="662" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#0369a1">DELTA EXTRACTION</text>
+  <text x="60" y="670" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#0f172a">Performance Deltas (Main.gd)</text>
+  <text x="60" y="687" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Δt = (ticks - start_time) / 1000.0 (s)  |  Target Pace: T* = 45s</text>
+  <text x="60" y="702" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Δdeaths = total_deaths - start_deaths</text>
+  <text x="60" y="717" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#0284c7">Δdamage = damage_taken - start_damage  |  Damage Ratio = Δdmg / HP_max</text>
+
+  <!-- Connector from Deltas to Observation Card -->
+  <line x1="256" y1="730" x2="256" y2="742" stroke="#0284c7" stroke-width="1.8" marker-end="url(#arr-cyan)"/>
+
+  <!-- 8-Dim Observation Vector Card -->
+  <rect x="48" y="742" width="416" height="364" rx="8" fill="#ffffff" stroke="#0284c7" stroke-width="1.6" filter="url(#shadow)"/>
+  <path d="M 49,750 A 8 8 0 0 1 56,743 L 53,743 L 53,1099 L 56,1099 A 8 8 0 0 1 49,1092 Z" fill="#0284c7"/>
+  <rect x="306" y="749" width="148" height="18" rx="4" fill="#e0f2fe" stroke="#0369a1" stroke-width="0.8"/>
+  <text x="380" y="762" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#0369a1">NORMALIZED STATE [0, 1]</text>
+  <text x="60" y="770" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#0f172a">8-Dim Observation Vector (S_t ∈ [0, 1]^8)</text>
+  <text x="60" y="787" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0284c7">Formula: clamp((val - min) / (max - min), 0.0, 1.0)</text>
+
+  <!-- Table of 8 Observation Dimensions -->
+  <g font-family="Inter, sans-serif" font-size="9.5" fill="#334155">
+    <rect x="58" y="798" width="396" height="22" rx="4" fill="#f1f5f9"/>
+    <text x="66" y="813" font-weight="700" fill="#0f172a">Idx</text>
+    <text x="96" y="813" font-weight="700" fill="#0f172a">Feature</text>
+    <text x="176" y="813" font-weight="700" fill="#0f172a">Normalization Formula</text>
+    <text x="348" y="813" font-weight="700" fill="#0f172a">Bounds</text>
+
+    <text x="66" y="836" font-weight="600" fill="#0284c7">[0]</text>
+    <text x="96" y="836" font-weight="600">norm_time</text>
+    <text x="176" y="836">clamp(Δt / 90.0, 0, 1)</text>
+    <text x="348" y="836">[0, 90s]</text>
+
+    <text x="66" y="859" font-weight="600" fill="#0284c7">[1]</text>
+    <text x="96" y="859" font-weight="600">norm_deaths</text>
+    <text x="176" y="859">clamp(Δdeaths / 3.0, 0, 1)</text>
+    <text x="348" y="859">[0, 3]</text>
+
+    <text x="66" y="882" font-weight="600" fill="#0284c7">[2]</text>
+    <text x="96" y="882" font-weight="600">norm_dmg_ratio</text>
+    <text x="176" y="882">clamp(Δdmg / HP_max, 0, 1)</text>
+    <text x="348" y="882">[0, 1.0]</text>
+
+    <text x="66" y="905" font-weight="600" fill="#0284c7">[3]</text>
+    <text x="96" y="905" font-weight="600">norm_hp</text>
+    <text x="176" y="905">(enemy_health - 20.0) / 100.0</text>
+    <text x="348" y="905">[20, 120]</text>
+
+    <text x="66" y="928" font-weight="600" fill="#0284c7">[4]</text>
+    <text x="96" y="928" font-weight="600">norm_dmg</text>
+    <text x="176" y="928">(enemy_damage - 5.0) / 45.0</text>
+    <text x="348" y="928">[5, 50]</text>
+
+    <text x="66" y="951" font-weight="600" fill="#0284c7">[5]</text>
+    <text x="96" y="951" font-weight="600">norm_haz</text>
+    <text x="176" y="951">(hazard_density - 0.05) / 0.75</text>
+    <text x="348" y="951">[0.05, 0.8]</text>
+
+    <text x="66" y="974" font-weight="600" fill="#0284c7">[6]</text>
+    <text x="96" y="974" font-weight="600">norm_rooms</text>
+    <text x="176" y="974">(room_target - 5.0) / 4.0</text>
+    <text x="348" y="974">[5, 9]</text>
+
+    <text x="66" y="997" font-weight="600" fill="#0284c7">[7]</text>
+    <text x="96" y="997" font-weight="600">norm_level</text>
+    <text x="176" y="997">clamp(level / 10.0, 0, 1)</text>
+    <text x="348" y="997">[1, 10]</text>
+  </g>
+  <rect x="58" y="1024" width="396" height="66" rx="5" fill="#f0f9ff" stroke="#bae6fd" stroke-width="1"/>
+  <text x="68" y="1042" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#0369a1">Built in DifficultyManager.build_observation()</text>
+  <text x="68" y="1059" font-family="Inter, sans-serif" font-size="9" font-weight="500" fill="#475569">Strictly bounds rolling state in [0.0, 1.0] for stable MLP inference</text>
+  <text x="68" y="1075" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="#0284c7">T* = 45s pacing baseline maps nominal pace exactly to 0.50</text>
+
+  <!-- ========================================================================= -->
+  <!-- COLUMN 2: OFFLINE TRAINING & NATIVE INFERENCE (x = 496 to 1016, w = 520)  -->
+  <!-- ========================================================================= -->
+
+  <!-- SECTION 3: OFFLINE TRAINING PIPELINE -->
+  <rect x="496" y="118" width="520" height="236" rx="12" fill="#f5f3ff" stroke="#6d28d9" stroke-width="1.8" stroke-dasharray="6 4"/>
+  <path d="M 497,130 A 11 11 0 0 1 508,119 L 1004,119 A 11 11 0 0 1 1015,130 L 1015,153 L 497,153 Z" fill="#7c3aed"/>
+  <text x="512" y="141" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#ffffff" letter-spacing="0.5">OFFLINE TRAINING PIPELINE</text>
+  <text x="1000" y="141" text-anchor="end" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#ffffff" opacity="0.9">Python 3.10 / SB3 / Gym</text>
+
+  <!-- DungeonDifficultyEnv Card (Split-Width Left) -->
+  <rect x="508" y="165" width="240" height="96" rx="8" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 509,173 A 8 8 0 0 1 516,166 L 513,166 L 513,260 L 516,260 A 8 8 0 0 1 509,253 Z" fill="#8b5cf6"/>
+  <rect x="518" y="173" width="82" height="16" rx="3" fill="#ede9fe" stroke="#6d28d9" stroke-width="0.8"/>
+  <text x="559" y="184" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="800" fill="#6d28d9">CUSTOM GYM</text>
+  <text x="518" y="205" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a">DungeonDifficultyEnv</text>
+  <text x="518" y="222" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Simulated Player Skill Drift (30 Lvls)</text>
+  <text x="518" y="238" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">Stochastic competence progression</text>
+  <text x="518" y="252" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#7c3aed">Anti-Reward Hacking Testbench</text>
+
+  <!-- PPO Trainer Card (Split-Width Right) -->
+  <rect x="758" y="165" width="246" height="96" rx="8" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 759,173 A 8 8 0 0 1 766,166 L 763,166 L 763,260 L 766,260 A 8 8 0 0 1 759,253 Z" fill="#8b5cf6"/>
+  <rect x="768" y="173" width="112" height="16" rx="3" fill="#ede9fe" stroke="#6d28d9" stroke-width="0.8"/>
+  <text x="824" y="184" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="800" fill="#6d28d9">ACTOR-CRITIC PPO</text>
+  <text x="768" y="205" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a">PPO Policy Optimizer</text>
+  <text x="768" y="222" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">train_ppo_difficulty.py (SB3)</text>
+  <text x="768" y="238" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">300k Steps | LR 3e-4 | Steps 2048</text>
+  <text x="768" y="252" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#7c3aed">Boredom (-0.3) / Frustration (-0.4)</text>
+
+  <line x1="748" y1="213" x2="758" y2="213" stroke="#7c3aed" stroke-width="1.6" marker-end="url(#arr-violet)"/>
+
+  <!-- Reward Equation Bar -->
+  <rect x="508" y="271" width="496" height="70" rx="6" fill="#ffffff" stroke="#7c3aed" stroke-width="1.2" filter="url(#shadow)"/>
+  <text x="520" y="291" font-family="Inter, sans-serif" font-size="10.5" font-weight="700" fill="#5b21b6">Multi-Objective Reward Formulation (§5.5.2):</text>
+  <text x="520" y="309" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">R_total = (1.0 - time_err) - 0.5·deaths - 0.3·1[boredom] - 0.4·1[frust] - 0.5·|N - N*|/4</text>
+  <text x="520" y="327" font-family="Inter, sans-serif" font-size="9" font-weight="500" fill="#64748b">time_err = |T/N - 45s|/45s | Prevents artificial room inflation via N*_appropriate = 5 + 4·(0.5·E_dmg + 0.5·E_hp)</text>
+
+  <!-- SECTION 4: EMBEDDED NEURAL INFERENCE ENGINE -->
+  <rect x="496" y="372" width="520" height="748" rx="12" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.8" stroke-dasharray="6 4"/>
+  <path d="M 497,384 A 11 11 0 0 1 508,373 L 1004,373 A 11 11 0 0 1 1015,384 L 1015,407 L 497,407 Z" fill="#0d9488"/>
+  <text x="512" y="395" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#ffffff" letter-spacing="0.5">3. EMBEDDED NEURAL INFERENCE ENGINE</text>
+  <text x="1000" y="395" text-anchor="end" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#ffffff" opacity="0.9">GDScript Runtime</text>
+
+  <!-- Weight Serialization Bridge -->
+  <rect x="508" y="420" width="496" height="74" rx="8" fill="#ffffff" stroke="#7c3aed" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 509,428 A 8 8 0 0 1 516,421 L 513,421 L 513,493 L 516,493 A 8 8 0 0 1 509,486 Z" fill="#7c3aed"/>
+  <rect x="840" y="427" width="154" height="18" rx="4" fill="#ede9fe" stroke="#6d28d9" stroke-width="0.8"/>
+  <text x="917" y="440" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#6d28d9">PORTABLE WEIGHTS JSON</text>
+  <text x="522" y="445" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a">policy_weights.json (Portable Build Asset)</text>
+  <text x="522" y="462" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Extracted from PyTorch via export_policy_to_json | Size: &lt; 120 KB</text>
+  <text x="522" y="478" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#7c3aed">W1: [8×64], b1: [64], W2: [64×64], b2: [64], W3: [64×8], b3: [8] (5,256 floats)</text>
+
+  <!-- Arrow from Offline to JSON Asset -->
+  <line x1="880" y1="341" x2="880" y2="420" stroke="#7c3aed" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arr-violet)"/>
+  <rect x="805" y="348" width="150" height="20" rx="5" fill="#ffffff" stroke="#7c3aed" stroke-width="1" filter="url(#shadow)"/>
+  <text x="880" y="362" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="700" fill="#7c3aed">Export Tensors to JSON</text>
+
+  <!-- Pure GDScript PPO Neural MLP Card -->
+  <rect x="508" y="506" width="496" height="126" rx="8" fill="#ffffff" stroke="#0d9488" stroke-width="1.6" filter="url(#shadow)"/>
+  <path d="M 509,514 A 8 8 0 0 1 516,507 L 513,507 L 513,631 L 516,631 A 8 8 0 0 1 509,624 Z" fill="#0d9488"/>
+  <rect x="844" y="513" width="150" height="18" rx="4" fill="#ccfbf1" stroke="#0f766e" stroke-width="0.8"/>
+  <text x="919" y="526" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#0f766e">LATENCY &lt; 0.5ms</text>
+  <text x="522" y="530" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a">PPOPolicy.gd (Pure GDScript MLP Forward Pass)</text>
+  <text x="522" y="548" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">h1 = tanh(W1 · s_t + b1) [8 ──► 64]  |  h2 = tanh(W2 · h1 + b2) [64 ──► 64]</text>
+  <text x="522" y="565" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">a_t = tanh(W3 · h2 + b3) [64 ──► 8] ∈ [-1.0, 1.0]^8</text>
+  <text x="522" y="583" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0d9488">Pure Vector Dot-Products | Sub-Millisecond Execution (&lt; 0.5ms measured)</text>
+  <text x="522" y="599" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#0f766e">Zero External Dependencies: Shipped .exe requires NO Python, PyTorch, or CUDA</text>
+  <text x="522" y="615" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#64748b">Bypasses REST/HTTP localhost latency (~50ms) entirely via native engine memory</text>
+
+  <!-- Observation input arrow into GDScript PPO -->
+  <path d="M 464,820 L 486,820 L 486,560 L 508,560" fill="none" stroke="#0284c7" stroke-width="2.2" marker-end="url(#arr-cyan)"/>
+  <rect x="424" y="670" width="124" height="20" rx="5" fill="#ffffff" stroke="#0284c7" stroke-width="1" filter="url(#shadow)"/>
+  <text x="486" y="684" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="700" fill="#0284c7">Obs S_t (8D)</text>
+
+  <!-- Deterministic Fallback Heuristic Card -->
+  <rect x="508" y="644" width="496" height="74" rx="8" fill="#ffffff" stroke="#d97706" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 509,652 A 8 8 0 0 1 516,645 L 513,645 L 513,717 L 516,717 A 8 8 0 0 1 509,710 Z" fill="#d97706"/>
+  <rect x="844" y="651" width="150" height="18" rx="4" fill="#fef3c7" stroke="#b45309" stroke-width="0.8"/>
+  <text x="919" y="664" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#b45309">CRASH RESILIENCE</text>
+  <text x="522" y="668" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a">Deterministic Heuristic Fallback (_fallback_heuristic)</text>
+  <text x="522" y="684" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Graceful degradation if policy_weights.json is unpopulated, corrupted, or missing</text>
+  <text x="522" y="700" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#d97706">Maps performance deltas directly to calibrated baseline presets with zero runtime crash</text>
+
+  <!-- Continuous Action Vector Card -->
+  <rect x="508" y="730" width="496" height="88" rx="8" fill="#ffffff" stroke="#0d9488" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 509,738 A 8 8 0 0 1 516,731 L 513,731 L 513,817 L 516,817 A 8 8 0 0 1 509,810 Z" fill="#0d9488"/>
+  <rect x="850" y="737" width="144" height="18" rx="4" fill="#ccfbf1" stroke="#0f766e" stroke-width="0.8"/>
+  <text x="922" y="750" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#0f766e">ACTION VECTOR [-1, 1]</text>
+  <text x="522" y="754" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a">Continuous Action Vector a_t ∈ [-1.0, 1.0]^8</text>
+  <text x="522" y="772" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Dimensions: [a_hp, a_dmg, a_spd, a_aggro, a_haz, a_scarcity, a_rooms, a_complex]</text>
+  <text x="522" y="788" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#0d9488">Gate 1 POC: 7-Dim Active Space | Gate 3 Target: 8th Dim (Archetype Complexity)</text>
+  <text x="522" y="803" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#64748b">Actions bounded in [-1.0, 1.0] via hyperbolic tangent (tanh) activation</text>
+
+  <!-- Real Physical Denormalization Layer Card -->
+  <rect x="508" y="830" width="496" height="276" rx="8" fill="#ffffff" stroke="#0d9488" stroke-width="1.6" filter="url(#shadow)"/>
+  <path d="M 509,838 A 8 8 0 0 1 516,831 L 513,831 L 513,1105 L 516,1105 A 8 8 0 0 1 509,1098 Z" fill="#0d9488"/>
+  <rect x="844" y="837" width="150" height="18" rx="4" fill="#ccfbf1" stroke="#0f766e" stroke-width="0.8"/>
+  <text x="919" y="850" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#0f766e">PHYSICAL DENORM</text>
+  <text x="522" y="854" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a">Parameter Denormalization (DifficultyManager.gd)</text>
+  <text x="522" y="871" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#0d9488">Affine Formula: x_k = L_k + ((a_k + 1.0) / 2.0) · (U_k - L_k)</text>
+
+  <!-- Table of 8 Denormalized Bounds -->
+  <g font-family="Inter, sans-serif" font-size="9.5" fill="#334155">
+    <rect x="522" y="882" width="468" height="22" rx="4" fill="#f0fdfa"/>
+    <text x="530" y="897" font-weight="700" fill="#0f766e">Idx</text>
+    <text x="558" y="897" font-weight="700" fill="#0f766e">Game Parameter</text>
+    <text x="710" y="897" font-weight="700" fill="#0f766e">Physical Range [L_k, U_k]</text>
+    <text x="870" y="897" font-weight="700" fill="#0f766e">Unit / Target</text>
+
+    <text x="530" y="918" font-weight="600" fill="#0d9488">[0]</text>
+    <text x="558" y="918" font-weight="600">enemy_health</text>
+    <text x="710" y="918">[20.0, 120.0]</text>
+    <text x="870" y="918">Max Health (HP)</text>
+
+    <text x="530" y="939" font-weight="600" fill="#0d9488">[1]</text>
+    <text x="558" y="939" font-weight="600">enemy_damage</text>
+    <text x="710" y="939">[5.0, 50.0]</text>
+    <text x="870" y="939">Per-Hit Attack Dmg</text>
+
+    <text x="530" y="960" font-weight="600" fill="#0d9488">[2]</text>
+    <text x="558" y="960" font-weight="600">enemy_speed</text>
+    <text x="710" y="960">[60.0, 220.0]</text>
+    <text x="870" y="960">Pixels / Sec</text>
+
+    <text x="530" y="981" font-weight="600" fill="#0d9488">[3]</text>
+    <text x="558" y="981" font-weight="600">enemy_aggro</text>
+    <text x="710" y="981">[100.0, 450.0]</text>
+    <text x="870" y="981">Detection Radius (px)</text>
+
+    <text x="530" y="1002" font-weight="600" fill="#0d9488">[4]</text>
+    <text x="558" y="1002" font-weight="600">hazard_density</text>
+    <text x="710" y="1002">[0.05, 0.80]</text>
+    <text x="870" y="1002">Spike Trap Ratio</text>
+
+    <text x="530" y="1023" font-weight="600" fill="#0d9488">[5]</text>
+    <text x="558" y="1023" font-weight="600">resource_scarcity</text>
+    <text x="710" y="1023">[0.10, 0.90]</text>
+    <text x="870" y="1023">Inverse Loot Odds</text>
+
+    <text x="530" y="1044" font-weight="600" fill="#0d9488">[6]</text>
+    <text x="558" y="1044" font-weight="600">room_count_target</text>
+    <text x="710" y="1044">[5, 9]</text>
+    <text x="870" y="1044">Connected Rooms</text>
+
+    <text x="530" y="1065" font-weight="600" fill="#0d9488">[7]</text>
+    <text x="558" y="1065" font-weight="600">archetype_complexity</text>
+    <text x="710" y="1065">[0.0, 1.0]</text>
+    <text x="870" y="1065">Softmax (5 Classes)</text>
+  </g>
+  <line x1="756" y1="818" x2="756" y2="830" stroke="#0d9488" stroke-width="1.8" marker-end="url(#arr-teal)"/>
+
+  <!-- ========================================================================= -->
+  <!-- COLUMN 3: PCG SYNTHESIS & DEFENSE SUITE (x = 1060 to 1564, width = 504)   -->
+  <!-- ========================================================================= -->
+
+  <!-- SECTION 4: PROCEDURAL LEVEL SYNTHESIZER -->
+  <rect x="1060" y="118" width="504" height="518" rx="12" fill="#fffbeb" stroke="#b45309" stroke-width="1.8" stroke-dasharray="6 4"/>
+  <path d="M 1061,130 A 11 11 0 0 1 1072,119 L 1553,119 A 11 11 0 0 1 1564,130 L 1564,153 L 1061,153 Z" fill="#d97706"/>
+  <text x="1076" y="141" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#ffffff" letter-spacing="0.5">4. PROCEDURAL LEVEL SYNTHESIZER</text>
+  <text x="1550" y="141" text-anchor="end" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#ffffff" opacity="0.9">Godot 4.x PCG</text>
+
+  <!-- DungeonGenerator Card -->
+  <rect x="1072" y="165" width="480" height="78" rx="8" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 1073,173 A 8 8 0 0 1 1080,166 L 1077,166 L 1077,242 L 1080,242 A 8 8 0 0 1 1073,235 Z" fill="#f59e0b"/>
+  <rect x="1436" y="172" width="106" height="18" rx="4" fill="#fef3c7" stroke="#b45309" stroke-width="0.8"/>
+  <text x="1489" y="185" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#b45309">MACRO GRAPH</text>
+  <text x="1086" y="188" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#0f172a">DungeonGenerator.gd (Random Walk &amp; Frontier)</text>
+  <text x="1086" y="205" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Starts at (0, 0) [START] ──► Frontier expansion ──► [EXIT]</text>
+  <text x="1086" y="221" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#b45309">Dynamic Room Targets: [5, 9] connected chambers | Assigns room types</text>
+
+  <!-- Enemy Spawner Configuration Card -->
+  <rect x="1072" y="255" width="480" height="82" rx="8" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 1073,263 A 8 8 0 0 1 1080,256 L 1077,256 L 1077,336 L 1080,336 A 8 8 0 0 1 1073,329 Z" fill="#f59e0b"/>
+  <rect x="1426" y="262" width="116" height="18" rx="4" fill="#fee2e2" stroke="#b91c1c" stroke-width="0.8"/>
+  <text x="1484" y="275" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#b91c1c">ADVERSARY (E)</text>
+  <text x="1086" y="278" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#0f172a">Adversary Configuration (Enemy Archetypes)</text>
+  <text x="1086" y="295" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Softmax Archetype Distribution: Crawlers, Spitters, Skirmishers, Brutes, Pyros</text>
+  <text x="1086" y="311" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#b91c1c">Injects Scaled Stats: HP [20-120], Dmg [5-50], Spd [60-220], Aggro [100-450]</text>
+
+  <!-- Tilemap Hazard & Resource Placer Card -->
+  <rect x="1072" y="349" width="480" height="78" rx="8" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 1073,357 A 8 8 0 0 1 1080,350 L 1077,350 L 1077,426 L 1080,426 A 8 8 0 0 1 1073,419 Z" fill="#f59e0b"/>
+  <rect x="1426" y="356" width="116" height="18" rx="4" fill="#fef3c7" stroke="#b45309" stroke-width="0.8"/>
+  <text x="1484" y="369" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#b45309">MODIFIERS (M)</text>
+  <text x="1086" y="372" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#0f172a">Tilemap Hazard &amp; Economy Placer</text>
+  <text x="1086" y="389" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Dynamic Floor Spikes, Lava Pools, Healing Potion &amp; Ember Drop Rates</text>
+  <text x="1086" y="405" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#b45309">Hazard Density [0.05-0.80] | Resource Scarcity [0.10-0.90]</text>
+
+  <!-- Solvable World Output Card -->
+  <rect x="1072" y="439" width="480" height="84" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.6" filter="url(#shadow)"/>
+  <path d="M 1073,447 A 8 8 0 0 1 1080,440 L 1077,440 L 1077,522 L 1080,522 A 8 8 0 0 1 1073,515 Z" fill="#16a34a"/>
+  <rect x="1406" y="446" width="136" height="18" rx="4" fill="#dcfce7" stroke="#15803d" stroke-width="0.8"/>
+  <text x="1474" y="459" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#15803d">A* VERIFIED LEVEL</text>
+  <text x="1086" y="462" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#0f172a">Instantiated Solvable Dungeon (5 to 9 Chambers)</text>
+  <text x="1086" y="479" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Unbroken Traversal Guaranteed Entry ──► Exit (Solvability Rate ≥ 95%)</text>
+  <text x="1086" y="495" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#16a34a">Instantiated into Godot Viewport: TileMap layers + CharacterBody2D entities</text>
+
+  <!-- Connectors inside PCG block -->
+  <line x1="1312" y1="243" x2="1312" y2="255" stroke="#d97706" stroke-width="1.6" marker-end="url(#arr-amber)"/>
+  <line x1="1312" y1="337" x2="1312" y2="349" stroke="#d97706" stroke-width="1.6" marker-end="url(#arr-amber)"/>
+  <line x1="1312" y1="427" x2="1312" y2="439" stroke="#16a34a" stroke-width="1.6" marker-end="url(#arr-green)"/>
+
+  <!-- SECTION 5: EXPLAINABILITY & LIVE DEFENSE SUITE -->
+  <rect x="1060" y="650" width="504" height="470" rx="12" fill="#fff1f2" stroke="#be123c" stroke-width="1.8" stroke-dasharray="6 4"/>
+  <path d="M 1061,662 A 11 11 0 0 1 1072,651 L 1553,651 A 11 11 0 0 1 1564,662 L 1564,685 L 1061,685 Z" fill="#e11d48"/>
+  <text x="1076" y="673" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#ffffff" letter-spacing="0.5">5. EXPLAINABILITY &amp; LIVE DEFENSE SUITE</text>
+  <text x="1550" y="673" text-anchor="end" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#ffffff" opacity="0.9">Evaluation Transparency</text>
+
+  <!-- Difficulty Attribution Scoring Engine Card -->
+  <rect x="1072" y="698" width="480" height="114" rx="8" fill="#ffffff" stroke="#f43f5e" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 1073,706 A 8 8 0 0 1 1080,699 L 1077,699 L 1077,811 L 1080,811 A 8 8 0 0 1 1073,804 Z" fill="#f43f5e"/>
+  <rect x="1426" y="705" width="116" height="18" rx="4" fill="#ffe4e6" stroke="#be123c" stroke-width="0.8"/>
+  <text x="1484" y="718" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#be123c">GLASS-BOX XAI</text>
+  <text x="1086" y="721" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#0f172a">Difficulty Attribution Scoring (calculate_difficulty_score)</text>
+  <text x="1086" y="739" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#e11d48">Formula: DS = Σ w_k · x_k_norm ∈ [0.0, 100.0]</text>
+  <text x="1086" y="756" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">Weights: Enemy Dmg (0.35), Trap Haz (0.25), Enemy HP (0.20), Speed (0.20)</text>
+  <text x="1086" y="773" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#e11d48">Ranks Top-3 Real-Time Attribution Drivers on Defense HUD for evaluators</text>
+  <text x="1086" y="790" font-family="Inter, sans-serif" font-size="9" font-weight="500" fill="#64748b">Transforms black-box RL outputs into actionable Design Insight Reports</text>
+
+  <!-- Defense Overlay HUD Card -->
+  <rect x="1072" y="826" width="480" height="136" rx="8" fill="#ffffff" stroke="#f43f5e" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 1073,834 A 8 8 0 0 1 1080,827 L 1077,827 L 1077,961 L 1080,961 A 8 8 0 0 1 1073,954 Z" fill="#f43f5e"/>
+  <rect x="1410" y="833" width="132" height="18" rx="4" fill="#ffe4e6" stroke="#be123c" stroke-width="0.8"/>
+  <text x="1476" y="846" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#be123c">IN-GAME DEFENSE HUD</text>
+  <text x="1086" y="849" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#0f172a">DefenseOverlay.gd (Evaluator Inspection HUD)</text>
+  <text x="1086" y="867" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Live Telemetry Dashboard: Engine FPS, Run Time, Deaths, Damage Taken</text>
+  <text x="1086" y="884" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Dynamic Minimap: Real-time room graph topology &amp; player position tracking</text>
+  <text x="1086" y="901" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Manual Parameter Override Sliders: Live tuning for sensitivity verification</text>
+  <text x="1086" y="918" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#e11d48">• Auto-Kill Enemies Toggle: Instant room clearance for fast evaluator demos</text>
+  <text x="1086" y="936" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#64748b">Glass-Box Transparency: Built specifically for Gate 1 &amp; Gate 5 faculty defenses</text>
+
+  <!-- Comparative Baselines Card -->
+  <rect x="1072" y="976" width="480" height="130" rx="8" fill="#ffffff" stroke="#475569" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 1073,984 A 8 8 0 0 1 1080,977 L 1077,977 L 1077,1105 L 1080,1105 A 8 8 0 0 1 1073,1098 Z" fill="#475569"/>
+  <rect x="1410" y="983" width="132" height="18" rx="4" fill="#f1f5f9" stroke="#475569" stroke-width="0.8"/>
+  <text x="1476" y="996" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#475569">4-SYSTEM BENCHMARK</text>
+  <text x="1086" y="999" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#0f172a">Empirical Comparative Evaluation Framework (§3)</text>
+  <text x="1086" y="1017" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Baseline A: Constructive Rule-Based PCG (BSP) with static difficulty presets</text>
+  <text x="1086" y="1034" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Baseline B: Standard Unconditioned PPO (PCGRL [1]) for population mean</text>
+  <text x="1086" y="1051" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Baseline C: Controllable PPO (CPCGRL [2]) on designer target vector</text>
+  <text x="1086" y="1068" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#15803d">FORGE: Closed-Loop PPO conditioned on real-time live player telemetry</text>
+  <text x="1086" y="1086" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#0284c7">Evaluation: Solvability (%), Difficulty MAE, Diversity (Jaccard), UAT (10 Players)</text>
+
+  <!-- ========================================================================= -->
+  <!-- CROSS-MODULE DATA FLOW CONNECTORS                                         -->
+  <!-- ========================================================================= -->
+
+  <!-- Flow 1: Denormalized Parameters to DungeonGenerator (Rooms [5, 9]) -->
+  <path d="M 1004,870 L 1036,870 L 1036,204 L 1072,204" fill="none" stroke="#d97706" stroke-width="1.8" marker-end="url(#arr-amber)"/>
+  <rect x="1006" y="210" width="60" height="18" rx="4" fill="#ffffff" stroke="#d97706" stroke-width="1" filter="url(#shadow)"/>
+  <text x="1036" y="223" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="#d97706">Rooms [5-9]</text>
+
+  <!-- Flow 2: Denormalized Parameters to Enemy Spawner (Adversary E) -->
+  <path d="M 1004,895 L 1042,895 L 1042,296 L 1072,296" fill="none" stroke="#d97706" stroke-width="1.8" marker-end="url(#arr-amber)"/>
+  <rect x="1012" y="302" width="60" height="18" rx="4" fill="#ffffff" stroke="#d97706" stroke-width="1" filter="url(#shadow)"/>
+  <text x="1042" y="315" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="#d97706">Adversary E</text>
+
+  <!-- Flow 3: Denormalized Parameters to Hazard Placer (Modifiers M) -->
+  <path d="M 1004,920 L 1048,920 L 1048,388 L 1072,388" fill="none" stroke="#d97706" stroke-width="1.8" marker-end="url(#arr-amber)"/>
+  <rect x="1018" y="394" width="60" height="18" rx="4" fill="#ffffff" stroke="#d97706" stroke-width="1" filter="url(#shadow)"/>
+  <text x="1048" y="407" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="#d97706">Modifiers M</text>
+
+  <!-- Flow 4: Denormalized Parameters to Difficulty Attribution (x_k) -->
+  <path d="M 1004,945 L 1048,945 L 1048,750 L 1072,750" fill="none" stroke="#e11d48" stroke-width="1.8" stroke-dasharray="4 3" marker-end="url(#arr-rose)"/>
+  <rect x="1016" y="756" width="64" height="18" rx="4" fill="#ffffff" stroke="#e11d48" stroke-width="1" filter="url(#shadow)"/>
+  <text x="1048" y="769" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="#e11d48">Attribution x_k</text>
+
+</svg>

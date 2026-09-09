@@ -1,0 +1,222 @@
+<svg viewBox="0 0 1560 960" width="1560" height="960" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="shadow" x="-5%" y="-8%" width="110%" height="120%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.08"/>
+    </filter>
+    <filter id="glow-card" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#3b82f6" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="1560" height="960" fill="#f8fafc"/>
+
+  <!-- Top Title Bar -->
+  <rect x="0" y="0" width="1560" height="58" fill="#0f172a"/>
+  <text x="36" y="26" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="800" fill="#ffffff" letter-spacing="0.5">FORGE: WORK BREAKDOWN STRUCTURE &amp; INDIVIDUAL ACCOUNTABILITY (§7.1, §7.2)</text>
+  <text x="36" y="45" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="500" fill="#94a3b8">FAST School of Computing Technical Ownership Allocation &amp; Seoul Accord &quot;Removal Test&quot; Traceability</text>
+
+  <!-- Header Badges -->
+  <rect x="1150" y="15" width="160" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="1165" cy="29" r="4.5" fill="#38bdf8"/>
+  <text x="1178" y="33" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#e2e8f0">3 Dedicated Pillars</text>
+
+  <rect x="1324" y="15" width="200" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="1339" cy="29" r="4.5" fill="#22c55e"/>
+  <text x="1352" y="33" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#e2e8f0">Removal Test Passed</text>
+
+  <!-- ========================================================================= -->
+  <!-- PILLAR 1: RAYAN AHMED (x = 36 to 506, width = 470)                        -->
+  <!-- ========================================================================= -->
+
+  <rect x="36" y="78" width="470" height="748" rx="12" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.8" filter="url(#shadow)"/>
+  
+  <!-- Pillar Header -->
+  <path d="M 37,90 A 11 11 0 0 1 48,79 L 494,79 A 11 11 0 0 1 505,90 L 505,142 L 37,142 Z" fill="#1e40af"/>
+  <text x="52" y="106" font-family="Inter, sans-serif" font-size="15" font-weight="800" fill="#ffffff">RAYAN AHMED</text>
+  <rect x="178" y="93" width="76" height="18" rx="4" fill="#3b82f6"/>
+  <text x="216" y="106" text-anchor="middle" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#ffffff">23i-0018</text>
+  <text x="52" y="128" font-family="Inter, sans-serif" font-size="11.5" font-weight="600" fill="#93c5fd">ML &amp; Profiling Lead</text>
+  <text x="490" y="128" text-anchor="end" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#bfdbfe">FAST CS/AI Dept</text>
+
+  <!-- Work Packages Card -->
+  <rect x="48" y="154" width="446" height="348" rx="8" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="60" y="166" width="176" height="20" rx="4" fill="#dbeafe" stroke="#1d4ed8" stroke-width="0.8"/>
+  <text x="148" y="180" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#1d4ed8">PRIMARY WORK PACKAGES</text>
+
+  <g font-family="Inter, sans-serif" font-size="10.5" fill="#0f172a">
+    <text x="60" y="208" font-weight="700" fill="#1e40af">• WP 1: Prior Art &amp; Literature Survey</text>
+    <text x="74" y="224" font-size="9.5" font-weight="500" fill="#475569">Competitive positioning matrix (10 games) &amp; research gap synthesis.</text>
+
+    <text x="60" y="248" font-weight="700" fill="#1e40af">• WP 4: SRS &amp; SDS Engineering Lead</text>
+    <text x="74" y="264" font-size="9.5" font-weight="500" fill="#475569">Architecture baselines, IEEE 830 functional/NFR requirements.</text>
+
+    <text x="60" y="288" font-weight="700" fill="#1e40af">• WP 7: Player Profiling &amp; Gear Modeling</text>
+    <text x="74" y="304" font-size="9.5" font-weight="500" fill="#475569">Exponential smoothing (α=0.3), placement matches, CR gear scaling.</text>
+
+    <text x="60" y="328" font-weight="700" fill="#1e40af">• WP 9: Difficulty Predictor &amp; XAI Engine</text>
+    <text x="74" y="344" font-size="9.5" font-weight="500" fill="#475569">Auxiliary regressor, SHAP feature-attribution, Design Insight Reports.</text>
+
+    <text x="60" y="368" font-weight="700" fill="#1e40af">• WP 12: Statistical Data Analysis</text>
+    <text x="74" y="384" font-size="9.5" font-weight="500" fill="#475569">Jaccard diversity, MAE difficulty fit, UAT Flow Channel hypothesis.</text>
+
+    <text x="60" y="408" font-weight="700" fill="#1e40af">• WP 11 &amp; 14: Playtesting &amp; Thesis Document</text>
+    <text x="74" y="424" font-size="9.5" font-weight="500" fill="#475569">UAT psychometric surveys, statistical evaluation, capstone defense.</text>
+  </g>
+
+  <!-- Technical Code Artifacts -->
+  <rect x="48" y="514" width="446" height="88" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.2" filter="url(#shadow)"/>
+  <rect x="60" y="524" width="134" height="18" rx="4" fill="#eff6ff" stroke="#3b82f6" stroke-width="0.8"/>
+  <text x="127" y="537" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="800" fill="#1d4ed8">CODE ARTIFACTS</text>
+  <text x="60" y="556" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">• DifficultyManager.calculate_difficulty_score() &amp; XAI</text>
+  <text x="60" y="572" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">• Player.get_combat_rating() &amp; Equipment Normalizer</text>
+  <text x="60" y="588" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">• Statistical evaluation scripts, Jaccard diversity metrics</text>
+
+  <!-- Removal Test Box -->
+  <rect x="48" y="614" width="446" height="196" rx="8" fill="#ffffff" stroke="#ef4444" stroke-width="1.8" filter="url(#shadow)"/>
+  <rect x="60" y="626" width="170" height="20" rx="4" fill="#fee2e2" stroke="#b91c1c" stroke-width="0.8"/>
+  <text x="145" y="640" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#b91c1c">REMOVAL TEST IMPACT</text>
+  <text x="60" y="662" font-family="Inter, sans-serif" font-size="11.5" font-weight="800" fill="#b91c1c">IF RAYAN AHMED IS REMOVED:</text>
+  <text x="60" y="682" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">The system loses its entire intelligence interpretation layer:</text>
+  <text x="60" y="700" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">1. Rolling player profiling &amp; cold-start calibration disappear.</text>
+  <text x="60" y="718" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">2. Combat Rating (CR) equipment scaling disappears.</text>
+  <text x="60" y="736" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">3. Auxiliary difficulty regressor &amp; SHAP attribution collapse.</text>
+  <text x="60" y="754" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">4. 10-Participant empirical UAT statistical study vanishes.</text>
+  <text x="60" y="776" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#b91c1c">VERDICT: Core evaluation and player personalization fail.</text>
+
+  <!-- ========================================================================= -->
+  <!-- PILLAR 2: RANA RAZA AHMED (x = 544 to 1014, width = 470)                  -->
+  <!-- ========================================================================= -->
+
+  <rect x="544" y="78" width="470" height="748" rx="12" fill="#f5f3ff" stroke="#6d28d9" stroke-width="1.8" filter="url(#shadow)"/>
+  
+  <!-- Pillar Header -->
+  <path d="M 545,90 A 11 11 0 0 1 556,79 L 1002,79 A 11 11 0 0 1 1013,90 L 1013,142 L 545,142 Z" fill="#7c3aed"/>
+  <text x="560" y="106" font-family="Inter, sans-serif" font-size="15" font-weight="800" fill="#ffffff">RANA RAZA AHMED</text>
+  <rect x="742" y="93" width="76" height="18" rx="4" fill="#8b5cf6"/>
+  <text x="780" y="106" text-anchor="middle" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#ffffff">23i-0060</text>
+  <text x="560" y="128" font-family="Inter, sans-serif" font-size="11.5" font-weight="600" fill="#ddd6fe">RL Architecture Lead</text>
+  <text x="998" y="128" text-anchor="end" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#ede9fe">FAST CS/AI Dept</text>
+
+  <!-- Work Packages Card -->
+  <rect x="556" y="154" width="446" height="348" rx="8" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="568" y="166" width="176" height="20" rx="4" fill="#ede9fe" stroke="#6d28d9" stroke-width="0.8"/>
+  <text x="656" y="180" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#6d28d9">PRIMARY WORK PACKAGES</text>
+
+  <g font-family="Inter, sans-serif" font-size="10.5" fill="#0f172a">
+    <text x="568" y="208" font-weight="700" fill="#6d28d9">• WP 2: Gymnasium Training Environment</text>
+    <text x="582" y="224" font-size="9.5" font-weight="500" fill="#475569">Custom DungeonDifficultyEnv with stochastic competence progression.</text>
+
+    <text x="568" y="248" font-weight="700" fill="#6d28d9">• WP 6: Rule-Based &amp; Baseline Models</text>
+    <text x="582" y="264" font-size="9.5" font-weight="500" fill="#475569">BSP constructive generator &amp; Unconditioned PPO benchmark.</text>
+
+    <text x="568" y="288" font-weight="700" fill="#6d28d9">• WP 8: Conditioned Multi-Attribute PPO</text>
+    <text x="582" y="304" font-size="9.5" font-weight="500" fill="#475569">Continuous continuous policy over (E, M, complexity) via SB3.</text>
+
+    <text x="568" y="328" font-weight="700" fill="#6d28d9">• WP 8: Anti-Reward-Hacking Reward Design</text>
+    <text x="582" y="344" font-size="9.5" font-weight="500" fill="#475569">Multi-objective formulation, pacing penalty (T*=45s), boredom.</text>
+
+    <text x="568" y="368" font-weight="700" fill="#6d28d9">• WP 8: Pre-Deployment Policy Diagnostics</text>
+    <text x="582" y="384" font-size="9.5" font-weight="500" fill="#475569">Sensitivity audit script, synthetic boundary testing, monotonicity.</text>
+
+    <text x="568" y="408" font-weight="700" fill="#6d28d9">• WP 11 &amp; 14: Playtesting &amp; Thesis Document</text>
+    <text x="582" y="424" font-size="9.5" font-weight="500" fill="#475569">RL convergence validation, loss curves, final thesis chapters.</text>
+  </g>
+
+  <!-- Technical Code Artifacts -->
+  <rect x="556" y="514" width="446" height="88" rx="8" fill="#ffffff" stroke="#c084fc" stroke-width="1.2" filter="url(#shadow)"/>
+  <rect x="568" y="524" width="134" height="18" rx="4" fill="#f5f3ff" stroke="#7c3aed" stroke-width="0.8"/>
+  <text x="635" y="537" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="800" fill="#7c3aed">CODE ARTIFACTS</text>
+  <text x="568" y="556" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">• ml_spike/train_ppo_difficulty.py &amp; Reward Functions</text>
+  <text x="568" y="572" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">• Custom Gymnasium DungeonDifficultyEnv class</text>
+  <text x="568" y="588" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">• Diagnostic policy inspection &amp; sensitivity audit scripts</text>
+
+  <!-- Removal Test Box -->
+  <rect x="556" y="614" width="446" height="196" rx="8" fill="#ffffff" stroke="#ef4444" stroke-width="1.8" filter="url(#shadow)"/>
+  <rect x="568" y="626" width="170" height="20" rx="4" fill="#fee2e2" stroke="#b91c1c" stroke-width="0.8"/>
+  <text x="653" y="640" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#b91c1c">REMOVAL TEST IMPACT</text>
+  <text x="568" y="662" font-family="Inter, sans-serif" font-size="11.5" font-weight="800" fill="#b91c1c">IF RANA RAZA AHMED IS REMOVED:</text>
+  <text x="568" y="682" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">The algorithmic core of the project completely vanishes:</text>
+  <text x="568" y="700" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">1. Standalone custom Gymnasium training environment vanishes.</text>
+  <text x="568" y="718" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">2. Multi-objective anti-reward-hacking formulation disappears.</text>
+  <text x="568" y="736" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">3. Continuous PPO training pipeline &amp; policy weights vanish.</text>
+  <text x="568" y="754" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">4. Baseline comparative models (BSP, Unconditioned PPO) collapse.</text>
+  <text x="568" y="776" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#b91c1c">VERDICT: Reinforcement learning research claim ceases to exist.</text>
+
+  <!-- ========================================================================= -->
+  <!-- PILLAR 3: UWAID MUNIR (x = 1052 to 1524, width = 472)                     -->
+  <!-- ========================================================================= -->
+
+  <rect x="1052" y="78" width="472" height="748" rx="12" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.8" filter="url(#shadow)"/>
+  
+  <!-- Pillar Header -->
+  <path d="M 1053,90 A 11 11 0 0 1 1064,79 L 1111,79 L 1512,79 A 11 11 0 0 1 1523,90 L 1523,142 L 1053,142 Z" fill="#0d9488"/>
+  <text x="1068" y="106" font-family="Inter, sans-serif" font-size="15" font-weight="800" fill="#ffffff">UWAID MUNIR</text>
+  <rect x="1200" y="93" width="76" height="18" rx="4" fill="#14b8a6"/>
+  <text x="1238" y="106" text-anchor="middle" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#ffffff">23i-2574</text>
+  <text x="1068" y="128" font-family="Inter, sans-serif" font-size="11.5" font-weight="600" fill="#99f6e4">Game Engineering Lead</text>
+  <text x="1506" y="128" text-anchor="end" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#ccfbf1">FAST CS/AI Dept</text>
+
+  <!-- Work Packages Card -->
+  <rect x="1064" y="154" width="448" height="348" rx="8" fill="#ffffff" stroke="#14b8a6" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="1076" y="166" width="176" height="20" rx="4" fill="#ccfbf1" stroke="#0f766e" stroke-width="0.8"/>
+  <text x="1164" y="180" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#0f766e">PRIMARY WORK PACKAGES</text>
+
+  <g font-family="Inter, sans-serif" font-size="10.5" fill="#0f172a">
+    <text x="1076" y="208" font-weight="700" fill="#0f766e">• WP 3: Godot 4.x Game Client Architecture</text>
+    <text x="1090" y="224" font-size="9.5" font-weight="500" fill="#475569">2D tilemap rendering, character physics, 5 enemy archetype AI.</text>
+
+    <text x="1076" y="248" font-weight="700" fill="#0f766e">• WP 5: Telemetry Pipeline &amp; SQLite DB</text>
+    <text x="1090" y="264" font-size="9.5" font-weight="500" fill="#475569">Autoload singleton, in-memory delta tracker, local persistence.</text>
+
+    <text x="1076" y="288" font-weight="700" fill="#0f766e">• WP 10: Embedded Neural Inference Engine</text>
+    <text x="1090" y="304" font-size="9.5" font-weight="500" fill="#475569">Pure GDScript PPO forward pass (&lt; 0.5ms) &amp; heuristic fallback.</text>
+
+    <text x="1076" y="328" font-weight="700" fill="#0f766e">• WP 3: Procedural Dungeon Synthesis (PCG)</text>
+    <text x="1090" y="344" font-size="9.5" font-weight="500" fill="#475569">Frontier random walk, A* pathfinding solvability verification (≥95%).</text>
+
+    <text x="1076" y="368" font-weight="700" fill="#0f766e">• WP 3: In-Game Economy &amp; Equipment Shop</text>
+    <text x="1090" y="384" font-size="9.5" font-weight="500" fill="#475569">Shop.gd, Forge Embers currency, gear tier purchases, stat updates.</text>
+
+    <text x="1076" y="408" font-weight="700" fill="#0f766e">• WP 13: Packaging &amp; Defense Overlay HUD</text>
+    <text x="1090" y="424" font-size="9.5" font-weight="500" fill="#475569">Windows .exe distribution, minimap, live sliders, auto-kill test tool.</text>
+  </g>
+
+  <!-- Technical Code Artifacts -->
+  <rect x="1064" y="514" width="448" height="88" rx="8" fill="#ffffff" stroke="#5eead4" stroke-width="1.2" filter="url(#shadow)"/>
+  <rect x="1076" y="524" width="134" height="18" rx="4" fill="#f0fdfa" stroke="#0d9488" stroke-width="0.8"/>
+  <text x="1143" y="537" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="800" fill="#0d9488">CODE ARTIFACTS</text>
+  <text x="1076" y="556" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">• godot_prototype/ai/PPOPolicy.gd (Native Inference)</text>
+  <text x="1076" y="572" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">• DungeonGenerator.gd, Enemy.gd, Shop.gd, Main.gd</text>
+  <text x="1076" y="588" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">• DefenseOverlay.gd &amp; SQLite database wrapper</text>
+
+  <!-- Removal Test Box -->
+  <rect x="1064" y="614" width="448" height="196" rx="8" fill="#ffffff" stroke="#ef4444" stroke-width="1.8" filter="url(#shadow)"/>
+  <rect x="1076" y="626" width="170" height="20" rx="4" fill="#fee2e2" stroke="#b91c1c" stroke-width="0.8"/>
+  <text x="1161" y="640" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#b91c1c">REMOVAL TEST IMPACT</text>
+  <text x="1076" y="662" font-family="Inter, sans-serif" font-size="11.5" font-weight="800" fill="#b91c1c">IF UWAID MUNIR IS REMOVED:</text>
+  <text x="1076" y="682" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">The interactive game implementation completely disappears:</text>
+  <text x="1076" y="700" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">1. The Godot 4.x client, 2D viewport, and combat engine disappear.</text>
+  <text x="1076" y="718" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">2. Equipment Shop, Ember economy, and enemy AI behavior vanish.</text>
+  <text x="1076" y="736" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">3. Native GDScript neural inference engine (PPOPolicy.gd) is lost.</text>
+  <text x="1076" y="754" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">4. Standalone Windows distribution build &amp; Defense HUD vanish.</text>
+  <text x="1076" y="776" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#b91c1c">VERDICT: No deployable software artifact exists to test or defend.</text>
+
+  <!-- ========================================================================= -->
+  <!-- BOTTOM REMOVAL TEST VERDICT & JOINT RESPONSIBILITY (y = 840 to 936)       -->
+  <!-- ========================================================================= -->
+
+  <rect x="36" y="842" width="1488" height="96" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1.2" filter="url(#shadow)"/>
+  
+  <rect x="52" y="856" width="310" height="68" rx="6" fill="#1e293b" stroke="#22c55e" stroke-width="1.2"/>
+  <circle cx="70" cy="874" r="5.5" fill="#22c55e"/>
+  <text x="84" y="878" font-family="Inter, sans-serif" font-size="11.5" font-weight="800" fill="#86efac">FAST FYP REMOVAL TEST: PASSED</text>
+  <text x="70" y="897" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#cbd5e1">Strict 1-to-1 mapping between team members</text>
+  <text x="70" y="912" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#4ade80">and irreplaceable, mission-critical subsystems.</text>
+
+  <rect x="376" y="856" width="1132" height="68" rx="6" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+  <text x="392" y="876" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#f8fafc">SHARED INTEGRATION RESPONSIBILITIES &amp; CO-OWNERSHIP:</text>
+  <text x="392" y="895" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#94a3b8">• <tspan font-weight="700" fill="#e2e8f0">WP 11 (Playtesting &amp; UAT Study):</tspan> Joint cohort coordination, protocol execution, and data collection across all 10 participants.</text>
+  <text x="392" y="912" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#94a3b8">• <tspan font-weight="700" fill="#e2e8f0">WP 14 (Final Project Report):</tspan> Co-authored capstone thesis document satisfying all Level 2 FAST School of Computing documentation standards.</text>
+
+</svg>

@@ -1,0 +1,311 @@
+<svg viewBox="0 0 1560 1020" width="1560" height="1020" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="shadow" x="-5%" y="-8%" width="110%" height="120%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.08"/>
+    </filter>
+    <filter id="glow-gold" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#f59e0b" flood-opacity="0.35"/>
+    </filter>
+
+    <!-- Markers -->
+    <marker id="arr-navy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#1e40af"/>
+    </marker>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="1560" height="1020" fill="#f8fafc"/>
+
+  <!-- Top Title Bar -->
+  <rect x="0" y="0" width="1560" height="58" fill="#0f172a"/>
+  <text x="36" y="26" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="800" fill="#ffffff" letter-spacing="0.5">FORGE: EVALUATION TRAJECTORY &amp; TWO-SEMESTER GANTT TIMELINE (§6.1, §6.2)</text>
+  <text x="36" y="45" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="500" fill="#94a3b8">Sequential 5-Gate Review Milestones &amp; 32-Week WBS Schedule Aligned with FAST School of Computing Standards</text>
+
+  <!-- Header Badges -->
+  <rect x="1100" y="15" width="140" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="1115" cy="29" r="4.5" fill="#38bdf8"/>
+  <text x="1128" y="33" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#e2e8f0">FYP-1: 16 Weeks</text>
+
+  <rect x="1250" y="15" width="140" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="1265" cy="29" r="4.5" fill="#c084fc"/>
+  <text x="1278" y="33" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#e2e8f0">FYP-2: 16 Weeks</text>
+
+  <rect x="1400" y="15" width="124" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="1415" cy="29" r="4.5" fill="#22c55e"/>
+  <text x="1428" y="33" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#e2e8f0">5 Eval Gates</text>
+
+  <!-- ========================================================================= -->
+  <!-- TOP SECTION: THE FIVE SEQUENTIAL EVALUATION GATES (y = 74 to 264, h = 190)-->
+  <!-- ========================================================================= -->
+
+  <rect x="36" y="74" width="1488" height="194" rx="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)"/>
+  
+  <rect x="36" y="74" width="1488" height="32" rx="12" fill="#1e293b"/>
+  <text x="52" y="95" font-family="Inter, sans-serif" font-size="11.5" font-weight="800" fill="#ffffff" letter-spacing="0.5">THE FIVE-GATE FAST EVALUATION TRAJECTORY (MANDATORY VERTICAL SLICE DELIVERY AT EVERY STAGE)</text>
+
+  <!-- Gate 1 Card -->
+  <rect x="50" y="116" width="276" height="136" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+  <rect x="58" y="124" width="116" height="18" rx="4" fill="#dbeafe" stroke="#1d4ed8" stroke-width="0.8"/>
+  <text x="116" y="137" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#1d4ed8">STAGE 1 / GATE 1</text>
+  <text x="250" y="137" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#1e40af">Week 6</text>
+  <text x="58" y="158" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#0f172a">Proposal Defense</text>
+  <text x="58" y="176" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#2563eb">Deliverable: Scope &amp; POC Spike</text>
+  <text x="58" y="194" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">• Problem &amp; CCP Justified (7 Claims)</text>
+  <text x="58" y="210" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">• Feasibility proven via POC Testbench</text>
+  <text x="58" y="226" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">• Individual WBS ownership allocated</text>
+  <rect x="58" y="234" width="260" height="12" rx="2" fill="#22c55e" opacity="0.85"/>
+  <text x="188" y="243" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#ffffff">CURRENT MILESTONE — DEFENSE READY</text>
+
+  <!-- Chevron 1 -->
+  <path d="M 334,175 L 348,184 L 334,193 Z" fill="#3b82f6"/>
+
+  <!-- Gate 2 & 3 Card -->
+  <rect x="356" y="116" width="276" height="136" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="364" y="124" width="134" height="18" rx="4" fill="#e2e8f0" stroke="#475569" stroke-width="0.8"/>
+  <text x="431" y="137" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#475569">STAGE 2 / GATES 2 &amp; 3</text>
+  <text x="556" y="137" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#475569">Week 10</text>
+  <text x="364" y="158" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#0f172a">Mid-1 Review</text>
+  <text x="364" y="176" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0284c7">Deliverable: SRS &amp; SDS Approved</text>
+  <text x="364" y="194" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">• Formal IEEE 830 SRS Specifications</text>
+  <text x="364" y="210" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">• SDS Architecture &amp; Component Design</text>
+  <text x="364" y="226" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">• Operational Godot Rendering Client</text>
+
+  <!-- Chevron 2 -->
+  <path d="M 640,175 L 654,184 L 640,193 Z" fill="#64748b"/>
+
+  <!-- Gate 3 / Final-1 Card -->
+  <rect x="662" y="116" width="276" height="136" rx="8" fill="#fdf4ff" stroke="#a855f7" stroke-width="1.5"/>
+  <rect x="670" y="124" width="138" height="18" rx="4" fill="#fae8ff" stroke="#9333ea" stroke-width="0.8"/>
+  <text x="739" y="137" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#9333ea">STAGE 3 / FINAL-1 EXIT</text>
+  <text x="862" y="137" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#9333ea">Week 14</text>
+  <text x="670" y="158" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#0f172a">Final-1 Exit Gate</text>
+  <text x="670" y="176" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#7c3aed">Deliverable: Core Build Accepted</text>
+  <text x="670" y="194" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">• Working Godot Core Combat Playthrough</text>
+  <text x="670" y="210" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">• Custom Gym Env verified &amp; benchmarked</text>
+  <text x="670" y="226" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">• Rule-Based &amp; Unconditioned PPO ready</text>
+
+  <!-- Chevron 3 -->
+  <path d="M 946,175 L 960,184 L 946,193 Z" fill="#a855f7"/>
+
+  <!-- Gate 4 / Mid-2 Card -->
+  <rect x="968" y="116" width="268" height="136" rx="8" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+  <rect x="976" y="124" width="116" height="18" rx="4" fill="#ccfbf1" stroke="#0f766e" stroke-width="0.8"/>
+  <text x="1034" y="137" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#0f766e">STAGE 4 / GATE 4</text>
+  <text x="1160" y="137" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#0f766e">Week 26</text>
+  <text x="976" y="158" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#0f172a">Mid-2 Review</text>
+  <text x="976" y="176" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0d9488">Deliverable: Release Readiness</text>
+  <text x="976" y="194" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">• Closed-Loop Conditioned PPO integrated</text>
+  <text x="976" y="210" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">• Pure GDScript Inference (&lt; 0.5ms) active</text>
+  <text x="976" y="226" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">• Player Profiling &amp; Auxiliary Regressor</text>
+
+  <!-- Chevron 4 -->
+  <path d="M 1244,175 L 1258,184 L 1244,193 Z" fill="#0d9488"/>
+
+  <!-- Gate 5 / Final-2 Card -->
+  <rect x="1266" y="116" width="246" height="136" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.8" filter="url(#glow-gold)"/>
+  <rect x="1274" y="124" width="134" height="18" rx="4" fill="#dcfce7" stroke="#15803d" stroke-width="0.8"/>
+  <text x="1341" y="137" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#15803d">STAGE 5 / GATE 5 &amp; FAIR</text>
+  <text x="1438" y="137" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#15803d">Week 32</text>
+  <text x="1274" y="158" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#0f172a">Final Defense &amp; Showcase</text>
+  <text x="1274" y="176" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#16a34a">Deliverable: Capstone &amp; UAT</text>
+  <text x="1274" y="194" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">• 10-Participant UAT Study Completed</text>
+  <text x="1274" y="210" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">• Pre-Job Fair &amp; Job Fair Showcase</text>
+  <text x="1274" y="226" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#475569">• Final Windows .exe &amp; Thesis Document</text>
+
+  <!-- ========================================================================= -->
+  <!-- BOTTOM SECTION: 32-WEEK TWO-SEMESTER GANTT CHART (y = 280 to 990, h = 710)-->
+  <!-- ========================================================================= -->
+
+  <rect x="36" y="280" width="1488" height="714" rx="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)"/>
+
+  <!-- Gantt Header -->
+  <rect x="36" y="280" width="1488" height="42" rx="12" fill="#0f172a"/>
+  <text x="52" y="306" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#ffffff">WORK PACKAGE TIMELINE</text>
+  <text x="320" y="306" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#94a3b8">OWNER</text>
+
+  <!-- Month Columns: 9 Months across 32 Weeks -->
+  <!-- Width for timeline: x = 440 to 1494, total = 1054 px -->
+  <!-- Sep (115px), Oct (115px), Nov (115px), Dec (115px) | Jan (115px), Feb (115px), Mar (115px), Apr (115px), May (134px) -->
+  
+  <rect x="440" y="280" width="460" height="42" fill="#1e293b"/>
+  <text x="670" y="300" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#38bdf8">FYP-1: SEMESTER 1 (WEEKS 1 TO 16)</text>
+  
+  <rect x="900" y="280" width="624" height="42" fill="#1e293b"/>
+  <text x="1212" y="300" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#c084fc">FYP-2: SEMESTER 2 (WEEKS 17 TO 32)</text>
+
+  <!-- Sub-Month Headers -->
+  <g font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#cbd5e1">
+    <rect x="440" y="304" width="115" height="18" fill="#334155"/>
+    <text x="497" y="316" text-anchor="middle">Sep 2026</text>
+
+    <rect x="555" y="304" width="115" height="18" fill="#1e293b"/>
+    <text x="612" y="316" text-anchor="middle">Oct 2026</text>
+
+    <rect x="670" y="304" width="115" height="18" fill="#334155"/>
+    <text x="727" y="316" text-anchor="middle">Nov 2026</text>
+
+    <rect x="785" y="304" width="115" height="18" fill="#1e293b"/>
+    <text x="842" y="316" text-anchor="middle">Dec 2026</text>
+
+    <rect x="900" y="304" width="115" height="18" fill="#334155"/>
+    <text x="957" y="316" text-anchor="middle">Jan 2027</text>
+
+    <rect x="1015" y="304" width="115" height="18" fill="#1e293b"/>
+    <text x="1072" y="316" text-anchor="middle">Feb 2027</text>
+
+    <rect x="1130" y="304" width="115" height="18" fill="#334155"/>
+    <text x="1187" y="316" text-anchor="middle">Mar 2027</text>
+
+    <rect x="1245" y="304" width="115" height="18" fill="#1e293b"/>
+    <text x="1302" y="316" text-anchor="middle">Apr 2027</text>
+
+    <rect x="1360" y="304" width="164" height="18" fill="#334155"/>
+    <text x="1442" y="316" text-anchor="middle">May 2027</text>
+  </g>
+
+  <!-- Background Month Alternating Vertical Grid Lines -->
+  <g stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3 3">
+    <line x1="440" y1="322" x2="440" y2="930"/>
+    <line x1="555" y1="322" x2="555" y2="930"/>
+    <line x1="670" y1="322" x2="670" y2="930"/>
+    <line x1="785" y1="322" x2="785" y2="930"/>
+    <line x1="900" y1="322" x2="900" y2="930" stroke="#94a3b8" stroke-width="2" stroke-dasharray="none"/>
+    <line x1="1015" y1="322" x2="1015" y2="930"/>
+    <line x1="1130" y1="322" x2="1130" y2="930"/>
+    <line x1="1245" y1="322" x2="1245" y2="930"/>
+    <line x1="1360" y1="322" x2="1360" y2="930"/>
+    <line x1="1524" y1="322" x2="1524" y2="930"/>
+  </g>
+
+  <!-- GANTT TASK ROWS (14 Tasks matching proposal WBS) -->
+  <g font-family="Inter, sans-serif" font-size="10.5">
+
+    <!-- Row 1: WP 1 Literature Review -->
+    <rect x="36" y="328" width="1488" height="38" fill="#f8fafc"/>
+    <text x="52" y="352" font-weight="700" fill="#0f172a">WP 1: Literature Review &amp; Gap Matrix</text>
+    <text x="320" y="352" font-weight="600" fill="#2563eb">Rayan Ahmed</text>
+    <rect x="440" y="337" width="80" height="20" rx="4" fill="#22c55e"/>
+    <text x="480" y="351" text-anchor="middle" font-size="9" font-weight="700" fill="#ffffff">DONE</text>
+
+    <!-- Row 2: WP 2 Gym Env & POC Spike -->
+    <rect x="36" y="366" width="1488" height="38" fill="#ffffff"/>
+    <text x="52" y="390" font-weight="700" fill="#0f172a">WP 2: Custom Gym Env &amp; POC Spike</text>
+    <text x="320" y="390" font-weight="600" fill="#7c3aed">Rana Raza Ahmed</text>
+    <rect x="490" y="375" width="110" height="20" rx="4" fill="#3b82f6"/>
+    <text x="545" y="389" text-anchor="middle" font-size="9" font-weight="700" fill="#ffffff">POC SPIKE READY</text>
+
+    <!-- Row 3: WP 3 Godot Client Prototype -->
+    <rect x="36" y="404" width="1488" height="38" fill="#f8fafc"/>
+    <text x="52" y="428" font-weight="700" fill="#0f172a">WP 3: Godot 4.x Client Prototype</text>
+    <text x="320" y="428" font-weight="600" fill="#0d9488">Uwaid Munir</text>
+    <rect x="520" y="413" width="90" height="20" rx="4" fill="#3b82f6"/>
+    <text x="565" y="427" text-anchor="middle" font-size="9" font-weight="700" fill="#ffffff">VERTICAL SLICE</text>
+
+    <!-- GATE 1 MILESTONE PIN (Oct 15 - Week 6) -->
+    <path d="M 610,332 L 618,342 L 610,352 L 602,342 Z" fill="#ef4444" filter="url(#shadow)"/>
+    <line x1="610" y1="342" x2="610" y2="445" stroke="#ef4444" stroke-width="1.8" stroke-dasharray="2 2"/>
+    <rect x="566" y="445" width="88" height="18" rx="3" fill="#fee2e2" stroke="#ef4444" stroke-width="0.8"/>
+    <text x="610" y="457" text-anchor="middle" font-size="8.5" font-weight="800" fill="#b91c1c">GATE 1 DEFENSE</text>
+
+    <!-- Row 4: WP 4 SRS & SDS Specifications -->
+    <rect x="36" y="468" width="1488" height="38" fill="#ffffff"/>
+    <text x="52" y="492" font-weight="700" fill="#0f172a">WP 4: SRS &amp; SDS Engineering Specs</text>
+    <text x="320" y="492" font-weight="600" fill="#2563eb">Rayan Ahmed</text>
+    <rect x="610" y="477" width="80" height="20" rx="4" fill="#9333ea"/>
+    <text x="650" y="491" text-anchor="middle" font-size="9" font-weight="700" fill="#ffffff">SCHEDULED</text>
+
+    <!-- GATE 2 & 3 MILESTONE PIN (Nov 6 - Week 10) -->
+    <path d="M 690,470 L 698,480 L 690,490 L 682,480 Z" fill="#9333ea" filter="url(#shadow)"/>
+    <line x1="690" y1="480" x2="690" y2="520" stroke="#9333ea" stroke-width="1.8" stroke-dasharray="2 2"/>
+    <rect x="646" y="520" width="88" height="18" rx="3" fill="#fae8ff" stroke="#9333ea" stroke-width="0.8"/>
+    <text x="690" y="532" text-anchor="middle" font-size="8.5" font-weight="800" fill="#6b21a8">GATES 2 &amp; 3 (MID-1)</text>
+
+    <!-- Row 5: WP 6 Rule-Based BSP Baseline -->
+    <rect x="36" y="542" width="1488" height="38" fill="#f8fafc"/>
+    <text x="52" y="566" font-weight="700" fill="#0f172a">WP 6: Rule-Based BSP Baseline (A)</text>
+    <text x="320" y="566" font-weight="600" fill="#7c3aed">Rana Raza Ahmed</text>
+    <rect x="695" y="551" width="70" height="20" rx="4" fill="#8b5cf6"/>
+    <text x="730" y="565" text-anchor="middle" font-size="9" font-weight="700" fill="#ffffff">BASELINE</text>
+
+    <!-- Row 6: Unconditioned PPO Baseline -->
+    <rect x="36" y="580" width="1488" height="38" fill="#ffffff"/>
+    <text x="52" y="604" font-weight="700" fill="#0f172a">WP 6: Unconditioned PPO Baseline (B)</text>
+    <text x="320" y="604" font-weight="600" fill="#7c3aed">Rana Raza Ahmed</text>
+    <rect x="725" y="589" width="95" height="20" rx="4" fill="#8b5cf6"/>
+    <text x="772" y="603" text-anchor="middle" font-size="9" font-weight="700" fill="#ffffff">POPULATION PPO</text>
+
+    <!-- Row 7: SQLite Telemetry & Core Build -->
+    <rect x="36" y="618" width="1488" height="38" fill="#f8fafc"/>
+    <text x="52" y="642" font-weight="700" fill="#0f172a">WP 5: SQLite Telemetry Pipeline &amp; Core</text>
+    <text x="320" y="642" font-weight="600" fill="#0d9488">Uwaid Munir</text>
+    <rect x="745" y="627" width="85" height="20" rx="4" fill="#0d9488"/>
+    <text x="787" y="641" text-anchor="middle" font-size="9" font-weight="700" fill="#ffffff">CORE BUILD</text>
+
+    <!-- GATE 3 / FINAL-1 MILESTONE PIN (Dec 15 - Week 14) -->
+    <path d="M 835,620 L 843,630 L 835,640 L 827,630 Z" fill="#9333ea" filter="url(#shadow)"/>
+    <line x1="835" y1="630" x2="835" y2="670" stroke="#9333ea" stroke-width="1.8" stroke-dasharray="2 2"/>
+    <rect x="790" y="670" width="90" height="18" rx="3" fill="#fae8ff" stroke="#9333ea" stroke-width="0.8"/>
+    <text x="835" y="682" text-anchor="middle" font-size="8.5" font-weight="800" fill="#6b21a8">FINAL-1 EXIT GATE</text>
+
+    <!-- Row 8: WP 7 Player Profiling & Gear Modeling -->
+    <rect x="36" y="694" width="1488" height="38" fill="#ffffff"/>
+    <text x="52" y="718" font-weight="700" fill="#0f172a">WP 7: Player Profiling &amp; Gear CR Modeling</text>
+    <text x="320" y="718" font-weight="600" fill="#2563eb">Rayan Ahmed</text>
+    <rect x="920" y="703" width="95" height="20" rx="4" fill="#3b82f6"/>
+    <text x="967" y="717" text-anchor="middle" font-size="9" font-weight="700" fill="#ffffff">EMA PROFILING</text>
+
+    <!-- Row 9: WP 8 Conditioned PPO Policy Training -->
+    <rect x="36" y="732" width="1488" height="38" fill="#f8fafc"/>
+    <text x="52" y="756" font-weight="700" fill="#0f172a">WP 8: Conditioned Multi-Attribute PPO</text>
+    <text x="320" y="756" font-weight="600" fill="#7c3aed">Rana Raza Ahmed</text>
+    <rect x="975" y="741" width="125" height="20" rx="4" fill="#7c3aed"/>
+    <text x="1037" y="755" text-anchor="middle" font-size="9" font-weight="700" fill="#ffffff">CONDITIONED PPO (E,M)</text>
+
+    <!-- Row 10: WP 10 Embedded Neural Runtime -->
+    <rect x="36" y="770" width="1488" height="38" fill="#ffffff"/>
+    <text x="52" y="794" font-weight="700" fill="#0f172a">WP 10: Embedded GDScript Neural Engine</text>
+    <text x="320" y="794" font-weight="600" fill="#0d9488">Uwaid Munir</text>
+    <rect x="1050" y="779" width="120" height="20" rx="4" fill="#0d9488"/>
+    <text x="1110" y="793" text-anchor="middle" font-size="9" font-weight="700" fill="#ffffff">SUB-0.5ms INFERENCE</text>
+
+    <!-- GATE 4 MILESTONE PIN (Mar 31 - Week 26) -->
+    <path d="M 1205,730 L 1213,740 L 1205,750 L 1197,740 Z" fill="#0d9488" filter="url(#shadow)"/>
+    <line x1="1205" y1="740" x2="1205" y2="820" stroke="#0d9488" stroke-width="1.8" stroke-dasharray="2 2"/>
+    <rect x="1165" y="820" width="80" height="18" rx="3" fill="#ccfbf1" stroke="#0f766e" stroke-width="0.8"/>
+    <text x="1205" y="832" text-anchor="middle" font-size="8.5" font-weight="800" fill="#0f766e">GATE 4 (MID-2)</text>
+
+    <!-- Row 11: WP 9 Difficulty Regressor & XAI -->
+    <rect x="36" y="842" width="1488" height="38" fill="#f8fafc"/>
+    <text x="52" y="866" font-weight="700" fill="#0f172a">WP 9: Auxiliary Regressor &amp; SHAP XAI</text>
+    <text x="320" y="866" font-weight="600" fill="#2563eb">Rayan Ahmed</text>
+    <rect x="1140" y="851" width="95" height="20" rx="4" fill="#be123c"/>
+    <text x="1187" y="865" text-anchor="middle" font-size="9" font-weight="700" fill="#ffffff">XAI REGRESSOR</text>
+
+    <!-- Row 12: WP 11 & 12 Playtesting Cohort & UAT -->
+    <rect x="36" y="880" width="1488" height="38" fill="#ffffff"/>
+    <text x="52" y="904" font-weight="700" fill="#0f172a">WP 11 &amp; 12: UAT Study &amp; Statistical Analysis</text>
+    <text x="320" y="904" font-weight="700" fill="#0f172a">All Members</text>
+    <rect x="1245" y="889" width="115" height="20" rx="4" fill="#16a34a"/>
+    <text x="1302" y="903" text-anchor="middle" font-size="9" font-weight="700" fill="#ffffff">HUMAN EVALUATION</text>
+
+    <!-- PRE-JOB FAIR & JOB FAIR PIN (Apr 28 - Week 30) -->
+    <path d="M 1345,845 L 1353,855 L 1345,865 L 1337,855 Z" fill="#d97706" filter="url(#shadow)"/>
+    <line x1="1345" y1="855" x2="1345" y2="926" stroke="#d97706" stroke-width="1.8" stroke-dasharray="2 2"/>
+    <rect x="1295" y="926" width="100" height="18" rx="3" fill="#fef3c7" stroke="#b45309" stroke-width="0.8"/>
+    <text x="1345" y="938" text-anchor="middle" font-size="8.5" font-weight="800" fill="#b45309">JOB FAIR SHOWCASE</text>
+
+    <!-- Row 13: Final Report & Windows Distribution Build -->
+    <rect x="36" y="948" width="1488" height="38" fill="#f8fafc"/>
+    <text x="52" y="972" font-weight="700" fill="#0f172a">WP 13 &amp; 14: Deployment (.exe) &amp; Thesis Report</text>
+    <text x="320" y="972" font-weight="700" fill="#0f172a">All Members</text>
+    <rect x="1350" y="957" width="130" height="20" rx="4" fill="#0f172a"/>
+    <text x="1415" y="971" text-anchor="middle" font-size="9" font-weight="700" fill="#ffffff">FINAL HANDOVER</text>
+
+    <!-- GATE 5 FINAL DEFENSE PIN (May 15 - Week 32) -->
+    <path d="M 1485,910 L 1493,920 L 1485,930 L 1477,920 Z" fill="#16a34a" filter="url(#shadow)"/>
+    <line x1="1485" y1="920" x2="1485" y2="980" stroke="#16a34a" stroke-width="2" stroke-dasharray="2 2"/>
+    <rect x="1435" y="980" width="100" height="18" rx="3" fill="#dcfce7" stroke="#15803d" stroke-width="0.8"/>
+    <text x="1485" y="992" text-anchor="middle" font-size="8.5" font-weight="800" fill="#15803d">GATE 5 DEFENSE</text>
+  </g>
+
+</svg>

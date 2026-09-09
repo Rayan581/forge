@@ -1,0 +1,256 @@
+<svg viewBox="0 0 1520 920" width="1520" height="920" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="shadow" x="-5%" y="-8%" width="110%" height="120%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.08"/>
+    </filter>
+    <filter id="glow-violet" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#a855f7" flood-opacity="0.3"/>
+    </filter>
+    <filter id="glow-teal" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#14b8a6" flood-opacity="0.3"/>
+    </filter>
+
+    <!-- Arrow Markers -->
+    <marker id="arr-violet" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#7c3aed"/>
+    </marker>
+    <marker id="arr-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#0d9488"/>
+    </marker>
+    <marker id="arr-slate" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arr-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#d97706"/>
+    </marker>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="1520" height="920" fill="#f8fafc"/>
+
+  <!-- Top Title Bar -->
+  <rect x="0" y="0" width="1520" height="58" fill="#0f172a"/>
+  <text x="36" y="26" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="800" fill="#ffffff" letter-spacing="0.5">FORGE: TWO-PHASE HYBRID ARCHITECTURE (§5.5.1)</text>
+  <text x="36" y="45" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="500" fill="#94a3b8">Decoupling Heavy Offline Deep RL (Python/SB3) from Sub-Millisecond Native Runtime Neural Inference (Godot 4.x / Pure GDScript)</text>
+
+  <!-- Header Badges -->
+  <rect x="1050" y="15" width="140" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="1065" cy="29" r="4.5" fill="#c084fc"/>
+  <text x="1078" y="33" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#e2e8f0">Phase 1: Offline ML</text>
+
+  <rect x="1200" y="15" width="140" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="1215" cy="29" r="4.5" fill="#2dd4bf"/>
+  <text x="1228" y="33" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#e2e8f0">Phase 2: Native Client</text>
+
+  <rect x="1350" y="15" width="134" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <circle cx="1365" cy="29" r="4.5" fill="#f59e0b"/>
+  <text x="1378" y="33" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#e2e8f0">JSON Serializer</text>
+
+  <!-- ========================================================================= -->
+  <!-- LEFT COLUMN: PHASE 1 OFFLINE TRAINING PIPELINE (x = 36 to 540, w = 504)  -->
+  <!-- ========================================================================= -->
+
+  <rect x="36" y="78" width="504" height="696" rx="12" fill="#f5f3ff" stroke="#6d28d9" stroke-width="1.8" stroke-dasharray="6 4"/>
+  <path d="M 37,90 A 11 11 0 0 1 48,79 L 528,79 A 11 11 0 0 1 539,90 L 539,113 L 37,113 Z" fill="#7c3aed"/>
+  <text x="52" y="101" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#ffffff" letter-spacing="0.5">PHASE 1: OFFLINE TRAINING PIPELINE</text>
+  <text x="524" y="101" text-anchor="end" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#ffffff" opacity="0.9">Python 3.10 / PyTorch / SB3</text>
+
+  <!-- Step 1: Simulated Player Gym Env -->
+  <rect x="48" y="126" width="480" height="114" rx="8" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 49,134 A 8 8 0 0 1 56,127 L 53,127 L 53,238 L 56,238 A 8 8 0 0 1 49,231 Z" fill="#8b5cf6"/>
+  <rect x="372" y="133" width="144" height="18" rx="4" fill="#ede9fe" stroke="#6d28d9" stroke-width="0.8"/>
+  <text x="444" y="146" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#6d28d9">FARAMA GYMNASIUM</text>
+  <text x="62" y="152" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a">1. Custom Training Environment</text>
+  <text x="62" y="170" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#7c3aed">DungeonDifficultyEnv (Original Work)</text>
+  <text x="62" y="188" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Stochastic simulation of player skill drift across 30 sequential levels</text>
+  <text x="62" y="204" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Simulates novice, intermediate, and expert combat capability curves</text>
+  <text x="62" y="220" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Injects dynamic fatigue, damage variance, and clearance-rate anomalies</text>
+
+  <!-- Down Connector 1 -->
+  <line x1="288" y1="240" x2="288" y2="256" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#arr-violet)"/>
+
+  <!-- Step 2: PPO Policy Optimization -->
+  <rect x="48" y="256" width="480" height="142" rx="8" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 49,264 A 8 8 0 0 1 56,257 L 53,257 L 53,396 L 56,396 A 8 8 0 0 1 49,389 Z" fill="#8b5cf6"/>
+  <rect x="364" y="263" width="152" height="18" rx="4" fill="#ede9fe" stroke="#6d28d9" stroke-width="0.8"/>
+  <text x="440" y="276" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#6d28d9">STABLE-BASELINES3</text>
+  <text x="62" y="282" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a">2. PPO Policy Optimization</text>
+  <text x="62" y="300" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#7c3aed">train_ppo_difficulty.py (Actor-Critic MLP: 8 ──► 64 ──► 64 ──► 8)</text>
+  <text x="62" y="318" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Training Horizon: 300,000 timesteps | Learning Rate: 3e-4 | Minibatch: 256</text>
+  <text x="62" y="334" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f172a">Multi-Objective Reward: (1.0 - time_err) - 0.5·deaths - 0.3·boredom - 0.4·frust - pen</text>
+  <text x="62" y="350" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#64748b">Target Pace: T* = 45.0s | Pacing Error: time_err = |(T/N) - 45s| / 45s</text>
+  <text x="62" y="366" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#64748b">Boredom Penalty: -0.3 if deaths=0 and t_room &lt; 22.5s (Forces Escalation)</text>
+  <text x="62" y="382" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#7c3aed">Room Appropriateness: N*_target = 5.0 + 4.0·(0.5·E_dmg + 0.5·E_hp)</text>
+
+  <!-- Down Connector 2 -->
+  <line x1="288" y1="398" x2="288" y2="414" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#arr-violet)"/>
+
+  <!-- Step 3: Diagnostic Sensitivity Audit Script -->
+  <rect x="48" y="414" width="480" height="106" rx="8" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 49,422 A 8 8 0 0 1 56,415 L 53,415 L 53,518 L 56,518 A 8 8 0 0 1 49,511 Z" fill="#8b5cf6"/>
+  <rect x="364" y="421" width="152" height="18" rx="4" fill="#ede9fe" stroke="#6d28d9" stroke-width="0.8"/>
+  <text x="440" y="434" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#6d28d9">POLICY AUDIT</text>
+  <text x="62" y="440" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a">3. Policy Diagnostics &amp; Audit</text>
+  <text x="62" y="458" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#7c3aed">Diagnostic Sensitivity Audit Script (Pre-Deployment Verification)</text>
+  <text x="62" y="476" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Injects synthetic boundary conditions (infinite deaths, instant clear, AFK)</text>
+  <text x="62" y="492" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Validates monotonicity: difficulty de-escalates under struggle, scales under mastery</text>
+  <text x="62" y="508" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#7c3aed">Confirms zero gradient saturation across continuous action intervals [-1, 1]</text>
+
+  <!-- Down Connector 3 -->
+  <line x1="288" y1="520" x2="288" y2="536" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#arr-violet)"/>
+
+  <!-- Step 4: Weight Extraction & JSON Serialization -->
+  <rect x="48" y="536" width="480" height="114" rx="8" fill="#ffffff" stroke="#7c3aed" stroke-width="1.6" filter="url(#shadow)"/>
+  <path d="M 49,544 A 8 8 0 0 1 56,537 L 53,537 L 53,648 L 56,648 A 8 8 0 0 1 49,641 Z" fill="#7c3aed"/>
+  <rect x="364" y="543" width="152" height="18" rx="4" fill="#ede9fe" stroke="#6d28d9" stroke-width="0.8"/>
+  <text x="440" y="556" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#6d28d9">TENSOR SERIALIZER</text>
+  <text x="62" y="562" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a">4. Weight Serialization</text>
+  <text x="62" y="580" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#7c3aed">export_policy_to_json(model, &quot;policy_weights.json&quot;)</text>
+  <text x="62" y="598" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Direct PyTorch tensor extraction: model.policy.mlp_extractor.policy_net</text>
+  <text x="62" y="614" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Exports floats for Layer 1 (8x64, 64), Layer 2 (64x64, 64), Layer 3 (64x8, 8)</text>
+  <text x="62" y="630" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0f766e">Outputs clean portable JSON file (&lt; 120 KB, 5,256 total float parameters)</text>
+
+  <!-- Offline Status Box -->
+  <rect x="48" y="664" width="480" height="96" rx="8" fill="#ede9fe" stroke="#c084fc" stroke-width="1.2"/>
+  <text x="62" y="684" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#5b21b6">Key Architectural Separation &amp; Freedom:</text>
+  <text x="62" y="702" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">The Python training process runs 100% offline. It can be trained on a high-performance</text>
+  <text x="62" y="718" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">workstation or GPU cluster, and produces a single, tiny, deterministic data file.</text>
+  <text x="62" y="736" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#7c3aed">NO Python binaries, NO PyTorch libraries, and NO CUDA drivers are shipped with the game.</text>
+
+  <!-- ========================================================================= -->
+  <!-- CENTER BRIDGE: SERIALIZATION & DECOUPLING (x = 556 to 748, width = 192)   -->
+  <!-- ========================================================================= -->
+
+  <path d="M 528,593 L 552,593 L 552,363 L 575,363" fill="none" stroke="#7c3aed" stroke-width="2.5" marker-end="url(#arr-violet)"/>
+
+  <rect x="577" y="270" width="170" height="186" rx="10" fill="#ffffff" stroke="#f59e0b" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="577" y="270" width="170" height="32" rx="10" fill="#f59e0b"/>
+  <text x="662" y="291" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#ffffff" letter-spacing="0.5">BUILD ASSET</text>
+  
+  <text x="662" y="320" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#0f172a">policy_weights.json</text>
+  <text x="662" y="335" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="#b45309">Size: &lt; 120 KB | 5,256 Floats</text>
+  <text x="662" y="349" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="700" fill="#0d9488">Parsed in &lt;0.5ms at Startup</text>
+
+  <rect x="589" y="358" width="146" height="86" rx="4" fill="#fef3c7" stroke="#fde68a" stroke-width="1"/>
+  <text x="597" y="374" font-family="Courier, monospace" font-size="9" font-weight="600" fill="#78350f">{</text>
+  <text x="605" y="388" font-family="Courier, monospace" font-size="8.5" fill="#78350f">&quot;w1&quot;: [[...]],</text>
+  <text x="605" y="402" font-family="Courier, monospace" font-size="8.5" fill="#78350f">&quot;b1&quot;: [...],</text>
+  <text x="605" y="416" font-family="Courier, monospace" font-size="8.5" fill="#78350f">&quot;w2&quot;: [[...]],</text>
+  <text x="605" y="430" font-family="Courier, monospace" font-size="8.5" fill="#78350f">&quot;b2&quot;: [...], ...</text>
+  <text x="597" y="440" font-family="Courier, monospace" font-size="9" font-weight="600" fill="#78350f">}</text>
+
+  <!-- Clean direct connector into Step 3 PPOPolicy.gd -->
+  <path d="M 747,363 L 792,363" fill="none" stroke="#0d9488" stroke-width="2.5" marker-end="url(#arr-teal)"/>
+  <rect x="748" y="343" width="42" height="16" rx="3" fill="#0d9488" filter="url(#shadow)"/>
+  <text x="769" y="354" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#ffffff">LOAD</text>
+
+  <!-- ========================================================================= -->
+  <!-- RIGHT COLUMN: PHASE 2 RUNTIME INFERENCE PIPELINE (x = 780 to 1484, w=704) -->
+  <!-- ========================================================================= -->
+
+  <rect x="780" y="78" width="704" height="696" rx="12" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.8" stroke-dasharray="6 4"/>
+  <path d="M 781,90 A 11 11 0 0 1 792,79 L 1472,79 A 11 11 0 0 1 1483,90 L 1483,113 L 781,113 Z" fill="#0d9488"/>
+  <text x="796" y="101" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#ffffff" letter-spacing="0.5">PHASE 2: RUNTIME INFERENCE PIPELINE</text>
+  <text x="1468" y="101" text-anchor="end" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#ffffff" opacity="0.9">Godot Engine 4.x / Pure GDScript</text>
+
+  <!-- Step 1: In-Game Telemetry Performance Deltas -->
+  <rect x="794" y="126" width="676" height="74" rx="8" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 795,134 A 8 8 0 0 1 802,127 L 799,127 L 799,198 L 802,198 A 8 8 0 0 1 795,191 Z" fill="#0284c7"/>
+  <rect x="1342" y="133" width="118" height="18" rx="4" fill="#e0f2fe" stroke="#0369a1" stroke-width="0.8"/>
+  <text x="1401" y="146" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#0369a1">LEVEL DELTAS</text>
+  <text x="810" y="148" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a">1. In-Game Telemetry Performance Deltas (TelemetryLogger.gd)</text>
+  <text x="810" y="165" font-family="Inter, sans-serif" font-size="10.5" font-weight="500" fill="#475569">Captured at level boundary upon exit: Δt = (time - start_time) / 1000s, Δdeaths, Δdamage</text>
+  <text x="810" y="181" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0284c7">Local Data Persistence: user://telemetry.db (SQLite Embedded | Zero Network Transmissions)</text>
+
+  <!-- Down Connector R1 -->
+  <line x1="1132" y1="200" x2="1132" y2="216" stroke="#0d9488" stroke-width="1.8" marker-end="url(#arr-teal)"/>
+
+  <!-- Step 2: 8-Dim Observation Vector Normalization -->
+  <rect x="794" y="216" width="676" height="78" rx="8" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 795,224 A 8 8 0 0 1 802,217 L 799,217 L 799,292 L 802,292 A 8 8 0 0 1 795,285 Z" fill="#0284c7"/>
+  <rect x="1330" y="223" width="130" height="18" rx="4" fill="#e0f2fe" stroke="#0369a1" stroke-width="0.8"/>
+  <text x="1395" y="236" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#0369a1">NORMALIZED STATE</text>
+  <text x="810" y="238" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a">2. 8-Dim Observation Normalization (DifficultyManager.gd)</text>
+  <text x="810" y="255" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Maps rolling state into s_t ∈ [0, 1]^8: [norm_time, norm_deaths, norm_dmg_ratio, norm_hp,</text>
+  <text x="810" y="271" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">                                        norm_dmg, norm_haz, norm_rooms, norm_level]</text>
+  <text x="810" y="286" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#0284c7">Formula: clamp((val - min) / (max - min), 0.0, 1.0) | Strict mathematical bounds guarantee stability</text>
+
+  <!-- Down Connector R2 -->
+  <line x1="1132" y1="294" x2="1132" y2="310" stroke="#0d9488" stroke-width="1.8" marker-end="url(#arr-teal)"/>
+
+  <!-- Step 3: Pure GDScript Neural Forward Pass & Fallback -->
+  <rect x="794" y="310" width="676" height="136" rx="8" fill="#ffffff" stroke="#0d9488" stroke-width="1.6" filter="url(#shadow)"/>
+  <path d="M 795,318 A 8 8 0 0 1 802,311 L 799,311 L 799,444 L 802,444 A 8 8 0 0 1 795,437 Z" fill="#0d9488"/>
+  <rect x="1318" y="317" width="142" height="18" rx="4" fill="#ccfbf1" stroke="#0f766e" stroke-width="0.8"/>
+  <text x="1389" y="330" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#0f766e">LATENCY &lt; 0.5ms</text>
+  <text x="810" y="332" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a">3. Pure GDScript Neural Forward Pass (PPOPolicy.gd)</text>
+  <text x="810" y="350" font-family="Inter, sans-serif" font-size="10.5" font-weight="500" fill="#475569">h1 = tanh(W1 · s_t + b1) [8 ──► 64]  |  h2 = tanh(W2 · h1 + b2) [64 ──► 64]</text>
+  <text x="810" y="367" font-family="Inter, sans-serif" font-size="10.5" font-weight="500" fill="#475569">a_t = tanh(W3 · h2 + b3) [64 ──► 8] ∈ [-1.0, 1.0]^8</text>
+  <text x="810" y="386" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0d9488">• Executed natively in GDScript via Vector-Matrix Dot Products: Sub-Millisecond (&lt; 0.5ms)</text>
+  <text x="810" y="402" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#d97706">• Deterministic Fallback (_fallback_heuristic): Activates if weights file is missing</text>
+  <text x="810" y="418" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#0f766e">• Complete Self-Containment: Shipped desktop client requires ZERO Python or PyTorch</text>
+  <text x="810" y="434" font-family="Inter, sans-serif" font-size="9.5" font-weight="500" fill="#64748b">Measured Performance: Outperforms local REST API by 100x (&lt; 0.5ms vs ~50ms roundtrip)</text>
+
+  <!-- Down Connector R3 -->
+  <line x1="1132" y1="446" x2="1132" y2="462" stroke="#0d9488" stroke-width="1.8" marker-end="url(#arr-teal)"/>
+
+  <!-- Step 4: Action Denormalization Layer -->
+  <rect x="794" y="462" width="676" height="96" rx="8" fill="#ffffff" stroke="#0d9488" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 795,470 A 8 8 0 0 1 802,463 L 799,463 L 799,556 L 802,556 A 8 8 0 0 1 795,549 Z" fill="#0d9488"/>
+  <rect x="1330" y="469" width="130" height="18" rx="4" fill="#ccfbf1" stroke="#0f766e" stroke-width="0.8"/>
+  <text x="1395" y="482" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#0f766e">PHYSICAL BOUNDS</text>
+  <text x="810" y="484" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a">4. Continuous Action Denormalization (DifficultyManager.gd)</text>
+  <text x="810" y="502" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#0d9488">Affine Transformation: x_k = L_k + ((a_k + 1.0) / 2.0) · (U_k - L_k)</text>
+  <text x="810" y="519" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Adversary E: HP [20, 120], Dmg [5, 50], Speed [60, 220 px/s], Aggro [100, 450 px]</text>
+  <text x="810" y="535" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">Modifiers M: Hazard Density [0.05, 0.80], Resource Scarcity [0.10, 0.90]</text>
+  <text x="810" y="550" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#0f766e">Macro Space: Target Rooms [5, 9], Softmax Archetype Distribution Complexity</text>
+
+  <!-- Down Connector R4 -->
+  <line x1="1132" y1="558" x2="1132" y2="574" stroke="#0d9488" stroke-width="1.8" marker-end="url(#arr-teal)"/>
+
+  <!-- Step 5: Procedural Synthesis & Spawning -->
+  <rect x="794" y="574" width="676" height="78" rx="8" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 795,582 A 8 8 0 0 1 802,575 L 799,575 L 799,650 L 802,650 A 8 8 0 0 1 795,643 Z" fill="#f59e0b"/>
+  <rect x="1330" y="581" width="130" height="18" rx="4" fill="#fef3c7" stroke="#b45309" stroke-width="0.8"/>
+  <text x="1395" y="594" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#b45309">PCG SYNTHESIS</text>
+  <text x="810" y="596" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a">5. Procedural Room &amp; Archetype Spawning (DungeonGenerator.gd)</text>
+  <text x="810" y="613" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Frontier random-walk graph synthesis: 5 to 9 connected chambers (START ──► EXIT)</text>
+  <text x="810" y="629" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Softmax Archetype Sampling: Grunts, Spitters, Skirmishers, Brutes, Pyromancers</text>
+  <text x="810" y="644" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#15803d">• Guaranteed Unbroken Traversal via A* Pathfinding: Solvability Rate ≥ 95%</text>
+
+  <!-- Down Connector R5 -->
+  <line x1="1132" y1="652" x2="1132" y2="668" stroke="#0d9488" stroke-width="1.8" marker-end="url(#arr-teal)"/>
+
+  <!-- Step 6: Live Defense Overlay & Feature XAI -->
+  <rect x="794" y="668" width="676" height="88" rx="8" fill="#ffffff" stroke="#be123c" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 795,676 A 8 8 0 0 1 802,669 L 799,669 L 799,754 L 802,754 A 8 8 0 0 1 795,747 Z" fill="#be123c"/>
+  <rect x="1330" y="675" width="130" height="18" rx="4" fill="#ffe4e6" stroke="#be123c" stroke-width="0.8"/>
+  <text x="1395" y="688" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#be123c">LIVE DEFENSE HUD</text>
+  <text x="810" y="690" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a">6. Live Defense Overlay &amp; Feature Attribution XAI (DefenseOverlay.gd)</text>
+  <text x="810" y="707" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Glass-Box Attribution: Difficulty Score DS ∈ [0, 100] = Σ w_k · x_k_norm</text>
+  <text x="810" y="723" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#475569">• Displays Top-3 Parameter Drivers on HUD: e.g., 35% Enemy Dmg, 25% Traps, 20% Speed</text>
+  <text x="810" y="739" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#be123c">• Interactive Faculty Inspection: Real-time parameter override sliders &amp; Auto-Kill toggle</text>
+
+  <!-- ========================================================================= -->
+  <!-- BOTTOM COMPARISON BANNER: WHY REST WAS DISCARDED (y = 790 to 898)          -->
+  <!-- ========================================================================= -->
+
+  <rect x="36" y="792" width="1448" height="106" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1.2" filter="url(#shadow)"/>
+
+  <!-- Left Compare Box: Rejected Approach -->
+  <rect x="52" y="806" width="670" height="78" rx="6" fill="#1e293b" stroke="#ef4444" stroke-width="1"/>
+  <circle cx="70" cy="824" r="5" fill="#ef4444"/>
+  <text x="84" y="828" font-family="Inter, sans-serif" font-size="11.5" font-weight="800" fill="#fca5a5">DISPROVED ALTERNATIVE: Local Python REST Inference Server (FastAPI)</text>
+  <text x="70" y="847" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#cbd5e1">Execution Latency: ~50ms HTTP localhost loopback penalty introduces stutter between rooms</text>
+  <text x="70" y="863" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#cbd5e1">Deployment Bloat: Shipped client requires bundled Python runtime, PyTorch wheels (&gt; 2.5 GB)</text>
+  <text x="70" y="878" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#f87171">Brittle Failure: If background Python server crashes, game client permanently locks up</text>
+
+  <!-- Right Compare Box: Accepted Approach -->
+  <rect x="742" y="806" width="726" height="78" rx="6" fill="#1e293b" stroke="#10b981" stroke-width="1"/>
+  <circle cx="760" cy="824" r="5" fill="#10b981"/>
+  <text x="774" y="828" font-family="Inter, sans-serif" font-size="11.5" font-weight="800" fill="#86efac">FORGE SELECTED SOLUTION: Embedded Pure GDScript Neural Forward Pass</text>
+  <text x="760" y="847" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#cbd5e1">Zero Execution Latency: &lt; 0.5ms native GDScript vector dot products in same memory space</text>
+  <text x="760" y="863" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#cbd5e1">Ultra-Lightweight Packaging: Standalone Windows .exe requires ONLY policy_weights.json (&lt; 120 KB)</text>
+  <text x="760" y="878" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#4ade80">Deterministic Crash Resilience: Automated mathematical fallback heuristic guarantees continuous play</text>
+
+</svg>

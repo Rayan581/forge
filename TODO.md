@@ -23,3 +23,4 @@
 - [ ] Add fixed set of 3–5 placement calibration maps in Godot prototype (`godot_prototype/`)
 - [ ] Migrate `TelemetryLogger.gd` from JSON to embedded SQLite
 - [ ] Implement remaining 4 enemy archetypes and activate 8th action dimension (`archetype_complexity`)
+- [ ] Calculating difficulty and skill level

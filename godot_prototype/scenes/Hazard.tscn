@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://hazard_forge_001"]
+[gd_scene load_steps=4 format=3 uid="uid://hazard_forge_001"]
 
 [ext_resource type="Script" path="res://scripts/Hazard.gd" id="1_hazard"]
+[ext_resource type="Texture2D" path="res://assets/sprites/hazard_spikes.png" id="2_tex"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(30, 30)
@@ -11,6 +12,9 @@ z_as_relative = false
 collision_layer = 0
 collision_mask = 1
 script = ExtResource("1_hazard")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_tex")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_1")

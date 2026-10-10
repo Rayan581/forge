@@ -1,0 +1,322 @@
+<svg viewBox="0 0 1440 500" width="1440" height="500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.07"/>
+    </filter>
+
+    <marker id="arr-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arr-teal" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#0d9488"/>
+    </marker>
+    <marker id="arr-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#d97706"/>
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,1.5 L10,5 L0,8.5 z" fill="#16a34a"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1440" height="500" fill="#f8fafc" rx="10"/>
+
+  <!-- Top Title & Legend Bar -->
+  <rect x="0" y="0" width="1440" height="46" fill="#0f172a" rx="10"/>
+  <rect x="0" y="32" width="1440" height="14" fill="#0f172a"/>
+
+  <text x="36" y="24" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="13.5" font-weight="800" fill="#ffffff" letter-spacing="0.5">FORGE — CLOSED-LOOP SYSTEM ARCHITECTURE</text>
+  <text x="36" y="38" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="9.5" font-weight="500" fill="#94a3b8">Telemetry-Conditioned Procedural Dungeon Personalization</text>
+
+  <!-- Legend -->
+  <g font-family="Segoe UI, Inter, Arial, sans-serif" font-size="9" font-weight="600">
+    <circle cx="930" cy="24" r="4" fill="#2563eb"/>
+    <text x="940" y="27" fill="#cbd5e1">Godot Runtime</text>
+
+    <circle cx="1060" cy="24" r="4" fill="#0d9488"/>
+    <text x="1070" y="27" fill="#cbd5e1">Offline Policy</text>
+
+    <circle cx="1185" cy="24" r="4" fill="#d97706"/>
+    <text x="1195" y="27" fill="#cbd5e1">PCG Generation</text>
+
+    <circle cx="1320" cy="24" r="4" fill="#16a34a"/>
+    <text x="1330" y="27" fill="#cbd5e1">Closed Loop</text>
+  </g>
+
+  <!-- ==================== 1. PLAYER TELEMETRY ==================== -->
+  <g filter="url(#shadow)">
+    <rect x="36" y="70" width="186" height="280" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="1.6"/>
+    <path d="M 36,79 Q 36,70 45,70 L 213,70 Q 222,70 222,79 L 222,96 L 36,96 Z" fill="#eff6ff"/>
+    <text x="46" y="87" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="800" fill="#1d4ed8">01 · RUNTIME TELEMETRY</text>
+
+    <text x="46" y="115" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="12.5" font-weight="800" fill="#0f172a">Player Telemetry</text>
+    <text x="46" y="128" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8" font-weight="600" fill="#64748b">8D Ingested State Attributes</text>
+
+    <!-- 8 Telemetry Input Attribute Pills -->
+    <g font-family="Segoe UI, Inter, Arial, sans-serif">
+      <!-- 0: norm_time -->
+      <rect x="44" y="136" width="170" height="19" rx="3.5" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.9"/>
+      <rect x="47" y="138.5" width="14" height="14" rx="2.5" fill="#eff6ff"/>
+      <text x="54" y="148.5" text-anchor="middle" font-size="7.5" font-weight="800" fill="#1d4ed8">0</text>
+      <text x="66" y="149" font-size="8.2" font-weight="700" fill="#0f172a">norm_time</text>
+      <text x="208" y="149" text-anchor="end" font-size="7.5" font-weight="600" fill="#64748b">Pace (Δt / 90s)</text>
+
+      <!-- 1: norm_deaths -->
+      <rect x="44" y="158" width="170" height="19" rx="3.5" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.9"/>
+      <rect x="47" y="160.5" width="14" height="14" rx="2.5" fill="#eff6ff"/>
+      <text x="54" y="170.5" text-anchor="middle" font-size="7.5" font-weight="800" fill="#1d4ed8">1</text>
+      <text x="66" y="171" font-size="8.2" font-weight="700" fill="#0f172a">norm_deaths</text>
+      <text x="208" y="171" text-anchor="end" font-size="7.5" font-weight="600" fill="#64748b">Mortality (Δd)</text>
+
+      <!-- 2: norm_dmg_ratio -->
+      <rect x="44" y="180" width="170" height="19" rx="3.5" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.9"/>
+      <rect x="47" y="182.5" width="14" height="14" rx="2.5" fill="#eff6ff"/>
+      <text x="54" y="192.5" text-anchor="middle" font-size="7.5" font-weight="800" fill="#1d4ed8">2</text>
+      <text x="66" y="193" font-size="8.2" font-weight="700" fill="#0f172a">norm_dmg_ratio</text>
+      <text x="208" y="193" text-anchor="end" font-size="7.5" font-weight="600" fill="#64748b">Damage / HP</text>
+
+      <!-- 3: norm_hp -->
+      <rect x="44" y="202" width="170" height="19" rx="3.5" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.9"/>
+      <rect x="47" y="204.5" width="14" height="14" rx="2.5" fill="#eff6ff"/>
+      <text x="54" y="214.5" text-anchor="middle" font-size="7.5" font-weight="800" fill="#1d4ed8">3</text>
+      <text x="66" y="215" font-size="8.2" font-weight="700" fill="#0f172a">norm_hp</text>
+      <text x="208" y="215" text-anchor="end" font-size="7.5" font-weight="600" fill="#64748b">Enemy HP (20-120)</text>
+
+      <!-- 4: norm_dmg -->
+      <rect x="44" y="224" width="170" height="19" rx="3.5" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.9"/>
+      <rect x="47" y="226.5" width="14" height="14" rx="2.5" fill="#eff6ff"/>
+      <text x="54" y="236.5" text-anchor="middle" font-size="7.5" font-weight="800" fill="#1d4ed8">4</text>
+      <text x="66" y="237" font-size="8.2" font-weight="700" fill="#0f172a">norm_dmg</text>
+      <text x="208" y="237" text-anchor="end" font-size="7.5" font-weight="600" fill="#64748b">Enemy Dmg (5-50)</text>
+
+      <!-- 5: norm_haz -->
+      <rect x="44" y="246" width="170" height="19" rx="3.5" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.9"/>
+      <rect x="47" y="248.5" width="14" height="14" rx="2.5" fill="#eff6ff"/>
+      <text x="54" y="258.5" text-anchor="middle" font-size="7.5" font-weight="800" fill="#1d4ed8">5</text>
+      <text x="66" y="259" font-size="8.2" font-weight="700" fill="#0f172a">norm_haz</text>
+      <text x="208" y="259" text-anchor="end" font-size="7.5" font-weight="600" fill="#64748b">Traps (5%-80%)</text>
+
+      <!-- 6: norm_rooms -->
+      <rect x="44" y="268" width="170" height="19" rx="3.5" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.9"/>
+      <rect x="47" y="270.5" width="14" height="14" rx="2.5" fill="#eff6ff"/>
+      <text x="54" y="280.5" text-anchor="middle" font-size="7.5" font-weight="800" fill="#1d4ed8">6</text>
+      <text x="66" y="281" font-size="8.2" font-weight="700" fill="#0f172a">norm_rooms</text>
+      <text x="208" y="281" text-anchor="end" font-size="7.5" font-weight="600" fill="#64748b">Rooms (5-9)</text>
+
+      <!-- 7: norm_level -->
+      <rect x="44" y="290" width="170" height="19" rx="3.5" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.9"/>
+      <rect x="47" y="292.5" width="14" height="14" rx="2.5" fill="#eff6ff"/>
+      <text x="54" y="302.5" text-anchor="middle" font-size="7.5" font-weight="800" fill="#1d4ed8">7</text>
+      <text x="66" y="303" font-size="8.2" font-weight="700" fill="#0f172a">norm_level</text>
+      <text x="208" y="303" text-anchor="end" font-size="7.5" font-weight="600" fill="#64748b">Floor Depth (1-10)</text>
+    </g>
+
+    <rect x="44" y="316" width="170" height="22" rx="4" fill="#eff6ff"/>
+    <text x="129" y="331" text-anchor="middle" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#2563eb">Continuous Telemetry Ingest</text>
+  </g>
+
+  <!-- Arrow 1 -> 2 -->
+  <line x1="222" y1="210" x2="242" y2="210" stroke="#2563eb" stroke-width="2" marker-end="url(#arr-blue)"/>
+
+  <!-- ==================== 2. STATE VECTOR ==================== -->
+  <g filter="url(#shadow)">
+    <rect x="244" y="70" width="170" height="280" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="1.6"/>
+    <path d="M 244,79 Q 244,70 253,70 L 405,70 Q 414,70 414,79 L 414,96 L 244,96 Z" fill="#eff6ff"/>
+    <text x="254" y="87" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="800" fill="#1d4ed8">02 · ENCODING</text>
+
+    <text x="254" y="118" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#0f172a">State Vector</text>
+    <text x="254" y="132" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="500" fill="#64748b">Normalized observation</text>
+
+    <!-- Large 8D Stat Display -->
+    <rect x="254" y="148" width="150" height="74" rx="7" fill="#f0f7ff" stroke="#bfdbfe" stroke-width="1"/>
+    <text x="329" y="185" text-anchor="middle" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="28" font-weight="900" fill="#1d4ed8">8D</text>
+    <text x="329" y="206" text-anchor="middle" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="9" font-weight="700" fill="#2563eb">OBSERVATION TENSOR</text>
+
+    <!-- Formula badge -->
+    <rect x="254" y="234" width="150" height="34" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="329" y="255" text-anchor="middle" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="10" font-weight="800" fill="#0f172a">s_t ∈ [0, 1]⁸</text>
+
+    <rect x="254" y="278" width="150" height="26" rx="5" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="329" y="295" text-anchor="middle" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="600" fill="#64748b">Sliding-Window Smoothed</text>
+
+    <rect x="254" y="316" width="150" height="22" rx="4" fill="#eff6ff"/>
+    <text x="329" y="331" text-anchor="middle" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#2563eb">Bounded Range [0, 1]</text>
+  </g>
+
+  <!-- Arrow 2 -> 3 -->
+  <line x1="414" y1="210" x2="436" y2="210" stroke="#0d9488" stroke-width="2" marker-end="url(#arr-teal)"/>
+
+  <!-- ==================== 3. PPO POLICY NETWORK ==================== -->
+  <g filter="url(#shadow)">
+    <rect x="438" y="70" width="280" height="280" rx="9" fill="#ffffff" stroke="#0d9488" stroke-width="1.8"/>
+    <path d="M 438,79 Q 438,70 447,70 L 709,70 Q 718,70 718,79 L 718,96 L 438,96 Z" fill="#f0fdfa"/>
+    <text x="448" y="87" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="800" fill="#0f766e">03 · INFERENCE</text>
+
+    <!-- Latency Badge -->
+    <rect x="640" y="75" width="70" height="17" rx="4" fill="#ccfbf1"/>
+    <text x="675" y="87" text-anchor="middle" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="800" fill="#0f766e">&lt; 0.5 ms</text>
+
+    <text x="448" y="118" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#0f172a">PPO Policy Network</text>
+    <text x="448" y="132" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="500" fill="#64748b">Pure GDScript forward pass · PPOPolicy.gd</text>
+
+    <!-- Clean, Visual MLP Architecture -->
+    <g font-family="Segoe UI, Inter, Arial, sans-serif">
+      <!-- Input -->
+      <rect x="452" y="150" width="52" height="74" rx="6" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.2"/>
+      <text x="478" y="174" text-anchor="middle" font-size="8.5" font-weight="700" fill="#0f766e">Input</text>
+      <text x="478" y="196" text-anchor="middle" font-size="15" font-weight="900" fill="#0f172a">8</text>
+      <text x="478" y="212" text-anchor="middle" font-size="7.5" font-weight="600" fill="#64748b">features</text>
+
+      <line x1="504" y1="187" x2="517" y2="187" stroke="#0d9488" stroke-width="1.3" marker-end="url(#arr-teal)"/>
+
+      <!-- Hidden 1 -->
+      <rect x="519" y="144" width="56" height="86" rx="6" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.2"/>
+      <text x="547" y="168" text-anchor="middle" font-size="8.5" font-weight="700" fill="#0f766e">Dense 1</text>
+      <text x="547" y="193" text-anchor="middle" font-size="17" font-weight="900" fill="#0f172a">64</text>
+      <text x="547" y="212" text-anchor="middle" font-size="7.5" font-weight="700" fill="#0d9488">Tanh</text>
+
+      <line x1="575" y1="187" x2="588" y2="187" stroke="#0d9488" stroke-width="1.3" marker-end="url(#arr-teal)"/>
+
+      <!-- Hidden 2 -->
+      <rect x="590" y="144" width="56" height="86" rx="6" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.2"/>
+      <text x="618" y="168" text-anchor="middle" font-size="8.5" font-weight="700" fill="#0f766e">Dense 2</text>
+      <text x="618" y="193" text-anchor="middle" font-size="17" font-weight="900" fill="#0f172a">64</text>
+      <text x="618" y="212" text-anchor="middle" font-size="7.5" font-weight="700" fill="#0d9488">Tanh</text>
+
+      <line x1="646" y1="187" x2="659" y2="187" stroke="#0d9488" stroke-width="1.3" marker-end="url(#arr-teal)"/>
+
+      <!-- Output -->
+      <rect x="661" y="150" width="50" height="74" rx="6" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.2"/>
+      <text x="686" y="174" text-anchor="middle" font-size="8.5" font-weight="700" fill="#0f766e">Output</text>
+      <text x="686" y="196" text-anchor="middle" font-size="15" font-weight="900" fill="#0f172a">8</text>
+      <text x="686" y="212" text-anchor="middle" font-size="7.5" font-weight="600" fill="#64748b">actions</text>
+    </g>
+
+    <!-- Minimal Badges -->
+    <rect x="448" y="246" width="260" height="28" rx="5" fill="#f0fdfa" stroke="#ccfbf1" stroke-width="1"/>
+    <text x="578" y="264" text-anchor="middle" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="9" font-weight="700" fill="#0f766e">Trained Offline (PyTorch / SB3)</text>
+
+    <rect x="448" y="280" width="260" height="28" rx="5" fill="#f0fdfa" stroke="#ccfbf1" stroke-width="1"/>
+    <text x="578" y="298" text-anchor="middle" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="9" font-weight="700" fill="#0f766e">Weights in policy_weights.json</text>
+
+    <rect x="448" y="316" width="260" height="22" rx="4" fill="#ccfbf1"/>
+    <text x="578" y="331" text-anchor="middle" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="800" fill="#115e59">Zero Python Runtime Dependency</text>
+  </g>
+
+  <!-- Arrow 3 -> 4 -->
+  <line x1="718" y1="210" x2="740" y2="210" stroke="#d97706" stroke-width="2" marker-end="url(#arr-amber)"/>
+
+  <!-- ==================== 4. ACTION MAPPING ==================== -->
+  <g filter="url(#shadow)">
+    <rect x="742" y="70" width="170" height="280" rx="9" fill="#ffffff" stroke="#d97706" stroke-width="1.6"/>
+    <path d="M 742,79 Q 742,70 751,70 L 903,70 Q 912,70 912,79 L 912,96 L 742,96 Z" fill="#fffbeb"/>
+    <text x="752" y="87" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="800" fill="#b45309">04 · MAPPING</text>
+
+    <text x="752" y="118" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#0f172a">Denormalize</text>
+    <text x="752" y="132" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="500" fill="#64748b">Scale to game bounds</text>
+
+    <!-- Large Stat Display -->
+    <rect x="752" y="148" width="150" height="74" rx="7" fill="#fffbeb" stroke="#fde68a" stroke-width="1"/>
+    <text x="827" y="185" text-anchor="middle" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="28" font-weight="900" fill="#b45309">8D</text>
+    <text x="827" y="206" text-anchor="middle" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="9" font-weight="700" fill="#92400e">TARGET PARAMETERS</text>
+
+    <!-- Formula badge -->
+    <rect x="752" y="234" width="150" height="34" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="827" y="255" text-anchor="middle" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="9.5" font-weight="800" fill="#0f172a">[-1, 1] → [L_i, U_i]</text>
+
+    <rect x="752" y="278" width="150" height="26" rx="5" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="827" y="295" text-anchor="middle" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="600" fill="#64748b">Safe Parameter Clamping</text>
+
+    <rect x="752" y="316" width="150" height="22" rx="4" fill="#fffbeb"/>
+    <text x="827" y="331" text-anchor="middle" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#b45309">Direct Engine Inputs</text>
+  </g>
+
+  <!-- Arrow 4 -> 5 -->
+  <line x1="912" y1="210" x2="934" y2="210" stroke="#d97706" stroke-width="2" marker-end="url(#arr-amber)"/>
+
+  <!-- ==================== 5. PROCEDURAL GENERATION ==================== -->
+  <g filter="url(#shadow)">
+    <rect x="936" y="70" width="260" height="280" rx="9" fill="#ffffff" stroke="#d97706" stroke-width="1.8"/>
+    <path d="M 936,79 Q 936,70 945,70 L 1187,70 Q 1196,70 1196,79 L 1196,96 L 936,96 Z" fill="#fffbeb"/>
+    <text x="946" y="87" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="800" fill="#b45309">05 · SYNTHESIS</text>
+
+    <text x="946" y="118" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#0f172a">Procedural Generation</text>
+    <text x="946" y="132" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="500" fill="#64748b">Adaptive encounter construction</text>
+
+    <!-- 3 Clean Component Cards -->
+    <g font-family="Segoe UI, Inter, Arial, sans-serif">
+      <rect x="946" y="146" width="240" height="38" rx="6" fill="#fffbeb" stroke="#fde68a" stroke-width="1"/>
+      <text x="958" y="164" font-size="10" font-weight="800" fill="#92400e">Dungeon Layout</text>
+      <text x="958" y="177" font-size="8.5" font-weight="600" fill="#b45309">5 – 9 Rooms · MST Topology</text>
+
+      <rect x="946" y="190" width="240" height="38" rx="6" fill="#fffbeb" stroke="#fde68a" stroke-width="1"/>
+      <text x="958" y="208" font-size="10" font-weight="800" fill="#92400e">Enemy Squads</text>
+      <text x="958" y="221" font-size="8.5" font-weight="600" fill="#b45309">HP · Damage · Speed · Density</text>
+
+      <rect x="946" y="234" width="240" height="38" rx="6" fill="#fffbeb" stroke="#fde68a" stroke-width="1"/>
+      <text x="958" y="252" font-size="10" font-weight="800" fill="#92400e">Hazards &amp; Loot</text>
+      <text x="958" y="265" font-size="8.5" font-weight="600" fill="#b45309">Trap Frequency · Health Drops</text>
+    </g>
+
+    <!-- Solvability Pill -->
+    <rect x="946" y="280" width="240" height="30" rx="5" fill="#f0fdf4" stroke="#86efac" stroke-width="1"/>
+    <text x="1066" y="299" text-anchor="middle" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="9.5" font-weight="800" fill="#15803d">✓ A* Solvability Verified (≥ 95%)</text>
+
+    <rect x="946" y="316" width="240" height="22" rx="4" fill="#fffbeb"/>
+    <text x="1066" y="331" text-anchor="middle" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#b45309">Deterministic Godot Generation</text>
+  </g>
+
+  <!-- Arrow 5 -> 6 -->
+  <line x1="1196" y1="210" x2="1218" y2="210" stroke="#16a34a" stroke-width="2" marker-end="url(#arr-green)"/>
+
+  <!-- ==================== 6. DUNGEON PLAYED ==================== -->
+  <g filter="url(#shadow)">
+    <rect x="1220" y="70" width="180" height="280" rx="9" fill="#ffffff" stroke="#16a34a" stroke-width="1.6"/>
+    <path d="M 1220,79 Q 1220,70 1229,70 L 1391,70 Q 1400,70 1400,79 L 1400,96 L 1220,96 Z" fill="#f0fdf4"/>
+    <text x="1230" y="87" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="800" fill="#15803d">06 · GAMEPLAY</text>
+
+    <text x="1230" y="118" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#0f172a">Dungeon Played</text>
+    <text x="1230" y="132" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="500" fill="#64748b">Live Godot client</text>
+
+    <!-- Clean Event Pills -->
+    <g font-family="Segoe UI, Inter, Arial, sans-serif" font-size="9.5" font-weight="600">
+      <rect x="1230" y="146" width="160" height="34" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+      <circle cx="1244" cy="163" r="3.5" fill="#16a34a"/>
+      <text x="1255" y="166" fill="#14532d">Spawn Level</text>
+
+      <rect x="1230" y="188" width="160" height="34" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+      <circle cx="1244" cy="205" r="3.5" fill="#16a34a"/>
+      <text x="1255" y="208" fill="#14532d">Player Engages</text>
+
+      <rect x="1230" y="230" width="160" height="34" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+      <circle cx="1244" cy="247" r="3.5" fill="#16a34a"/>
+      <text x="1255" y="250" fill="#14532d">Record Telemetry</text>
+
+      <rect x="1230" y="272" width="160" height="34" rx="6" fill="#dcfce7" stroke="#86efac" stroke-width="1"/>
+      <circle cx="1244" cy="289" r="3.5" fill="#15803d"/>
+      <text x="1255" y="292" font-weight="800" fill="#15803d">Floor Complete</text>
+    </g>
+
+    <rect x="1230" y="316" width="160" height="22" rx="4" fill="#f0fdf4"/>
+    <text x="1310" y="331" text-anchor="middle" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#15803d">Triggers Next Loop ↺</text>
+  </g>
+
+  <!-- ==================== CLOSED-LOOP FEEDBACK PATH (BOTTOM) ==================== -->
+  <path d="M 1310,350 L 1310,420 Q 1310,436 1294,436 L 146,436 Q 130,436 130,420 L 130,354" 
+        fill="none" stroke="#16a34a" stroke-width="2.6" stroke-linecap="round" marker-end="url(#arr-green)"/>
+
+  <!-- Centered Minimalist Feedback Pill -->
+  <g filter="url(#shadow)">
+    <rect x="520" y="420" width="400" height="32" rx="16" fill="#15803d" stroke="#166534" stroke-width="1.4"/>
+    <circle cx="538" cy="436" r="7.5" fill="#ffffff"/>
+    <text x="538" y="440" text-anchor="middle" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="11" font-weight="900" fill="#15803d">↺</text>
+    <text x="556" y="440" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="10.5" font-weight="800" fill="#ffffff" letter-spacing="0.5">CLOSED-LOOP CONTINUOUS ADAPTATION</text>
+  </g>
+
+  <!-- Directional arrows on feedback path -->
+  <polygon points="340,432 326,436 340,440" fill="#16a34a"/>
+  <polygon points="230,432 216,436 230,440" fill="#16a34a"/>
+  <polygon points="1100,432 1086,436 1100,440" fill="#16a34a"/>
+  <polygon points="1210,432 1196,436 1210,440" fill="#16a34a"/>
+
+</svg>

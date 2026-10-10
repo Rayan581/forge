@@ -2,6 +2,7 @@ class_name Enemy
 extends CharacterBody2D
 
 signal enemy_defeated(enemy_node: Enemy)
+signal enemy_damaged(amount: float, hit_position: Vector2)
 
 @export var max_health: float = 60.0
 var current_health: float = 60.0
@@ -18,11 +19,20 @@ var flash_timer: float = 0.0
 var wander_timer: float = 0.0
 var wander_direction: Vector2 = Vector2.ZERO
 
+# Persistent Knockback Impulse System
+var knockback_velocity: Vector2 = Vector2.ZERO
+var knockback_decay: float = 1400.0 # Decays 420px/s impulse smoothly over ~0.30s
+
 enum State { WANDER, CHASE, ATTACK }
 var current_state: State = State.WANDER
 
+@onready var sprite: Sprite2D = get_node_or_null("Sprite2D")
+
 func _ready() -> void:
+	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	current_health = max_health
+	if not sprite and has_node("Sprite2D"):
+		sprite = $Sprite2D
 
 func configure_parameters(p_health: float, p_damage: float, p_speed: float, p_aggro: float) -> void:
 	max_health = p_health
@@ -43,40 +53,79 @@ func _physics_process(delta: float) -> void:
 		flash_timer -= delta
 		if flash_timer <= 0.0:
 			is_flashing = false
+			if sprite:
+				sprite.modulate = Color.WHITE
 			
 	if not is_instance_valid(player_ref):
 		player_ref = get_tree().get_first_node_in_group("player")
 		
+	var move_velocity = Vector2.ZERO
+	
 	if player_ref:
 		var dist_to_player = global_position.distance_to(player_ref.global_position)
 		var dir_to_player = (player_ref.global_position - global_position).normalized()
 		
-		if dist_to_player <= attack_reach:
+		# 1. Contact Anti-Stuck Separation (< 34px: colliders are touching)
+		if dist_to_player < 34.0:
 			current_state = State.ATTACK
-			velocity = velocity.move_toward(Vector2.ZERO, move_speed * 6.0 * delta)
+			# Back off slightly so colliders don't pinch and stick
+			move_velocity = -dir_to_player * 75.0
 			if attack_cooldown_timer <= 0.0:
 				perform_attack()
+				
+		# 2. Attack Reach (34px - 38px): Hold position and strike without pushing
+		elif dist_to_player <= attack_reach:
+			current_state = State.ATTACK
+			move_velocity = Vector2.ZERO
+			if attack_cooldown_timer <= 0.0:
+				perform_attack()
+				
+		# 3. Chase Range
 		elif dist_to_player <= aggro_radius:
 			current_state = State.CHASE
-			velocity = dir_to_player * move_speed
+			move_velocity = dir_to_player * move_speed
+			
+		# 4. Wander Range
 		else:
 			current_state = State.WANDER
 			wander_timer -= delta
 			if wander_timer <= 0.0:
 				wander_timer = randf_range(1.5, 3.5)
 				wander_direction = Vector2(randf_range(-1, 1), randf_range(-1, 1)).normalized()
-			velocity = wander_direction * (move_speed * 0.45)
+			move_velocity = wander_direction * (move_speed * 0.45)
 	else:
-		velocity = Vector2.ZERO
+		move_velocity = Vector2.ZERO
+		
+	# 5. Decay Persistent Knockback Force
+	if knockback_velocity != Vector2.ZERO:
+		knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, knockback_decay * delta)
+		
+	# 6. Apply Combined Velocity
+	velocity = move_velocity + knockback_velocity
+	
+	# Sprite visual juice: scuttle and flip
+	if sprite:
+		if abs(velocity.x) > 5.0:
+			sprite.flip_h = (velocity.x < 0.0)
+		if current_state == State.CHASE:
+			var scuttle = sin(Time.get_ticks_msec() / 65.0) * 0.1
+			sprite.scale = Vector2(1.0 + scuttle, 1.0 - scuttle)
+		else:
+			sprite.scale = Vector2(1.0, 1.0)
 		
 	move_and_slide()
 	queue_redraw()
+
+func apply_knockback(impulse: Vector2) -> void:
+	knockback_velocity = impulse
 
 func perform_attack() -> void:
 	attack_cooldown_timer = attack_rate
 	if player_ref and player_ref.has_method("take_damage"):
 		var attack_dir = (player_ref.global_position - global_position).normalized()
 		player_ref.take_damage(attack_damage, attack_dir)
+		# Tactile recoil bounce on attacker (creates clean 50px separation gap)
+		apply_knockback(-attack_dir * 180.0)
 
 func take_damage(amount: float, from_dir: Vector2 = Vector2.ZERO) -> void:
 	if current_health <= 0:
@@ -84,10 +133,15 @@ func take_damage(amount: float, from_dir: Vector2 = Vector2.ZERO) -> void:
 		
 	current_health -= amount
 	is_flashing = true
-	flash_timer = 0.15
+	flash_timer = 0.14
+	if sprite:
+		sprite.modulate = Color(2.5, 2.2, 2.2) # Crisp hurt flash
+		
+	emit_signal("enemy_damaged", amount, global_position)
 	
+	# Apply persistent knockback impulse away from weapon hit
 	if from_dir != Vector2.ZERO:
-		velocity = from_dir * 320.0
+		apply_knockback(from_dir * 420.0)
 		
 	if current_health <= 0:
 		emit_signal("enemy_defeated", self)
@@ -99,36 +153,20 @@ func kill() -> void:
 	take_damage(current_health)
 
 func _draw() -> void:
-	# Calculate visual scaling based on parameters (higher HP = bulkier, higher Dmg = redder)
-	var radius = 13.0 + clampf((max_health - 20.0) / 100.0 * 7.0, 0.0, 8.0)
-	var red_intensity = clampf((attack_damage - 5.0) / 45.0, 0.3, 1.0)
-	var body_color = Color(red_intensity, 0.18, 0.22)
-	if is_flashing:
-		body_color = Color(1.0, 1.0, 1.0)
-		
-	# Shadow
-	draw_circle(Vector2(0, radius * 0.7), radius * 0.9, Color(0, 0, 0, 0.3))
-	# Aggro Aura ring if chasing
-	if current_state == State.CHASE:
-		draw_arc(Vector2.ZERO, radius + 4.0, 0, TAU, 16, Color(1.0, 0.3, 0.2, 0.55), 2.0)
-	# Main Body
-	draw_circle(Vector2.ZERO, radius, body_color)
-	draw_circle(Vector2.ZERO, radius, Color(0.12, 0.05, 0.05), false, 2.0)
-	# Glowing Horns / Spikes based on damage
-	var horn_len = 4.0 + (attack_damage / 10.0)
-	draw_line(Vector2(-radius*0.6, -radius*0.5), Vector2(-radius*0.8, -radius*0.5 - horn_len), Color(0.9, 0.7, 0.1), 2.5)
-	draw_line(Vector2(radius*0.6, -radius*0.5), Vector2(radius*0.8, -radius*0.5 - horn_len), Color(0.9, 0.7, 0.1), 2.5)
-	# Eyes
-	draw_circle(Vector2(-4, -2), 3.0, Color(1.0, 0.9, 0.2))
-	draw_circle(Vector2(4, -2), 3.0, Color(1.0, 0.9, 0.2))
-	draw_circle(Vector2(-4, -2), 1.5, Color(0.1, 0.0, 0.0))
-	draw_circle(Vector2(4, -2), 1.5, Color(0.1, 0.0, 0.0))
+	# Subtle grounded shadow
+	draw_circle(Vector2(0, 11), 15.0, Color(0, 0, 0, 0.35))
 	
-	# Health Bar
+	# Aggro Aura ring when chasing
+	if current_state == State.CHASE:
+		draw_arc(Vector2.ZERO, 22.0, 0, TAU, 20, Color(1.0, 0.3, 0.2, 0.45), 2.0)
+	
+	# Health Bar above enemy head
 	if current_health < max_health:
-		var bar_w = radius * 2.2
-		var bar_h = 4.0
-		var bar_y = -radius - 8.0
-		draw_rect(Rect2(-bar_w/2, bar_y, bar_w, bar_h), Color(0.15, 0.15, 0.15, 0.8))
+		var bar_w = 32.0
+		var bar_h = 4.5
+		var bar_y = -24.0
+		# Dark backing border
+		draw_rect(Rect2(-bar_w/2 - 1, bar_y - 1, bar_w + 2, bar_h + 2), Color(0.08, 0.08, 0.1, 0.9))
+		draw_rect(Rect2(-bar_w/2, bar_y, bar_w, bar_h), Color(0.25, 0.1, 0.12, 0.8))
 		var hp_ratio = clampf(current_health / max_health, 0.0, 1.0)
-		draw_rect(Rect2(-bar_w/2, bar_y, bar_w * hp_ratio, bar_h), Color(0.9, 0.2, 0.2, 0.9))
+		draw_rect(Rect2(-bar_w/2, bar_y, bar_w * hp_ratio, bar_h), Color(0.95, 0.22, 0.25, 0.95))

@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://room_forge_001"]
+[gd_scene load_steps=6 format=3 uid="uid://room_forge_001"]
 
 [ext_resource type="Script" path="res://scripts/Room.gd" id="1_room"]
+[ext_resource type="Texture2D" path="res://assets/sprites/portal_exit.png" id="2_portal_tex"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_trigger"]
 size = Vector2(820, 460)
@@ -25,6 +26,9 @@ shape = SubResource("RectangleShape2D_trigger")
 [node name="ExitPortal" type="Area2D" parent="."]
 collision_layer = 0
 collision_mask = 1
+
+[node name="PortalSprite" type="Sprite2D" parent="ExitPortal"]
+texture = ExtResource("2_portal_tex")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ExitPortal"]
 shape = SubResource("CircleShape2D_portal")

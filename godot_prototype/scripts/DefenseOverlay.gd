@@ -8,6 +8,9 @@ signal auto_kill_toggled(enabled: bool)
 var difficulty_manager: DifficultyManager
 var telemetry_logger: TelemetryLogger
 
+var font_cinzel: Font = null
+var font_inter: Font = null
+
 @onready var panel_container: PanelContainer = $Control/DefensePanel
 @onready var toggle_btn: Button = $Control/TopBar/TogglePanelBtn
 @onready var score_label: Label = $Control/DefensePanel/MarginContainer/VBoxContainer/ReportBox/ScoreHBox/ScoreLabel
@@ -47,6 +50,14 @@ var telemetry_logger: TelemetryLogger
 var is_panel_open: bool = false
 
 func _ready() -> void:
+	# Load Google Fonts
+	if ResourceLoader.exists("res://assets/fonts/Cinzel.ttf"):
+		font_cinzel = load("res://assets/fonts/Cinzel.ttf")
+	if ResourceLoader.exists("res://assets/fonts/Inter.ttf"):
+		font_inter = load("res://assets/fonts/Inter.ttf")
+		
+	_apply_typography()
+
 	toggle_btn.pressed.connect(_on_toggle_panel_pressed)
 	btn_novice.pressed.connect(func(): _on_preset_selected(DifficultyManager.ProfileTier.NOVICE))
 	btn_inter.pressed.connect(func(): _on_preset_selected(DifficultyManager.ProfileTier.INTERMEDIATE))
@@ -62,6 +73,35 @@ func _ready() -> void:
 	slider_scarce.value_changed.connect(_on_slider_changed)
 	
 	set_panel_visible(false)
+
+func _apply_typography() -> void:
+	# Apply Cinzel (Epic medieval font) to headers, badges, and action buttons
+	if font_cinzel:
+		if has_node("Control/DefensePanel/MarginContainer/VBoxContainer/HeaderLabel"):
+			var hdr = get_node("Control/DefensePanel/MarginContainer/VBoxContainer/HeaderLabel")
+			hdr.add_theme_font_override("font", font_cinzel)
+			hdr.add_theme_font_size_override("font_size", 16)
+		toggle_btn.add_theme_font_override("font", font_cinzel)
+		room_label.add_theme_font_override("font", font_cinzel)
+		hud_diff_label.add_theme_font_override("font", font_cinzel)
+		score_label.add_theme_font_override("font", font_cinzel)
+		tier_label.add_theme_font_override("font", font_cinzel)
+		btn_novice.add_theme_font_override("font", font_cinzel)
+		btn_inter.add_theme_font_override("font", font_cinzel)
+		btn_expert.add_theme_font_override("font", font_cinzel)
+		btn_regen.add_theme_font_override("font", font_cinzel)
+		
+	# Apply Inter (Crisp modern sans-serif) to numeric telemetry, data values, and sliders
+	if font_inter:
+		hp_text.add_theme_font_override("font", font_inter)
+		telemetry_summary_label.add_theme_font_override("font", font_inter)
+		ppo_stats_label.add_theme_font_override("font", font_inter)
+		label_hp.add_theme_font_override("font", font_inter)
+		label_dmg.add_theme_font_override("font", font_inter)
+		label_spd.add_theme_font_override("font", font_inter)
+		label_aggro.add_theme_font_override("font", font_inter)
+		label_haz.add_theme_font_override("font", font_inter)
+		label_scarce.add_theme_font_override("font", font_inter)
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("toggle_defense_panel") and not event.is_echo():
@@ -83,9 +123,6 @@ func set_panel_visible(p_visible: bool) -> void:
 func _on_toggle_panel_pressed() -> void:
 	toggle_panel()
 
-## Testing aid: instantly kills every enemy in every generated room so you can
-## walk straight to the exit and watch the PPO policy react to a fast, clean
-## clear on the very next level. Also reveals the exit room on the minimap.
 func _on_auto_kill_toggled(enabled: bool) -> void:
 	emit_signal("auto_kill_toggled", enabled)
 	if minimap:
@@ -147,13 +184,12 @@ func update_report_ui() -> void:
 		var d = report.drivers[i]
 		var lbl = Label.new()
 		lbl.text = str(i + 1) + ". " + d.name + " (" + str(d.pct) + "%)"
+		if font_inter:
+			lbl.add_theme_font_override("font", font_inter)
 		lbl.add_theme_font_size_override("font_size", 12)
 		lbl.add_theme_color_override("font_color", Color(0.85, 0.9, 0.95))
 		drivers_container.add_child(lbl)
 
-	# PPO-controlled values that aren't sliders (room count, enemy count scale)
-	# so the panel always reflects what the policy actually set — not just
-	# what a human last dragged.
 	ppo_stats_label.text = "Next dungeon → Rooms: %d | Enemy count ×%.2f" % [
 		difficulty_manager.room_count_target, difficulty_manager.enemy_count_scale
 	]

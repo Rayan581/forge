@@ -13,13 +13,19 @@ var active_rooms: Dictionary = {} # Vector2i -> Room
 var current_player_room_pos: Vector2i = Vector2i.ZERO
 var auto_kill_enabled: bool = false # Defense Panel testing toggle
 
-# Snapshot of telemetry + a clock at the moment the current level began,
-# so we can measure this level's performance in isolation and hand it to PPO.
+# Camera Trauma Shake System
+var camera_trauma: float = 0.0
+var trauma_decay: float = 3.6 # Recovers 0.4 trauma in ~0.11s (crisp hit punch)
+var max_shake_offset: Vector2 = Vector2(15.0, 11.0)
+var max_shake_roll: float = 0.04
+
+# Snapshot of telemetry + a clock at the moment the current level began
 var level_start_time_msec: int = 0
 var level_start_deaths: int = 0
 var level_start_damage_taken: float = 0.0
 
 var room_scene = preload("res://scenes/Room.tscn")
+var damage_floater_scene = preload("res://scenes/DamageFloater.tscn")
 
 @onready var player: Player = $Player
 @onready var dungeon_container: Node2D = $DungeonContainer
@@ -38,6 +44,8 @@ func _ready() -> void:
 	
 	# Connect Player signals
 	player.health_changed.connect(_on_player_health_changed)
+	player.player_damaged.connect(_on_player_damaged)
+	player.player_healed.connect(_on_player_healed)
 	player.player_died.connect(_on_player_died)
 	
 	# Connect Defense Overlay signals
@@ -53,9 +61,40 @@ func _process(delta: float) -> void:
 	telemetry_logger.update_time(delta)
 	defense_overlay.update_telemetry_ui()
 	
-	# Camera follows player smoothly
+	# Camera follows player smoothly with trauma shake
 	if is_instance_valid(player):
 		camera.global_position = player.global_position
+		
+		if camera_trauma > 0.0:
+			camera_trauma = maxf(0.0, camera_trauma - trauma_decay * delta)
+			var shake_amount = camera_trauma * camera_trauma
+			camera.offset = Vector2(
+				max_shake_offset.x * shake_amount * randf_range(-1.0, 1.0),
+				max_shake_offset.y * shake_amount * randf_range(-1.0, 1.0)
+			)
+			camera.rotation = max_shake_roll * shake_amount * randf_range(-1.0, 1.0)
+		else:
+			camera.offset = Vector2.ZERO
+			camera.rotation = 0.0
+
+func add_camera_trauma(amount: float) -> void:
+	camera_trauma = clampf(camera_trauma + amount, 0.0, 1.0)
+
+func spawn_damage_floater(pos: Vector2, amount: float, is_player_damage: bool, is_heal: bool = false) -> void:
+	var floater = damage_floater_scene.instantiate()
+	floater.global_position = pos + Vector2(randf_range(-6.0, 6.0), -12.0)
+	add_child(floater)
+	floater.setup(amount, is_player_damage, is_heal)
+
+func _on_player_damaged(amount: float) -> void:
+	add_camera_trauma(0.42) # Screen trauma punch on hit
+	spawn_damage_floater(player.global_position, amount, true)
+
+func _on_player_healed(amount: float) -> void:
+	spawn_damage_floater(player.global_position, amount, false, true)
+
+func _on_enemy_damaged(amount: float, pos: Vector2) -> void:
+	spawn_damage_floater(pos, amount, false)
 
 func build_new_dungeon(level_num: int) -> void:
 	current_dungeon_level = level_num
@@ -65,9 +104,7 @@ func build_new_dungeon(level_num: int) -> void:
 		child.queue_free()
 	active_rooms.clear()
 	
-	# 1. Procedurally generate dungeon layout on grid.
-	# Room count now comes from the PPO policy's last decision (difficulty_manager.room_count_target),
-	# which it sets in _on_dungeon_escaped() based on how the player performed in the previous level.
+	# 1. Procedurally generate dungeon layout on grid
 	var room_count = difficulty_manager.room_count_target
 	var generated_data = dungeon_generator.generate_dungeon(difficulty_manager, room_count)
 	
@@ -82,6 +119,7 @@ func build_new_dungeon(level_num: int) -> void:
 		r_inst.room_entered.connect(_on_room_entered)
 		r_inst.room_cleared.connect(_on_room_cleared)
 		r_inst.enemy_killed.connect(_on_enemy_killed)
+		r_inst.enemy_damaged_in_room.connect(_on_enemy_damaged)
 		r_inst.player_hit_hazard.connect(_on_player_hit_hazard)
 		r_inst.player_collected_pickup.connect(_on_pickup_collected)
 		r_inst.dungeon_escaped.connect(_on_dungeon_escaped)
@@ -98,14 +136,12 @@ func build_new_dungeon(level_num: int) -> void:
 	var start_world_pos = generated_data[start_pos].world_pos
 	player.reset(start_world_pos)
 
-	# 5. Snapshot the clock + telemetry so this level's performance can be
-	# measured in isolation when the player reaches the exit.
+	# 5. Snapshot the clock + telemetry for this level
 	level_start_time_msec = Time.get_ticks_msec()
 	level_start_deaths = telemetry_logger.total_deaths
 	level_start_damage_taken = telemetry_logger.damage_taken
 
-	# 6. Testing aid: if Auto-Kill is toggled on, wipe every enemy in the
-	# freshly built dungeon immediately so you can walk straight to the exit.
+	# 6. Testing aid: Auto-Kill wipe if enabled
 	if auto_kill_enabled:
 		_kill_all_enemies_in_all_rooms()
 
@@ -124,6 +160,7 @@ func _on_player_health_changed(curr: float, max_val: float) -> void:
 	defense_overlay.update_player_hp(curr, max_val)
 
 func _on_player_died() -> void:
+	add_camera_trauma(0.65) # Strong shake on death
 	telemetry_logger.record_death()
 	telemetry_logger.save_to_file()
 	
@@ -138,24 +175,18 @@ func _on_player_died() -> void:
 		defense_overlay.update_room_info(current_dungeon_level, start_pos)
 
 func _on_dungeon_escaped() -> void:
-	# 1. Measure how this level actually went for the player.
+	# 1. Measure level performance
 	var completion_time_sec = float(Time.get_ticks_msec() - level_start_time_msec) / 1000.0
 	var deaths_this_level = telemetry_logger.total_deaths - level_start_deaths
 	var damage_taken_this_level = telemetry_logger.damage_taken - level_start_damage_taken
 
-	# 2. Ask the PPO policy what the NEXT dungeon's parameters should be,
-	# given how this one went. Quick clear + no deaths -> it should escalate.
-	# Slow / died a lot -> it should ease off.
+	# 2. PPO adaptation step
 	var obs = difficulty_manager.build_observation(
 		completion_time_sec, deaths_this_level, damage_taken_this_level,
 		player.max_health, current_dungeon_level
 	)
 	var action = ppo_policy.predict(obs)
 	difficulty_manager.apply_ppo_action(action)
-
-	# Keep the Defense Panel's sliders/score/labels in sync — without this,
-	# they'd only ever reflect whatever a human last dragged, not what PPO
-	# just decided for the next level.
 	defense_overlay.sync_ui_with_manager()
 
 	print("[FORGE][PPO] Level %d cleared in %.1fs, %d deaths -> next: rooms=%d hp=%.0f dmg=%.0f haz=%.2f" % [
@@ -164,13 +195,15 @@ func _on_dungeon_escaped() -> void:
 		difficulty_manager.enemy_damage, difficulty_manager.hazard_density
 	])
 
-	# 3. Advance to next deeper dungeon level (deferred to avoid physics flush conflict)
+	# 3. Advance to next level
 	call_deferred("build_new_dungeon", current_dungeon_level + 1)
 
 func _on_enemy_killed() -> void:
+	add_camera_trauma(0.18) # Satisfying tactile punch on kill
 	telemetry_logger.record_enemy_defeated()
 
 func _on_player_hit_hazard() -> void:
+	add_camera_trauma(0.30)
 	telemetry_logger.record_hazard_hit()
 
 func _on_pickup_collected(_type: String) -> void:

@@ -4,6 +4,7 @@ extends Node2D
 signal room_entered(room_node: Room)
 signal room_cleared(room_node: Room)
 signal enemy_killed
+signal enemy_damaged_in_room(damage: float, pos: Vector2)
 signal player_hit_hazard
 signal player_collected_pickup(type: String)
 signal dungeon_escaped
@@ -16,6 +17,14 @@ var enemy_scene = preload("res://scenes/Enemy.tscn")
 var hazard_scene = preload("res://scenes/Hazard.tscn")
 var pickup_scene = preload("res://scenes/Pickup.tscn")
 
+# Preloaded Dungeon Textures
+var tex_floor_stone: Texture2D = preload("res://assets/sprites/tile_floor_stone.png")
+var tex_floor_start: Texture2D = preload("res://assets/sprites/tile_floor_start.png")
+var tex_floor_hazard: Texture2D = preload("res://assets/sprites/tile_floor_hazard.png")
+var tex_floor_treasure: Texture2D = preload("res://assets/sprites/tile_floor_treasure.png")
+var tex_floor_exit: Texture2D = preload("res://assets/sprites/tile_floor_exit.png")
+var tex_wall_top: Texture2D = preload("res://assets/sprites/tile_wall_top.png")
+
 var room_data: DungeonGenerator.RoomData = null
 var enemies_alive: int = 0
 var is_active_room: bool = false
@@ -24,11 +33,25 @@ var is_active_room: bool = false
 @onready var static_walls: StaticBody2D = $StaticWalls
 @onready var room_trigger: Area2D = $RoomTrigger
 @onready var exit_portal: Area2D = $ExitPortal
+@onready var portal_sprite: Sprite2D = $ExitPortal/PortalSprite
 
 func _ready() -> void:
 	room_trigger.body_entered.connect(_on_player_entered_room)
 	if exit_portal:
 		exit_portal.body_entered.connect(_on_exit_portal_entered)
+
+func _process(delta: float) -> void:
+	# Animate Exit Portal vortex spin & pulse if present
+	if exit_portal and exit_portal.visible and portal_sprite:
+		portal_sprite.rotation += delta * 1.6
+		var is_open = (room_data and (room_data.is_cleared or enemies_alive <= 0))
+		if is_open:
+			var pulse = 1.0 + sin(Time.get_ticks_msec() / 180.0) * 0.08
+			portal_sprite.scale = Vector2(pulse, pulse)
+			portal_sprite.modulate = Color(1.1, 1.0, 1.2, 1.0)
+		else:
+			portal_sprite.scale = Vector2(0.85, 0.85)
+			portal_sprite.modulate = Color(0.5, 0.35, 0.6, 0.45)
 
 func initialize_room(data: DungeonGenerator.RoomData, p_diff: DifficultyManager) -> void:
 	room_data = data
@@ -142,6 +165,7 @@ func spawn_entities(p_diff: DifficultyManager) -> void:
 		var rand_y = randf_range(-room_height/2 + 80, room_height/2 - 80)
 		e.position = Vector2(rand_x, rand_y)
 		e.configure_parameters(p_diff.enemy_health, p_diff.enemy_damage, p_diff.enemy_speed, p_diff.enemy_aggro)
+		e.enemy_damaged.connect(func(dmg, pos): emit_signal("enemy_damaged_in_room", dmg, pos))
 		e.enemy_defeated.connect(_on_enemy_defeated)
 		entities_container.add_child(e)
 		enemies_alive += 1
@@ -155,8 +179,6 @@ func _on_enemy_defeated(_enemy_node: Enemy) -> void:
 		queue_redraw()
 
 ## Instantly defeats every living enemy currently in this room.
-## Used by the Defense Panel's "Auto-Kill Enemies" testing toggle so you can
-## walk straight to the exit and observe PPO's difficulty response quickly.
 func kill_all_enemies() -> void:
 	for child in entities_container.get_children():
 		if child is Enemy:
@@ -183,52 +205,45 @@ func _draw() -> void:
 	var wall_thick = 32.0
 	var half_spacing = 60.0
 	
-	# Floor styling based on room type
-	var floor_color = Color(0.11, 0.13, 0.17)
+	# 1. Select appropriate themed floor tile
+	var floor_tex = tex_floor_stone
 	if room_data.room_type == DungeonGenerator.RoomType.START:
-		floor_color = Color(0.12, 0.16, 0.22)
+		floor_tex = tex_floor_start
 	elif room_data.room_type == DungeonGenerator.RoomType.HAZARD:
-		floor_color = Color(0.18, 0.11, 0.12)
+		floor_tex = tex_floor_hazard
 	elif room_data.room_type == DungeonGenerator.RoomType.TREASURE:
-		floor_color = Color(0.13, 0.18, 0.15)
+		floor_tex = tex_floor_treasure
 	elif room_data.room_type == DungeonGenerator.RoomType.EXIT:
-		floor_color = Color(0.20, 0.14, 0.22)
+		floor_tex = tex_floor_exit
 		
-	draw_rect(rect, floor_color)
+	# Draw tiled stone flagstone floor
+	draw_texture_rect(floor_tex, rect, true)
 	
-	# Grid Lines
-	var grid_size = 48.0
-	var grid_color = Color(0.16, 0.19, 0.25, 0.35)
-	var x = -w/2
-	while x <= w/2:
-		draw_line(Vector2(x, -h/2), Vector2(x, h/2), grid_color, 1.0)
-		x += grid_size
-	var y = -h/2
-	while y <= h/2:
-		draw_line(Vector2(-w/2, y), Vector2(w/2, y), grid_color, 1.0)
-		y += grid_size
-		
-	# Draw Corridor Floors
-	var corridor_floor_color = Color(0.13, 0.15, 0.20)
+	# Dark perimeter shadow inside room walls (dungeon depth vignette)
+	draw_rect(rect, Color(0, 0, 0, 0.18), false, 12.0)
+	
+	# 2. Draw Corridor Floors with stone tiling
 	if room_data.doors["N"]:
-		draw_rect(Rect2(-dw/2, -h/2 - half_spacing, dw, half_spacing), corridor_floor_color)
+		draw_texture_rect(tex_floor_stone, Rect2(-dw/2, -h/2 - half_spacing, dw, half_spacing), true)
 	if room_data.doors["S"]:
-		draw_rect(Rect2(-dw/2, h/2, dw, half_spacing), corridor_floor_color)
+		draw_texture_rect(tex_floor_stone, Rect2(-dw/2, h/2, dw, half_spacing), true)
 	if room_data.doors["E"]:
-		draw_rect(Rect2(w/2, -dw/2, half_spacing, dw), corridor_floor_color)
+		draw_texture_rect(tex_floor_stone, Rect2(w/2, -dw/2, half_spacing, dw), true)
 	if room_data.doors["W"]:
-		draw_rect(Rect2(-w/2 - half_spacing, -dw/2, half_spacing, dw), corridor_floor_color)
+		draw_texture_rect(tex_floor_stone, Rect2(-w/2 - half_spacing, -dw/2, half_spacing, dw), true)
 		
-	# Draw Solid Walls with Bevel/Trim
-	var wall_color = Color(0.22, 0.26, 0.34)
-	var trim_color = Color(0.34, 0.40, 0.52)
+	# 3. Draw Solid Walls with masonry brick texture & beveled coping
 	var seg_w = (w - dw) / 2.0
 	var seg_h = (h - dw) / 2.0
 	
 	var draw_wall_box = func(pos: Vector2, size: Vector2):
 		var r = Rect2(pos.x - size.x/2.0, pos.y - size.y/2.0, size.x, size.y)
-		draw_rect(r, wall_color)
-		draw_rect(r, trim_color, false, 1.5)
+		# Tiled masonry texture
+		draw_texture_rect(tex_wall_top, r, true)
+		# Subtle stone border highlight & drop shadow line
+		draw_rect(r, Color(0.38, 0.44, 0.56, 0.8), false, 1.5)
+		# Drop shadow on bottom edge
+		draw_line(Vector2(r.position.x, r.end.y), Vector2(r.end.x, r.end.y), Color(0.05, 0.06, 0.09, 0.95), 2.5)
 	
 	# Top Wall
 	if room_data.doors["N"]:
@@ -269,10 +284,3 @@ func _draw() -> void:
 		draw_wall_box.call(Vector2(w/2 + half_spacing/2, dw/2 + wall_thick/2), Vector2(half_spacing + wall_thick, wall_thick))
 	else:
 		draw_wall_box.call(Vector2(w/2, 0), Vector2(wall_thick, h + wall_thick * 2))
-		
-	# Exit Portal Icon if Exit Room
-	if room_data.room_type == DungeonGenerator.RoomType.EXIT:
-		var portal_col = Color(0.9, 0.4, 1.0, 0.8) if (room_data.is_cleared or enemies_alive <= 0) else Color(0.5, 0.2, 0.6, 0.4)
-		draw_circle(Vector2.ZERO, 36.0, portal_col)
-		draw_circle(Vector2.ZERO, 28.0, Color(0.1, 0.05, 0.15))
-		draw_arc(Vector2.ZERO, 32.0, 0, TAU, 24, Color(1, 0.8, 1), 3.0)

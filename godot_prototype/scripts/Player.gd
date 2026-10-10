@@ -2,6 +2,8 @@ class_name Player
 extends CharacterBody2D
 
 signal health_changed(current_hp: float, max_hp: float)
+signal player_damaged(amount: float)
+signal player_healed(amount: float)
 signal player_died
 
 @export var max_health: float = 100.0
@@ -18,28 +20,52 @@ var is_swinging: bool = false
 var swing_timer: float = 0.0
 var swing_angle: float = 0.0
 
+# Persistent Knockback Impulse System
+var knockback_velocity: Vector2 = Vector2.ZERO
+var knockback_decay: float = 1300.0 # Decays ~340px/s impulse smoothly over ~0.26s
+
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
+@onready var sprite: Sprite2D = get_node_or_null("Sprite2D")
 
 func _ready() -> void:
+	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	current_health = max_health
 	emit_signal("health_changed", current_health, max_health)
+	if not sprite and has_node("Sprite2D"):
+		sprite = $Sprite2D
 
 func _physics_process(delta: float) -> void:
 	if current_health <= 0:
 		return
 		
-	# Input Handling
+	# 1. Player Input Vector
 	var input_vector = Vector2.ZERO
 	input_vector.x = Input.get_axis("move_left", "move_right")
 	input_vector.y = Input.get_axis("move_up", "move_down")
 	
+	var move_velocity = Vector2.ZERO
 	if input_vector != Vector2.ZERO:
 		input_vector = input_vector.normalized()
 		facing_direction = input_vector
-		velocity = input_vector * move_speed
-	else:
-		velocity = velocity.move_toward(Vector2.ZERO, move_speed * 8.0 * delta)
+		move_velocity = input_vector * move_speed
 		
+		# Sprite movement juice: gentle tilt and bob
+		if sprite:
+			sprite.position.y = -2.0 + sin(Time.get_ticks_msec() / 90.0) * 1.5
+			sprite.rotation = sin(Time.get_ticks_msec() / 110.0) * 0.07
+			if abs(facing_direction.x) > 0.1:
+				sprite.flip_h = (facing_direction.x < 0.0)
+	else:
+		if sprite:
+			sprite.position.y = -2.0
+			sprite.rotation = 0.0
+			
+	# 2. Decay Persistent Knockback Force
+	if knockback_velocity != Vector2.ZERO:
+		knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, knockback_decay * delta)
+		
+	# 3. Combine Input & Knockback Vectors (prevents bounce/stick trapping)
+	velocity = move_velocity + knockback_velocity
 	move_and_slide()
 	
 	# Attack Handling
@@ -49,8 +75,16 @@ func _physics_process(delta: float) -> void:
 	# Timers
 	if is_invulnerable:
 		invulnerable_timer -= delta
+		if sprite:
+			# Hurt blink effect
+			sprite.modulate.a = 0.4 if fmod(Time.get_ticks_msec() / 80.0, 2.0) > 1.0 else 1.0
 		if invulnerable_timer <= 0.0:
 			is_invulnerable = false
+			if sprite:
+				sprite.modulate = Color.WHITE
+	else:
+		if sprite and sprite.modulate.a != 1.0:
+			sprite.modulate = Color.WHITE
 			
 	if is_swinging:
 		swing_timer -= delta
@@ -58,6 +92,9 @@ func _physics_process(delta: float) -> void:
 			is_swinging = false
 			
 	queue_redraw()
+
+func apply_knockback(impulse: Vector2) -> void:
+	knockback_velocity = impulse
 
 func perform_attack() -> void:
 	can_attack = false
@@ -99,17 +136,21 @@ func take_damage(amount: float, from_dir: Vector2 = Vector2.ZERO) -> void:
 	is_invulnerable = true
 	invulnerable_timer = 0.6
 	emit_signal("health_changed", current_health, max_health)
+	emit_signal("player_damaged", amount)
 	
-	# Knockback
+	# Apply persistent knockback impulse away from attacker
 	if from_dir != Vector2.ZERO:
-		velocity = from_dir * 280.0
+		apply_knockback(from_dir * 340.0)
 		
 	if current_health <= 0:
 		emit_signal("player_died")
 
 func heal(amount: float) -> void:
-	current_health = minf(max_health, current_health + amount)
-	emit_signal("health_changed", current_health, max_health)
+	var actual_heal = minf(amount, max_health - current_health)
+	if actual_heal > 0:
+		current_health = minf(max_health, current_health + actual_heal)
+		emit_signal("health_changed", current_health, max_health)
+		emit_signal("player_healed", actual_heal)
 
 func reset(start_pos: Vector2) -> void:
 	global_position = start_pos
@@ -117,29 +158,27 @@ func reset(start_pos: Vector2) -> void:
 	is_invulnerable = false
 	is_swinging = false
 	can_attack = true
+	knockback_velocity = Vector2.ZERO
+	velocity = Vector2.ZERO
+	if sprite:
+		sprite.modulate = Color.WHITE
+		sprite.rotation = 0.0
+		sprite.position = Vector2(0, -2)
 	emit_signal("health_changed", current_health, max_health)
 
 func _draw() -> void:
-	# Draw Player Character (Knight / Adventurer)
-	var body_color = Color(0.18, 0.52, 0.88)
-	if is_invulnerable and fmod(Time.get_ticks_msec() / 100.0, 2.0) > 1.0:
-		body_color = Color(0.9, 0.9, 0.9, 0.6) # Flash on hurt
-		
-	# Shadow
-	draw_circle(Vector2(0, 10), 16.0, Color(0, 0, 0, 0.25))
-	# Main body
-	draw_circle(Vector2.ZERO, 16.0, body_color)
-	draw_circle(Vector2.ZERO, 16.0, Color(0.1, 0.25, 0.5), false, 2.5) # Outline
-	# Helm / Visor
-	var eye_offset = facing_direction * 7.0
-	draw_circle(eye_offset, 5.5, Color(0.95, 0.85, 0.3))
-	draw_circle(eye_offset, 3.0, Color(0.1, 0.1, 0.15))
+	# Subtle grounded shadow underneath sprite
+	draw_circle(Vector2(0, 10), 15.0, Color(0, 0, 0, 0.35))
 	
-	# Sword Attack Arc Visual
+	# Sword Attack Arc Visual (Kinetic Slash FX)
 	if is_swinging:
 		var arc_center = Vector2.ZERO
 		var arc_radius = 48.0
-		var start_a = swing_angle - PI/3.0
-		var end_a = swing_angle + PI/3.0
-		draw_arc(arc_center, arc_radius, start_a, end_a, 16, Color(1.0, 0.9, 0.4, 0.85), 5.0)
-		draw_line(arc_center, arc_center + Vector2.from_angle(swing_angle) * (arc_radius + 6), Color(1.0, 1.0, 0.9), 3.0)
+		var start_a = swing_angle - PI/2.8
+		var end_a = swing_angle + PI/2.8
+		
+		# Outer luminous slash wave
+		draw_arc(arc_center, arc_radius + 4.0, start_a, end_a, 20, Color(1.0, 0.95, 0.5, 0.9), 5.5)
+		# Inner piercing blade line
+		draw_arc(arc_center, arc_radius, start_a + 0.1, end_a - 0.1, 20, Color(1.0, 1.0, 1.0, 1.0), 3.0)
+		draw_line(arc_center, arc_center + Vector2.from_angle(swing_angle) * (arc_radius + 8.0), Color(1.0, 0.9, 0.3), 3.0)

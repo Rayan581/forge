@@ -4,4 +4,8 @@ __pycache__/
 .DS_Store
 .godot/
 *.tmp
+*.log
+~$*
 venv/
+.env
+astra_session.json

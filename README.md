@@ -39,6 +39,7 @@ Traditional Dynamic Difficulty Adjustment (DDA) often relies on blunt stat-scali
 ├── assets/                    # System architecture diagrams and visual figures
 ├── archive/                   # Archived early concept outlines and initial spikes
 ├── FORGE_Proposal.md          # Comprehensive FYP proposal and research documentation
+├── MID_EVAL_IMPLEMENTATION_PLAN.md # Lean Mid-Evaluation sprint plan and team task split
 ├── FORGE_FYP_Proposal_Final.docx # Official formatted proposal document
 ├── FORGE_Proposal_Defense.pptx   # Defense presentation slide deck
 ├── FYP_Committee_Defense_Feedback.md # Evaluator feedback and committee action items

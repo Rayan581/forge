@@ -5,6 +5,7 @@ signal health_changed(current_hp: float, max_hp: float)
 signal player_damaged(amount: float)
 signal player_healed(amount: float)
 signal player_died
+signal player_moved
 
 @export var max_health: float = 100.0
 var current_health: float = 100.0
@@ -48,6 +49,7 @@ func _physics_process(delta: float) -> void:
 		input_vector = input_vector.normalized()
 		facing_direction = input_vector
 		move_velocity = input_vector * move_speed
+		emit_signal("player_moved")
 		
 		# Sprite movement juice: gentle tilt and bob
 		if sprite:

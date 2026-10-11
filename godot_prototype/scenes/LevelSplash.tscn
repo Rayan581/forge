@@ -1,0 +1,89 @@
+[gd_scene load_steps=3 format=3 uid="uid://level_splash_forge_001"]
+
+[ext_resource type="Script" path="res://scripts/LevelSplash.gd" id="1_splash"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_banner"]
+bg_color = Color(0.06, 0.08, 0.12, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.35, 0.55, 0.85, 0.8)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.55)
+shadow_size = 14
+
+[node name="LevelSplash" type="CanvasLayer"]
+layer = 4
+script = ExtResource("1_splash")
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="Control"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 75.0
+offset_bottom = 250.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="SplashPanel" type="PanelContainer" parent="Control/CenterContainer"]
+custom_minimum_size = Vector2(580, 130)
+layout_mode = 2
+pivot_offset = Vector2(290, 65)
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
+
+[node name="MarginContainer" type="MarginContainer" parent="Control/CenterContainer/SplashPanel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/CenterContainer/SplashPanel/MarginContainer"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="Control/CenterContainer/SplashPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.35, 1)
+theme_override_font_sizes/font_size = 22
+text = "Level 1: Novice Initiation"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="Control/CenterContainer/SplashPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "Cold-Start Calibration (1/5) · Pacing & Navigation"
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="Control/CenterContainer/SplashPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.92, 1)
+theme_override_font_sizes/font_size = 12
+text = "Introductory floor with slow, low-damage adversaries and minimal traps."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="ChallengeBadge" type="Label" parent="Control/CenterContainer/SplashPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.9, 0.6, 1)
+theme_override_font_sizes/font_size = 12
+text = "Target Challenge: Accessible / Easy (28/100) · Rooms: 3"
+horizontal_alignment = 1

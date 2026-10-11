@@ -65,6 +65,95 @@ const PRESETS = {
 	}
 }
 
+# 5-Stage Cold-Start Calibration Sequence (Proposal §5.4 / Table 4.1)
+# These levels are not hand-drawn tilemaps; they are procedurally generated dungeons
+# with fixed, calibrated difficulty vectors to evaluate the player's baseline capabilities.
+const CALIBRATION_LEVELS = {
+	1: {
+		"title": "Level 1: Novice Initiation",
+		"subtitle": "Cold-Start Calibration (1/5) · Pacing & Navigation",
+		"rooms": 3,
+		"health": 35.0,
+		"damage": 10.0,
+		"speed": 85.0,
+		"aggro": 160.0,
+		"hazard": 0.05,
+		"scarcity": 0.15,
+		"count_scale": 0.7,
+		"description": "Introductory floor with slow, low-damage adversaries and minimal environmental hazards."
+	},
+	2: {
+		"title": "Level 2: Swarm Reflex",
+		"subtitle": "Cold-Start Calibration (2/5) · Melee Combat & Reflexes",
+		"rooms": 4,
+		"health": 45.0,
+		"damage": 14.0,
+		"speed": 110.0,
+		"aggro": 200.0,
+		"hazard": 0.15,
+		"scarcity": 0.25,
+		"count_scale": 0.9,
+		"description": "Standard combat encounter testing basic swordplay, evasion, and crowd engagement."
+	},
+	3: {
+		"title": "Level 3: Evasion & Traps",
+		"subtitle": "Cold-Start Calibration (3/5) · Spatial Awareness & Hazards",
+		"rooms": 4,
+		"health": 55.0,
+		"damage": 18.0,
+		"speed": 135.0,
+		"aggro": 240.0,
+		"hazard": 0.38,
+		"scarcity": 0.35,
+		"count_scale": 1.0,
+		"description": "Higher density of floor spike traps and agile adversaries testing spatial navigation."
+	},
+	4: {
+		"title": "Level 4: Tactical Crucible",
+		"subtitle": "Cold-Start Calibration (4/5) · Attrition & Resource Scarcity",
+		"rooms": 5,
+		"health": 70.0,
+		"damage": 24.0,
+		"speed": 155.0,
+		"aggro": 290.0,
+		"hazard": 0.50,
+		"scarcity": 0.55,
+		"count_scale": 1.15,
+		"description": "Extended dungeon layout with resilient adversaries and scarcer restorative pickups."
+	},
+	5: {
+		"title": "Level 5: Apex Gauntlet",
+		"subtitle": "Cold-Start Calibration (5/5) · Stress Test & Climax",
+		"rooms": 5,
+		"health": 90.0,
+		"damage": 30.0,
+		"speed": 175.0,
+		"aggro": 350.0,
+		"hazard": 0.65,
+		"scarcity": 0.70,
+		"count_scale": 1.3,
+		"description": "High-intensity gauntlet testing damage avoidance and rapid tactical elimination."
+	}
+}
+
+func is_in_calibration(level_num: int) -> bool:
+	return level_num >= 1 and level_num <= 5
+
+func apply_calibration_level(level_num: int) -> Dictionary:
+	if CALIBRATION_LEVELS.has(level_num):
+		var cal = CALIBRATION_LEVELS[level_num]
+		current_profile = ProfileTier.CUSTOM
+		enemy_health = cal.health
+		enemy_damage = cal.damage
+		enemy_speed = cal.speed
+		enemy_aggro = cal.aggro
+		hazard_density = cal.hazard
+		resource_scarcity = cal.scarcity
+		room_count_target = cal.rooms
+		enemy_count_scale = cal.count_scale
+		return cal
+	return {}
+
 func apply_preset(tier: ProfileTier) -> void:
 	current_profile = tier
 	if tier in PRESETS:

@@ -1,18 +1,24 @@
-[gd_scene format=3 uid="uid://bvetvjxlm6c6x"]
+[gd_scene load_steps=6 format=3 uid="uid://bvetvjxlm6c6x"]
 
-[ext_resource type="Script" uid="uid://bucg0gx8icogp" path="res://scripts/Main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/Main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/Player.tscn" id="2_player"]
 [ext_resource type="PackedScene" path="res://scenes/DefenseOverlay.tscn" id="3_defense"]
+[ext_resource type="PackedScene" path="res://scenes/LevelSplash.tscn" id="4_splash"]
+[ext_resource type="PackedScene" path="res://scenes/MainMenu.tscn" id="5_menu"]
 
-[node name="Main" type="Node2D" unique_id=155563050]
+[node name="Main" type="Node2D"]
 script = ExtResource("1_main")
 
-[node name="Camera2D" type="Camera2D" parent="." unique_id=1469445919]
+[node name="Camera2D" type="Camera2D" parent="."]
 position_smoothing_enabled = true
 position_smoothing_speed = 7.0
 
-[node name="DungeonContainer" type="Node2D" parent="." unique_id=1637489288]
+[node name="DungeonContainer" type="Node2D" parent="."]
 
-[node name="Player" parent="." unique_id=372100413 instance=ExtResource("2_player")]
+[node name="Player" parent="." instance=ExtResource("2_player")]
 
-[node name="DefenseOverlay" parent="." unique_id=1068161410 instance=ExtResource("3_defense")]
+[node name="DefenseOverlay" parent="." instance=ExtResource("3_defense")]
+
+[node name="LevelSplash" parent="." instance=ExtResource("4_splash")]
+
+[node name="MainMenu" parent="." instance=ExtResource("5_menu")]

@@ -199,8 +199,9 @@ func update_player_hp(current: float, max_val: float) -> void:
 	hp_bar.value = current
 	hp_text.text = str(int(current)) + " / " + str(int(max_val)) + " HP"
 
-func update_room_info(dungeon_level: int, grid_pos: Vector2i) -> void:
-	room_label.text = "Dungeon: " + str(dungeon_level) + " | Room: (" + str(grid_pos.x) + "," + str(grid_pos.y) + ")"
+func update_room_info(dungeon_level: int, grid_pos: Vector2i, is_calibrating: bool = false) -> void:
+	var mode_tag = "[CALIBRATION %d/5]" % dungeon_level if is_calibrating else "[ADAPTIVE PPO]"
+	room_label.text = "Floor %d %s | Room: (%d,%d)" % [dungeon_level, mode_tag, grid_pos.x, grid_pos.y]
 
 func setup_minimap(rooms_data: Dictionary, start_pos: Vector2i) -> void:
 	if minimap:

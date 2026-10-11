@@ -31,10 +31,15 @@ var damage_floater_scene = preload("res://scenes/DamageFloater.tscn")
 @onready var dungeon_container: Node2D = $DungeonContainer
 @onready var defense_overlay: DefenseOverlay = $DefenseOverlay
 @onready var camera: Camera2D = $Camera2D
+@onready var level_splash: LevelSplash = $LevelSplash
+@onready var main_menu: MainMenu = $MainMenu
+
+var game_started: bool = false
 
 func _ready() -> void:
 	difficulty_manager = DifficultyManager.new()
-	difficulty_manager.apply_preset(DifficultyManager.ProfileTier.INTERMEDIATE)
+	# Initialize Level 1 calibration parameters
+	difficulty_manager.apply_calibration_level(1)
 	
 	telemetry_logger = TelemetryLogger.new()
 	dungeon_generator = DungeonGenerator.new()
@@ -54,7 +59,17 @@ func _ready() -> void:
 	defense_overlay.parameters_updated.connect(_on_parameters_updated)
 	defense_overlay.auto_kill_toggled.connect(_on_auto_kill_toggled)
 	
-	# Generate first multi-room dungeon
+	# Connect Main Menu signals
+	main_menu.start_run_requested.connect(_on_start_run_requested)
+	
+	# Pause player input until Start Run is clicked
+	player.set_physics_process(false)
+	defense_overlay.visible = false
+
+func _on_start_run_requested() -> void:
+	game_started = true
+	player.set_physics_process(true)
+	defense_overlay.visible = true
 	call_deferred("build_new_dungeon", 1)
 
 func _process(delta: float) -> void:
@@ -98,6 +113,13 @@ func _on_enemy_damaged(amount: float, pos: Vector2) -> void:
 
 func build_new_dungeon(level_num: int) -> void:
 	current_dungeon_level = level_num
+	var is_calibrating = difficulty_manager.is_in_calibration(level_num)
+	var cal_data: Dictionary = {}
+	
+	if is_calibrating:
+		cal_data = difficulty_manager.apply_calibration_level(level_num)
+	
+	defense_overlay.sync_ui_with_manager()
 	
 	# Clear old rooms
 	for child in dungeon_container.get_children():
@@ -130,7 +152,7 @@ func build_new_dungeon(level_num: int) -> void:
 	var start_pos = dungeon_generator.start_room_pos
 	current_player_room_pos = start_pos
 	defense_overlay.setup_minimap(generated_data, start_pos)
-	defense_overlay.update_room_info(current_dungeon_level, start_pos)
+	defense_overlay.update_room_info(current_dungeon_level, start_pos, is_calibrating)
 	
 	# 4. Place player in start room
 	var start_world_pos = generated_data[start_pos].world_pos
@@ -141,7 +163,15 @@ func build_new_dungeon(level_num: int) -> void:
 	level_start_deaths = telemetry_logger.total_deaths
 	level_start_damage_taken = telemetry_logger.damage_taken
 
-	# 6. Testing aid: Auto-Kill wipe if enabled
+	# 6. Display Level Splash banner
+	var diff_report = difficulty_manager.calculate_difficulty_score()
+	if level_splash:
+		level_splash.show_level_announcement(
+			current_dungeon_level, is_calibrating, cal_data,
+			diff_report.score, diff_report.label
+		)
+
+	# 7. Testing aid: Auto-Kill wipe if enabled
 	if auto_kill_enabled:
 		_kill_all_enemies_in_all_rooms()
 
@@ -149,7 +179,8 @@ func _on_room_entered(room_node: Room) -> void:
 	if room_node and room_node.room_data:
 		current_player_room_pos = room_node.room_data.grid_pos
 		defense_overlay.update_minimap_player(current_player_room_pos)
-		defense_overlay.update_room_info(current_dungeon_level, current_player_room_pos)
+		var is_calibrating = difficulty_manager.is_in_calibration(current_dungeon_level)
+		defense_overlay.update_room_info(current_dungeon_level, current_player_room_pos, is_calibrating)
 
 func _on_room_cleared(_room_node: Room) -> void:
 	telemetry_logger.record_room_cleared()
@@ -172,7 +203,8 @@ func _on_player_died() -> void:
 		player.reset(start_world_pos)
 		current_player_room_pos = start_pos
 		defense_overlay.update_minimap_player(start_pos)
-		defense_overlay.update_room_info(current_dungeon_level, start_pos)
+		var is_calibrating = difficulty_manager.is_in_calibration(current_dungeon_level)
+		defense_overlay.update_room_info(current_dungeon_level, start_pos, is_calibrating)
 
 func _on_dungeon_escaped() -> void:
 	# 1. Measure level performance
@@ -180,23 +212,41 @@ func _on_dungeon_escaped() -> void:
 	var deaths_this_level = telemetry_logger.total_deaths - level_start_deaths
 	var damage_taken_this_level = telemetry_logger.damage_taken - level_start_damage_taken
 
-	# 2. PPO adaptation step
-	var obs = difficulty_manager.build_observation(
-		completion_time_sec, deaths_this_level, damage_taken_this_level,
-		player.max_health, current_dungeon_level
-	)
-	var action = ppo_policy.predict(obs)
-	difficulty_manager.apply_ppo_action(action)
-	defense_overlay.sync_ui_with_manager()
+	var next_level = current_dungeon_level + 1
 
-	print("[FORGE][PPO] Level %d cleared in %.1fs, %d deaths -> next: rooms=%d hp=%.0f dmg=%.0f haz=%.2f" % [
-		current_dungeon_level, completion_time_sec, deaths_this_level,
-		difficulty_manager.room_count_target, difficulty_manager.enemy_health,
-		difficulty_manager.enemy_damage, difficulty_manager.hazard_density
-	])
+	# Special milestone: Exiting Floor 5 finishes Cold-Start calibration!
+	if current_dungeon_level == 5:
+		print("[FORGE][COLD-START] 5 calibration levels completed! Baseline established.")
+		# Show PPO Activation celebration banner
+		if level_splash:
+			level_splash.show_ppo_activation_banner()
+			# Allow player to read the activation message before loading floor 6
+			await get_tree().create_timer(2.2).timeout
+
+	# 2. PPO adaptation step:
+	# During levels 1-4, next level parameters are loaded from calibration.
+	# From level 5 completion onward (generating floor 6+), the PPO policy drives difficulty!
+	if next_level >= 6:
+		var obs = difficulty_manager.build_observation(
+			completion_time_sec, deaths_this_level, damage_taken_this_level,
+			player.max_health, current_dungeon_level
+		)
+		var action = ppo_policy.predict(obs)
+		difficulty_manager.apply_ppo_action(action)
+		defense_overlay.sync_ui_with_manager()
+
+		print("[FORGE][PPO] Level %d cleared in %.1fs, %d deaths -> next: rooms=%d hp=%.0f dmg=%.0f haz=%.2f" % [
+			current_dungeon_level, completion_time_sec, deaths_this_level,
+			difficulty_manager.room_count_target, difficulty_manager.enemy_health,
+			difficulty_manager.enemy_damage, difficulty_manager.hazard_density
+		])
+	else:
+		print("[FORGE][CALIBRATION] Level %d completed in %.1fs with %d deaths. Advancing to Calibration Level %d." % [
+			current_dungeon_level, completion_time_sec, deaths_this_level, next_level
+		])
 
 	# 3. Advance to next level
-	call_deferred("build_new_dungeon", current_dungeon_level + 1)
+	call_deferred("build_new_dungeon", next_level)
 
 func _on_enemy_killed() -> void:
 	add_camera_trauma(0.18) # Satisfying tactile punch on kill

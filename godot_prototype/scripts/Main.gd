@@ -52,6 +52,7 @@ func _ready() -> void:
 	player.player_damaged.connect(_on_player_damaged)
 	player.player_healed.connect(_on_player_healed)
 	player.player_died.connect(_on_player_died)
+	player.player_moved.connect(_on_player_moved)
 	
 	# Connect Defense Overlay signals
 	defense_overlay.setup(difficulty_manager, telemetry_logger)
@@ -62,12 +63,15 @@ func _ready() -> void:
 	# Connect Main Menu signals
 	main_menu.start_run_requested.connect(_on_start_run_requested)
 	
-	# Pause player input until Start Run is clicked
+	# Hide player completely until Start Run is clicked from Menu
+	player.visible = false
+	player.position = Vector2(-9999, -9999)
 	player.set_physics_process(false)
 	defense_overlay.visible = false
 
 func _on_start_run_requested() -> void:
 	game_started = true
+	player.visible = true
 	player.set_physics_process(true)
 	defense_overlay.visible = true
 	call_deferred("build_new_dungeon", 1)
@@ -186,6 +190,10 @@ func _on_room_cleared(_room_node: Room) -> void:
 	telemetry_logger.record_room_cleared()
 	telemetry_logger.save_to_file()
 	defense_overlay.update_minimap_player(current_player_room_pos)
+
+func _on_player_moved() -> void:
+	if level_splash:
+		level_splash.dismiss_banner()
 
 func _on_player_health_changed(curr: float, max_val: float) -> void:
 	defense_overlay.update_player_hp(curr, max_val)

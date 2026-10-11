@@ -28,10 +28,16 @@ func _ready() -> void:
 	container.modulate.a = 0.0
 	visible = false
 
+var is_dismissing: bool = false
+var banner_shown_time_msec: int = 0
+const MIN_DISPLAY_DURATION_MSEC: int = 3000
+
 func show_level_announcement(level_num: int, is_calibrating: bool, cal_data: Dictionary, diff_score: int, diff_label: String) -> void:
 	if current_tween and current_tween.is_valid():
 		current_tween.kill()
 		
+	is_dismissing = false
+	banner_shown_time_msec = Time.get_ticks_msec()
 	visible = true
 	container.modulate.a = 0.0
 	container.scale = Vector2(0.92, 0.92)
@@ -54,16 +60,28 @@ func show_level_announcement(level_num: int, is_calibrating: bool, cal_data: Dic
 		challenge_label.text = "Conditioned Challenge: %s (%d/100)" % [diff_label, diff_score]
 		
 	current_tween = create_tween()
-	# Slide/Pop in
+	# Slide & Pop into full view and stay there until player starts moving (after at least 3 seconds)
 	current_tween.parallel().tween_property(container, "modulate:a", 1.0, 0.35).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	current_tween.parallel().tween_property(container, "scale", Vector2(1.0, 1.0), 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	# Hold for reading
-	current_tween.tween_interval(2.3)
-	# Fade out
+
+func dismiss_banner() -> void:
+	if not visible or is_dismissing or container.modulate.a <= 0.0:
+		return
+	# Enforce minimum display time of 3 seconds before allowing fade-out
+	var elapsed = Time.get_ticks_msec() - banner_shown_time_msec
+	if elapsed < MIN_DISPLAY_DURATION_MSEC:
+		return
+		
+	is_dismissing = true
+	if current_tween and current_tween.is_valid():
+		current_tween.kill()
+		
+	current_tween = create_tween()
 	current_tween.parallel().tween_property(container, "modulate:a", 0.0, 0.45).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	current_tween.parallel().tween_property(container, "scale", Vector2(1.04, 1.04), 0.45)
 	await current_tween.finished
 	visible = false
+	is_dismissing = false
 
 func show_ppo_activation_banner() -> void:
 	if current_tween and current_tween.is_valid():

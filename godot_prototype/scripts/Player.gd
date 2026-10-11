@@ -168,17 +168,23 @@ func reset(start_pos: Vector2) -> void:
 
 func _draw() -> void:
 	# Subtle grounded shadow underneath sprite
-	draw_circle(Vector2(0, 10), 15.0, Color(0, 0, 0, 0.35))
+	draw_circle(Vector2(0, 10), 16.0, Color(0, 0, 0, 0.4))
 	
-	# Sword Attack Arc Visual (Kinetic Slash FX)
+	# Sword Attack Arc Visual (Kinetic Slash FX with Radiant Bloom)
 	if is_swinging:
 		var arc_center = Vector2.ZERO
-		var arc_radius = 48.0
-		var start_a = swing_angle - PI/2.8
-		var end_a = swing_angle + PI/2.8
+		var arc_radius = 52.0
+		var start_a = swing_angle - PI/2.6
+		var end_a = swing_angle + PI/2.6
 		
-		# Outer luminous slash wave
-		draw_arc(arc_center, arc_radius + 4.0, start_a, end_a, 20, Color(1.0, 0.95, 0.5, 0.9), 5.5)
-		# Inner piercing blade line
-		draw_arc(arc_center, arc_radius, start_a + 0.1, end_a - 0.1, 20, Color(1.0, 1.0, 1.0, 1.0), 3.0)
-		draw_line(arc_center, arc_center + Vector2.from_angle(swing_angle) * (arc_radius + 8.0), Color(1.0, 0.9, 0.3), 3.0)
+		# 1. Outer luminous radiant flare (gold/amber)
+		draw_arc(arc_center, arc_radius + 6.0, start_a, end_a, 24, Color(1.0, 0.75, 0.25, 0.5), 8.0)
+		# 2. Main crescent blade wave (electric gold)
+		draw_arc(arc_center, arc_radius, start_a, end_a, 24, Color(1.0, 0.95, 0.45, 0.95), 4.5)
+		# 3. Inner razor edge (pure bright white)
+		draw_arc(arc_center, arc_radius - 2.0, start_a + 0.1, end_a - 0.1, 24, Color(1.0, 1.0, 1.0, 1.0), 2.5)
+		# 4. Kinetic tip punch line
+		var tip_vec = Vector2.from_angle(swing_angle) * (arc_radius + 12.0)
+		draw_line(arc_center, arc_center + tip_vec, Color(1.0, 0.9, 0.5, 0.8), 3.0)
+		draw_circle(arc_center + tip_vec, 3.5, Color(1.0, 1.0, 1.0, 0.9))
+

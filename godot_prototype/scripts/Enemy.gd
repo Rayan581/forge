@@ -153,20 +153,27 @@ func kill() -> void:
 	take_damage(current_health)
 
 func _draw() -> void:
-	# Subtle grounded shadow
-	draw_circle(Vector2(0, 11), 15.0, Color(0, 0, 0, 0.35))
+	# Grounded contact shadow
+	draw_circle(Vector2(0, 12), 16.0, Color(0, 0, 0, 0.42))
 	
-	# Aggro Aura ring when chasing
+	# Menacing demonic aggro aura with pulsing edge
 	if current_state == State.CHASE:
-		draw_arc(Vector2.ZERO, 22.0, 0, TAU, 20, Color(1.0, 0.3, 0.2, 0.45), 2.0)
+		var pulse = sin(Time.get_ticks_msec() / 120.0) * 3.0
+		draw_arc(Vector2.ZERO, 24.0 + pulse, 0, TAU, 24, Color(1.0, 0.25, 0.15, 0.45), 2.5)
+		draw_arc(Vector2.ZERO, 20.0, 0, TAU, 24, Color(1.0, 0.4, 0.2, 0.25), 1.5)
 	
-	# Health Bar above enemy head
+	# Beveled dark health bar with crimson-orange gradient
 	if current_health < max_health:
-		var bar_w = 32.0
-		var bar_h = 4.5
-		var bar_y = -24.0
-		# Dark backing border
-		draw_rect(Rect2(-bar_w/2 - 1, bar_y - 1, bar_w + 2, bar_h + 2), Color(0.08, 0.08, 0.1, 0.9))
-		draw_rect(Rect2(-bar_w/2, bar_y, bar_w, bar_h), Color(0.25, 0.1, 0.12, 0.8))
+		var bar_w = 34.0
+		var bar_h = 5.0
+		var bar_y = -26.0
+		# Dark steel backing border
+		draw_rect(Rect2(-bar_w/2 - 1.5, bar_y - 1.5, bar_w + 3.0, bar_h + 3.0), Color(0.06, 0.06, 0.09, 0.95))
+		draw_rect(Rect2(-bar_w/2, bar_y, bar_w, bar_h), Color(0.2, 0.08, 0.1, 0.9))
 		var hp_ratio = clampf(current_health / max_health, 0.0, 1.0)
-		draw_rect(Rect2(-bar_w/2, bar_y, bar_w * hp_ratio, bar_h), Color(0.95, 0.22, 0.25, 0.95))
+		var fill_w = bar_w * hp_ratio
+		if fill_w > 0:
+			draw_rect(Rect2(-bar_w/2, bar_y, fill_w, bar_h), Color(0.95, 0.2, 0.25, 0.95))
+			# Top gloss shine
+			draw_line(Vector2(-bar_w/2, bar_y + 1), Vector2(-bar_w/2 + fill_w, bar_y + 1), Color(1.0, 0.55, 0.6, 0.7), 1.0)
+

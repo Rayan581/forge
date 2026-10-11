@@ -219,18 +219,36 @@ func _draw() -> void:
 	# Draw tiled stone flagstone floor
 	draw_texture_rect(floor_tex, rect, true)
 	
-	# Dark perimeter shadow inside room walls (dungeon depth vignette)
-	draw_rect(rect, Color(0, 0, 0, 0.18), false, 12.0)
+	# Layered dungeon atmosphere shadows:
+	# 1. Outer deep border shadow (inner wall drop shadow)
+	draw_rect(rect, Color(0, 0, 0, 0.45), false, 18.0)
+	# 2. Soft perimeter vignette
+	draw_rect(Rect2(-w/2 + 18, -h/2 + 18, w - 36, h - 36), Color(0, 0, 0, 0.2), false, 24.0)
+	# 3. Corner architectural stone reinforcement brackets
+	var bracket_c = Color(0.2, 0.25, 0.35, 0.6)
+	var b_sz = 36.0
+	draw_rect(Rect2(-w/2, -h/2, b_sz, 6.0), bracket_c)
+	draw_rect(Rect2(-w/2, -h/2, 6.0, b_sz), bracket_c)
+	draw_rect(Rect2(w/2 - b_sz, -h/2, b_sz, 6.0), bracket_c)
+	draw_rect(Rect2(w/2 - 6.0, -h/2, 6.0, b_sz), bracket_c)
+	draw_rect(Rect2(-w/2, h/2 - 6.0, b_sz, 6.0), bracket_c)
+	draw_rect(Rect2(-w/2, h/2 - b_sz, 6.0, b_sz), bracket_c)
+	draw_rect(Rect2(w/2 - b_sz, h/2 - 6.0, b_sz, 6.0), bracket_c)
+	draw_rect(Rect2(w/2 - 6.0, h/2 - b_sz, 6.0, b_sz), bracket_c)
 	
 	# 2. Draw Corridor Floors with stone tiling
 	if room_data.doors["N"]:
 		draw_texture_rect(tex_floor_stone, Rect2(-dw/2, -h/2 - half_spacing, dw, half_spacing), true)
+		draw_rect(Rect2(-dw/2, -h/2 - half_spacing, dw, half_spacing), Color(0, 0, 0, 0.25), false, 6.0)
 	if room_data.doors["S"]:
 		draw_texture_rect(tex_floor_stone, Rect2(-dw/2, h/2, dw, half_spacing), true)
+		draw_rect(Rect2(-dw/2, h/2, dw, half_spacing), Color(0, 0, 0, 0.25), false, 6.0)
 	if room_data.doors["E"]:
 		draw_texture_rect(tex_floor_stone, Rect2(w/2, -dw/2, half_spacing, dw), true)
+		draw_rect(Rect2(w/2, -dw/2, half_spacing, dw), Color(0, 0, 0, 0.25), false, 6.0)
 	if room_data.doors["W"]:
 		draw_texture_rect(tex_floor_stone, Rect2(-w/2 - half_spacing, -dw/2, half_spacing, dw), true)
+		draw_rect(Rect2(-w/2 - half_spacing, -dw/2, half_spacing, dw), Color(0, 0, 0, 0.25), false, 6.0)
 		
 	# 3. Draw Solid Walls with masonry brick texture & beveled coping
 	var seg_w = (w - dw) / 2.0

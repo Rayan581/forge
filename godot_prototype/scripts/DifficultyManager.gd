@@ -194,6 +194,23 @@ func build_observation(completion_time_sec: float, deaths_this_level: int, damag
 		norm_hp, norm_dmg, norm_haz, norm_rooms, norm_level
 	])
 
+## Builds the initial observation vector s₀ seeded by the composite 5-level CR₀ baseline.
+## Ensures the entire calibration history directly guides the neural PPO policy for Floor 6+.
+func build_observation_from_cr0(cr0_profile: Dictionary, level_num: int = 6) -> PackedFloat32Array:
+	var norm_time = cr0_profile.get("weighted_time_ratio", 0.5)
+	var norm_deaths = cr0_profile.get("weighted_death_ratio", 0.0)
+	var norm_dmg_ratio = cr0_profile.get("weighted_damage_ratio", 0.3)
+	var norm_hp = _normalize(enemy_health, "enemy_health")
+	var norm_dmg = _normalize(enemy_damage, "enemy_damage")
+	var norm_haz = _normalize(hazard_density, "hazard_density")
+	var norm_rooms = _normalize(float(room_count_target), "room_count")
+	var norm_level = clampf(float(level_num) / 10.0, 0.0, 1.0)
+
+	return PackedFloat32Array([
+		norm_time, norm_deaths, norm_dmg_ratio,
+		norm_hp, norm_dmg, norm_haz, norm_rooms, norm_level
+	])
+
 ## Applies the 7-dim continuous action vector output by the PPO policy.
 ## action = [enemy_health, enemy_damage, enemy_speed, enemy_aggro,
 ##           hazard_density, resource_scarcity, room_count]  (each in [-1, 1])

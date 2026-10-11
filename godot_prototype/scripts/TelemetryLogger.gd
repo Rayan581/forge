@@ -12,6 +12,9 @@ var enemies_defeated: int = 0
 var pickups_collected: int = 0
 var hazard_hits: int = 0
 
+# Per-Floor Cold-Start Calibration Records (Floors 1 to 5)
+var calibration_records: Array = []
+
 const TELEMETRY_FILE_PATH = "user://session_telemetry.json"
 
 func _init() -> void:
@@ -52,6 +55,89 @@ func record_pickup_collected() -> void:
 
 func record_hazard_hit() -> void:
 	hazard_hits += 1
+
+## Records a completed calibration floor's performance slice along with its difficulty challenge rating
+func record_calibration_floor(floor_num: int, completion_time_sec: float, deaths: int, damage_taken: float, expected_rooms: int, diff_score: int) -> void:
+	calibration_records.append({
+		"floor": floor_num,
+		"time": completion_time_sec,
+		"deaths": deaths,
+		"damage": damage_taken,
+		"rooms": expected_rooms,
+		"diff_score": diff_score,
+		# Pace per room: normal is ~7.5s/room
+		"sec_per_room": completion_time_sec / maxf(1.0, float(expected_rooms))
+	})
+	print("[TelemetryLogger] Recorded Calibration Floor %d: %.1fs (%d rooms, %d deaths, %.0f dmg, diff=%d)" % [
+		floor_num, completion_time_sec, expected_rooms, deaths, damage_taken, diff_score
+	])
+
+## Computes the composite Cold-Start Initial Combat Rating (CR₀) across all 5 calibration levels.
+## Higher difficulty levels are weighted significantly more heavily than introductory floors:
+## Floor 1 weight = 1.0 (Novice Pacing)
+## Floor 2 weight = 1.5 (Melee Reflex)
+## Floor 3 weight = 2.0 (Hazard & Agile Evasion)
+## Floor 4 weight = 2.5 (Tactical Attrition)
+## Floor 5 weight = 3.0 (Apex Gauntlet Stress Test)
+## Total Weight = 10.0
+func compute_cr0_baseline() -> Dictionary:
+	if calibration_records.is_empty():
+		return {
+			"cr0_score": 50.0,
+			"weighted_time_ratio": 0.5,
+			"weighted_death_ratio": 0.0,
+			"weighted_damage_ratio": 0.3,
+			"tier_name": "Intermediate"
+		}
+		
+	var weights = [1.0, 1.5, 2.0, 2.5, 3.0]
+	var total_weight: float = 0.0
+	var weighted_pace_score: float = 0.0
+	var weighted_death_score: float = 0.0
+	var weighted_dmg_score: float = 0.0
+	
+	for i in range(calibration_records.size()):
+		var rec = calibration_records[i]
+		var w = weights[clampi(i, 0, weights.size() - 1)]
+		total_weight += w
+		
+		# Ideal pace per room is ~7.5 seconds
+		# Fast clear (< 5s/room) scores high (0.8-1.0), Slow (> 15s/room) scores low (0.0-0.3)
+		var pace_ratio = clampf(1.0 - (rec.sec_per_room - 5.0) / 12.0, 0.0, 1.0)
+		weighted_pace_score += pace_ratio * w
+		
+		# Death penalty: 0 deaths = 1.0, 1 death = 0.5, >= 2 deaths = 0.0
+		var survival_ratio = clampf(1.0 - float(rec.deaths) * 0.5, 0.0, 1.0)
+		weighted_death_score += survival_ratio * w
+		
+		# Damage intake ratio per 100 HP
+		var dmg_ratio = clampf(1.0 - (rec.damage / 120.0), 0.0, 1.0)
+		weighted_dmg_score += dmg_ratio * w
+		
+	var avg_pace = weighted_pace_score / total_weight
+	var avg_survival = weighted_death_score / total_weight
+	var avg_dmg_defense = weighted_dmg_score / total_weight
+	
+	# Initial Combat Rating CR0 (0 to 100 scale):
+	# 40% Survival Execution + 35% Combat Efficiency & Defense + 25% Pace
+	var cr0 = (avg_survival * 40.0) + (avg_dmg_defense * 35.0) + (avg_pace * 25.0)
+	cr0 = clampf(cr0, 10.0, 95.0)
+	
+	var tier = "Intermediate"
+	if cr0 < 40.0:
+		tier = "Novice (Adaptive Scaling Down)"
+	elif cr0 < 70.0:
+		tier = "Intermediate (Balanced Adaptive)"
+	else:
+		tier = "Expert (High-Intensity Adaptive)"
+		
+	return {
+		"cr0_score": cr0,
+		"weighted_time_ratio": clampf(1.0 - avg_pace, 0.0, 1.0),
+		"weighted_death_ratio": clampf(1.0 - avg_survival, 0.0, 1.0),
+		"weighted_damage_ratio": clampf(1.0 - avg_dmg_defense, 0.0, 1.0),
+		"tier_name": tier
+	}
 
 func get_summary() -> Dictionary:
 	return {

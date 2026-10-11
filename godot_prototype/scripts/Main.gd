@@ -219,22 +219,52 @@ func _on_dungeon_escaped() -> void:
 	var completion_time_sec = float(Time.get_ticks_msec() - level_start_time_msec) / 1000.0
 	var deaths_this_level = telemetry_logger.total_deaths - level_start_deaths
 	var damage_taken_this_level = telemetry_logger.damage_taken - level_start_damage_taken
+	var diff_report = difficulty_manager.calculate_difficulty_score()
 
 	var next_level = current_dungeon_level + 1
 
+	# Record calibration performance for floors 1 to 5
+	if difficulty_manager.is_in_calibration(current_dungeon_level):
+		telemetry_logger.record_calibration_floor(
+			current_dungeon_level,
+			completion_time_sec,
+			deaths_this_level,
+			damage_taken_this_level,
+			difficulty_manager.room_count_target,
+			diff_report.score
+		)
+
 	# Special milestone: Exiting Floor 5 finishes Cold-Start calibration!
 	if current_dungeon_level == 5:
-		print("[FORGE][COLD-START] 5 calibration levels completed! Baseline established.")
+		var cr0_profile = telemetry_logger.compute_cr0_baseline()
+		print("[FORGE][COLD-START] All 5 calibration floors complete!")
+		print("[FORGE][COLD-START] Composite Initial Combat Rating CR0: %.1f/100 (%s)" % [
+			cr0_profile.cr0_score, cr0_profile.tier_name
+		])
+		print("[FORGE][COLD-START] Weighted Metrics -> Pace: %.2f | Deaths: %.2f | Dmg: %.2f" % [
+			cr0_profile.weighted_time_ratio, cr0_profile.weighted_death_ratio, cr0_profile.weighted_damage_ratio
+		])
+		
 		# Show PPO Activation celebration banner
 		if level_splash:
 			level_splash.show_ppo_activation_banner()
 			# Allow player to read the activation message before loading floor 6
-			await get_tree().create_timer(2.2).timeout
+			await get_tree().create_timer(2.4).timeout
 
-	# 2. PPO adaptation step:
-	# During levels 1-4, next level parameters are loaded from calibration.
-	# From level 5 completion onward (generating floor 6+), the PPO policy drives difficulty!
-	if next_level >= 6:
+		# Seed Floor 6 difficulty from the 5-level weighted CR0 profile
+		var obs_s0 = difficulty_manager.build_observation_from_cr0(cr0_profile, 6)
+		var initial_action = ppo_policy.predict(obs_s0)
+		difficulty_manager.apply_ppo_action(initial_action)
+		defense_overlay.sync_ui_with_manager()
+
+		print("[FORGE][PPO] Floor 6 seeded from CR0: rooms=%d hp=%.0f dmg=%.0f spd=%.0f haz=%.2f" % [
+			difficulty_manager.room_count_target, difficulty_manager.enemy_health,
+			difficulty_manager.enemy_damage, difficulty_manager.enemy_speed,
+			difficulty_manager.hazard_density
+		])
+
+	# 2. PPO adaptation step for Floor 7 onward (online step-by-step rolling adaptation)
+	elif next_level >= 7:
 		var obs = difficulty_manager.build_observation(
 			completion_time_sec, deaths_this_level, damage_taken_this_level,
 			player.max_health, current_dungeon_level

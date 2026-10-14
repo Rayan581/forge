@@ -1,0 +1,147 @@
+﻿name: FORGE Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Release tag (e.g. v0.1.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    name: Pre-Release Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ml_spike/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r ml_spike/requirements.txt
+          pip install pytest==8.2.2
+
+      - name: Run mandatory tests
+        run: |
+          pytest ml_spike/tests/ -v --tb=short -x
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Validate policy JSON
+        run: |
+          pytest ml_spike/tests/test_policy_validation.py -v
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Validate policy size
+        run: |
+          python -c "
+          import os, sys
+          path = 'godot_prototype/ai/policy_weights.json'
+          size_kb = os.path.getsize(path) / 1024
+          print(f'Policy size: {size_kb:.1f} KB')
+          if size_kb >= 120:
+              sys.exit(1)
+          "
+
+  build-windows:
+    name: Export Windows x86-64
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: validate
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Godot 4.3 headless
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip \
+            -O /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot_bin
+          chmod +x /tmp/godot_bin/Godot_v4.3-stable_linux.x86_64
+          echo "GODOT=/tmp/godot_bin/Godot_v4.3-stable_linux.x86_64" >> $GITHUB_ENV
+
+      - name: Download Windows export templates
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz \
+            -O /tmp/templates.tpz
+          mkdir -p ~/.local/share/godot/export_templates/4.3.stable
+          cd /tmp && unzip -q templates.tpz
+          mv /tmp/templates/* ~/.local/share/godot/export_templates/4.3.stable/
+
+      - name: Import project
+        run: |
+          timeout 60 $GODOT --headless --editor --quit \
+            --path godot_prototype || true
+
+      - name: Create output directory
+        run: mkdir -p dist/FORGE-Windows
+
+      - name: Export Windows build
+        run: |
+          $GODOT --headless --export-release "Windows Desktop" \
+            dist/FORGE-Windows/FORGE.exe \
+            --path godot_prototype
+
+      - name: Copy policy JSON to dist
+        run: |
+          cp godot_prototype/ai/policy_weights.json dist/FORGE-Windows/
+
+      - name: Verify exported files
+        run: |
+          if [ ! -f "dist/FORGE-Windows/FORGE.exe" ]; then
+            echo "ERROR: FORGE.exe not found in dist"
+            exit 1
+          fi
+          if [ ! -f "dist/FORGE-Windows/policy_weights.json" ]; then
+            echo "ERROR: policy_weights.json not in dist"
+            exit 1
+          fi
+          ls -lh dist/FORGE-Windows/
+
+      - name: Record build metadata
+        run: |
+          echo "commit_sha=${{ github.sha }}" > dist/FORGE-Windows/build_info.txt
+          echo "build_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> dist/FORGE-Windows/build_info.txt
+          echo "godot_version=4.3-stable" >> dist/FORGE-Windows/build_info.txt
+          echo "tag=${{ github.ref_name }}" >> dist/FORGE-Windows/build_info.txt
+          python -c "
+          import hashlib, json
+          with open('godot_prototype/ai/policy_weights.json','rb') as f:
+              h = hashlib.sha256(f.read()).hexdigest()
+          print('policy_sha256=' + h)
+          " >> dist/FORGE-Windows/build_info.txt
+
+      - name: Package release ZIP
+        run: |
+          cd dist
+          zip -r FORGE-Windows-${{ github.ref_name }}.zip FORGE-Windows/
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: forge-windows-build
+          path: dist/FORGE-Windows-${{ github.ref_name }}.zip
+          retention-days: 30
+
+      - name: Publish to GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: dist/FORGE-Windows-${{ github.ref_name }}.zip
+          generate_release_notes: true

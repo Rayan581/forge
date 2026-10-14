@@ -1,0 +1,281 @@
+﻿name: FORGE CI
+
+on:
+  push:
+    branches: ["main", "dev", "5levels", "cicd"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # ─────────────────────────────────────────────
+  # JOB 1 — Python lint & static analysis
+  # ─────────────────────────────────────────────
+  python-lint:
+    name: Python Lint & Static Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ml_spike/requirements.txt
+
+      - name: Install lint tools
+        run: pip install ruff==0.4.10
+
+      - name: Run Ruff linter
+        run: ruff check ml_spike/ --output-format=github
+
+      - name: Check formatting
+        run: ruff format ml_spike/ --check
+
+  # ─────────────────────────────────────────────
+  # JOB 2 — Python unit & integration tests
+  # ─────────────────────────────────────────────
+  python-tests:
+    name: Python Unit & Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ml_spike/requirements.txt
+
+      - name: Install project dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r ml_spike/requirements.txt
+          pip install pytest==8.2.2 pytest-cov==5.0.0
+
+      - name: Run unit tests
+        run: |
+          pytest ml_spike/tests/ \
+            --cov=ml_spike \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            -v
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: python-coverage
+          path: coverage.xml
+          retention-days: 14
+
+  # ─────────────────────────────────────────────
+  # JOB 3 — Gymnasium env validation + PPO smoke test
+  # ─────────────────────────────────────────────
+  env-and-ppo-smoke:
+    name: Gymnasium Env Validation & PPO Smoke Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ml_spike/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r ml_spike/requirements.txt
+          pip install pytest==8.2.2
+
+      - name: Run Gymnasium validation & PPO smoke tests
+        run: |
+          pytest ml_spike/tests/test_env_validation.py \
+                 ml_spike/tests/test_ppo_smoke.py \
+            -v --tb=short
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+  # ─────────────────────────────────────────────
+  # JOB 4 — Policy JSON validation & cross-language parity
+  # ─────────────────────────────────────────────
+  policy-validation:
+    name: Policy JSON Validation & Parity Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ml_spike/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r ml_spike/requirements.txt
+          pip install pytest==8.2.2
+
+      - name: Validate policy JSON schema & values
+        run: |
+          pytest ml_spike/tests/test_policy_validation.py -v --tb=short
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Check policy file size (< 120 KB target)
+        run: |
+          python -c "
+          import os, sys
+          path = 'godot_prototype/ai/policy_weights.json'
+          size_kb = os.path.getsize(path) / 1024
+          print(f'Policy size: {size_kb:.1f} KB')
+          if size_kb >= 120:
+              print(f'WARNING: Policy size {size_kb:.1f} KB exceeds 120 KB target')
+              sys.exit(1)
+          print('PASS: Policy size within 120 KB target')
+          "
+
+      - name: Run Python inference parity test
+        run: |
+          pytest ml_spike/tests/test_inference_parity.py -v --tb=short
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+  # ─────────────────────────────────────────────
+  # JOB 5 — Godot headless validation
+  # ─────────────────────────────────────────────
+  godot-headless:
+    name: Godot Headless Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Godot 4.3 headless
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip \
+            -O /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot_bin
+          chmod +x /tmp/godot_bin/Godot_v4.3-stable_linux.x86_64
+          echo "GODOT=/tmp/godot_bin/Godot_v4.3-stable_linux.x86_64" >> $GITHUB_ENV
+
+      - name: Import Godot project resources
+        run: |
+          timeout 60 $GODOT --headless --editor --quit \
+            --path godot_prototype || true
+
+      - name: GDScript parse check (headless startup)
+        run: |
+          timeout 30 $GODOT --headless --quit \
+            --path godot_prototype 2>&1 | tee godot_output.txt
+          if grep -Ei "script error|parse error|ERROR:" godot_output.txt; then
+            echo "GDScript parse errors detected."
+            exit 1
+          fi
+          echo "GDScript parse check passed."
+
+      - name: Verify required scenes exist
+        run: |
+          for scene in Main.tscn MainMenu.tscn Room.tscn Player.tscn Enemy.tscn; do
+            if [ ! -f "godot_prototype/scenes/$scene" ]; then
+              echo "MISSING required scene: $scene"
+              exit 1
+            fi
+          done
+          echo "All required scenes present."
+
+      - name: Verify policy JSON is present in game
+        run: |
+          if [ ! -f "godot_prototype/ai/policy_weights.json" ]; then
+            echo "ERROR: policy_weights.json missing from godot_prototype/ai/"
+            exit 1
+          fi
+          echo "Policy JSON present."
+
+      - name: Upload Godot output log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: godot-headless-log
+          path: godot_output.txt
+          retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # JOB 6 — Performance regression checks (lightweight)
+  # ─────────────────────────────────────────────
+  performance-checks:
+    name: Lightweight Performance Regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [python-tests, policy-validation]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ml_spike/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r ml_spike/requirements.txt
+          pip install pytest==8.2.2
+
+      - name: Run performance regression tests
+        run: |
+          pytest ml_spike/tests/test_performance.py -v --tb=short
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+  # ─────────────────────────────────────────────
+  # Required status gate — all mandatory checks
+  # ─────────────────────────────────────────────
+  ci-gate:
+    name: CI Gate (Required)
+    runs-on: ubuntu-latest
+    needs:
+      - python-lint
+      - python-tests
+      - env-and-ppo-smoke
+      - policy-validation
+      - godot-headless
+    if: always()
+    steps:
+      - name: Check all mandatory jobs passed
+        run: |
+          if [[ "${{ needs.python-lint.result }}" != "success" ]]; then
+            echo "python-lint FAILED"; exit 1; fi
+          if [[ "${{ needs.python-tests.result }}" != "success" ]]; then
+            echo "python-tests FAILED"; exit 1; fi
+          if [[ "${{ needs.env-and-ppo-smoke.result }}" != "success" ]]; then
+            echo "env-and-ppo-smoke FAILED"; exit 1; fi
+          if [[ "${{ needs.policy-validation.result }}" != "success" ]]; then
+            echo "policy-validation FAILED"; exit 1; fi
+          if [[ "${{ needs.godot-headless.result }}" != "success" ]]; then
+            echo "godot-headless FAILED"; exit 1; fi
+          echo "All mandatory CI checks passed."

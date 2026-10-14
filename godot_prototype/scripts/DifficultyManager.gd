@@ -19,6 +19,7 @@ var resource_scarcity: float = 0.40   # Range: 0.10 to 0.90 (10% to 90%)
 # --- PPO-controlled additions ---
 var room_count_target: int = 6        # Range: 5 to 9 (rooms in next generated dungeon)
 var enemy_count_scale: float = 1.0    # Range: 0.6 to 1.6 (multiplies per-room enemy counts)
+var ranged_enemy_ratio: float = 0.35  # Range: 0.0 to 1.0 (proportion of spawned enemies that are Pyromancers)
 
 # Real-value ranges used to map PPO's normalized [-1, 1] actions onto game parameters.
 const PARAM_RANGES = {
@@ -41,6 +42,7 @@ const PRESETS = {
 		"aggro": 160.0,
 		"hazard": 0.15,
 		"scarcity": 0.15,
+		"ranged_ratio": 0.20,
 		"description": "Slow, low-damage adversaries with abundant health drops and minimal traps."
 	},
 	ProfileTier.INTERMEDIATE: {
@@ -51,6 +53,7 @@ const PRESETS = {
 		"aggro": 250.0,
 		"hazard": 0.35,
 		"scarcity": 0.40,
+		"ranged_ratio": 0.35,
 		"description": "Balanced combat pace with moderate traps and standard resource drops."
 	},
 	ProfileTier.EXPERT: {
@@ -61,6 +64,7 @@ const PRESETS = {
 		"aggro": 380.0,
 		"hazard": 0.65,
 		"scarcity": 0.75,
+		"ranged_ratio": 0.50,
 		"description": "High-velocity aggressive enemies, hazardous traps, and scarce survival drops."
 	}
 }
@@ -80,6 +84,7 @@ const CALIBRATION_LEVELS = {
 		"hazard": 0.05,
 		"scarcity": 0.15,
 		"count_scale": 0.7,
+		"ranged_ratio": 0.0,
 		"description": "Introductory floor with slow, low-damage adversaries and minimal environmental hazards."
 	},
 	2: {
@@ -93,11 +98,12 @@ const CALIBRATION_LEVELS = {
 		"hazard": 0.15,
 		"scarcity": 0.25,
 		"count_scale": 0.9,
+		"ranged_ratio": 0.0,
 		"description": "Standard combat encounter testing basic swordplay, evasion, and crowd engagement."
 	},
 	3: {
-		"title": "Level 3: Evasion & Traps",
-		"subtitle": "Cold-Start Calibration (3/5) · Spatial Awareness & Hazards",
+		"title": "Level 3: Ranged Evasion & Traps",
+		"subtitle": "Cold-Start Calibration (3/5) · Spatial Awareness & Projectiles",
 		"rooms": 4,
 		"health": 55.0,
 		"damage": 18.0,
@@ -106,11 +112,12 @@ const CALIBRATION_LEVELS = {
 		"hazard": 0.38,
 		"scarcity": 0.35,
 		"count_scale": 1.0,
-		"description": "Higher density of floor spike traps and agile adversaries testing spatial navigation."
+		"ranged_ratio": 1.0,
+		"description": "Robed pyromancer casters testing projectile dodge roll evasion and spatial navigation."
 	},
 	4: {
 		"title": "Level 4: Tactical Crucible",
-		"subtitle": "Cold-Start Calibration (4/5) · Attrition & Resource Scarcity",
+		"subtitle": "Cold-Start Calibration (4/5) · Mixed Attrition & Priority Targeting",
 		"rooms": 5,
 		"health": 70.0,
 		"damage": 24.0,
@@ -119,11 +126,12 @@ const CALIBRATION_LEVELS = {
 		"hazard": 0.50,
 		"scarcity": 0.55,
 		"count_scale": 1.15,
-		"description": "Extended dungeon layout with resilient adversaries and scarcer restorative pickups."
+		"ranged_ratio": 0.35,
+		"description": "Extended dungeon layout with mixed melee crawlers and ranged pyromancers."
 	},
 	5: {
 		"title": "Level 5: Apex Gauntlet",
-		"subtitle": "Cold-Start Calibration (5/5) · Stress Test & Climax",
+		"subtitle": "Cold-Start Calibration (5/5) · Mini-Boss Challenge & Climax",
 		"rooms": 5,
 		"health": 90.0,
 		"damage": 30.0,
@@ -132,7 +140,8 @@ const CALIBRATION_LEVELS = {
 		"hazard": 0.65,
 		"scarcity": 0.70,
 		"count_scale": 1.3,
-		"description": "High-intensity gauntlet testing damage avoidance and rapid tactical elimination."
+		"ranged_ratio": 0.60,
+		"description": "High-intensity gauntlet with buffed adversaries and multi-caster projectile salvos."
 	}
 }
 
@@ -151,6 +160,7 @@ func apply_calibration_level(level_num: int) -> Dictionary:
 		resource_scarcity = cal.scarcity
 		room_count_target = cal.rooms
 		enemy_count_scale = cal.count_scale
+		ranged_enemy_ratio = cal.get("ranged_ratio", 0.35)
 		return cal
 	return {}
 
@@ -164,6 +174,7 @@ func apply_preset(tier: ProfileTier) -> void:
 		enemy_aggro = p.aggro
 		hazard_density = p.hazard
 		resource_scarcity = p.scarcity
+		ranged_enemy_ratio = p.get("ranged_ratio", 0.35)
 
 # --- PPO integration ---
 

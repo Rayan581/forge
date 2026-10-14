@@ -158,13 +158,29 @@ func spawn_entities(p_diff: DifficultyManager) -> void:
 		pk.pickup_collected.connect(func(type): emit_signal("player_collected_pickup", type))
 		entities_container.add_child(pk)
 		
-	# Spawn Enemies with vector E parameters
+	# Spawn Enemies with vector E parameters and archetype distribution
 	for i in range(room_data.enemies_count):
 		var e = enemy_scene.instantiate()
 		var rand_x = randf_range(-room_width/2 + 90, room_width/2 - 90)
 		var rand_y = randf_range(-room_height/2 + 80, room_height/2 - 80)
 		e.position = Vector2(rand_x, rand_y)
+		
+		# Archetype assignment based on calibrated/adaptive ranged ratio
+		var is_ranged = (randf() < p_diff.ranged_enemy_ratio)
+		if is_ranged:
+			e.set_archetype(Enemy.Archetype.RANGED_PYROMANCER)
+		else:
+			e.set_archetype(Enemy.Archetype.MELEE_CRAWLER)
+			
 		e.configure_parameters(p_diff.enemy_health, p_diff.enemy_damage, p_diff.enemy_speed, p_diff.enemy_aggro)
+		
+		# Floor 5 Apex Mini-boss buff for lead melee champion in Exit room
+		if room_data.room_type == DungeonGenerator.RoomType.EXIT and not is_ranged and i == 0 and p_diff.enemy_health >= 85.0:
+			e.max_health *= 1.7
+			e.current_health = e.max_health
+			e.scale = Vector2(1.28, 1.28)
+			e.attack_damage *= 1.25
+			
 		e.enemy_damaged.connect(func(dmg, pos): emit_signal("enemy_damaged_in_room", dmg, pos))
 		e.enemy_defeated.connect(_on_enemy_defeated)
 		entities_container.add_child(e)
@@ -183,6 +199,8 @@ func kill_all_enemies() -> void:
 	for child in entities_container.get_children():
 		if child is Enemy:
 			child.kill()
+		elif child is ProjectileFireball:
+			child.queue_free()
 
 func _on_player_entered_room(body: Node2D) -> void:
 	if body is Player:

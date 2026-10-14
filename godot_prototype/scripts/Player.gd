@@ -6,6 +6,7 @@ signal player_damaged(amount: float)
 signal player_healed(amount: float)
 signal player_died
 signal player_moved
+signal player_dashed
 
 @export var max_health: float = 100.0
 var current_health: float = 100.0
@@ -20,6 +21,15 @@ var facing_direction: Vector2 = Vector2.DOWN
 var is_swinging: bool = false
 var swing_timer: float = 0.0
 var swing_angle: float = 0.0
+
+# Dodge Roll / Dash System (Spacebar)
+var is_dashing: bool = false
+var dash_timer: float = 0.0
+var dash_duration: float = 0.20
+var dash_speed_multiplier: float = 2.45
+var dash_cooldown: float = 1.0
+var dash_cooldown_timer: float = 0.0
+var dash_direction: Vector2 = Vector2.DOWN
 
 # Persistent Knockback Impulse System
 var knockback_velocity: Vector2 = Vector2.ZERO
@@ -39,13 +49,35 @@ func _physics_process(delta: float) -> void:
 	if current_health <= 0:
 		return
 		
+	if dash_cooldown_timer > 0.0:
+		dash_cooldown_timer -= delta
+		
 	# 1. Player Input Vector
 	var input_vector = Vector2.ZERO
 	input_vector.x = Input.get_axis("move_left", "move_right")
 	input_vector.y = Input.get_axis("move_up", "move_down")
 	
+	# Check Dodge Roll trigger
+	var wants_dodge = Input.is_action_just_pressed("dodge")
+	if not wants_dodge and Input.is_key_pressed(KEY_SPACE) and not Input.is_action_just_pressed("attack"):
+		wants_dodge = true
+		
+	if wants_dodge and dash_cooldown_timer <= 0.0 and not is_dashing:
+		perform_dash(input_vector)
+		
 	var move_velocity = Vector2.ZERO
-	if input_vector != Vector2.ZERO:
+	
+	if is_dashing:
+		dash_timer -= delta
+		move_velocity = dash_direction * (move_speed * dash_speed_multiplier)
+		if sprite:
+			sprite.scale = Vector2(1.25, 0.75)
+			sprite.modulate = Color(0.6, 1.3, 2.2, 0.85)
+		if dash_timer <= 0.0:
+			is_dashing = false
+			if sprite:
+				sprite.scale = Vector2.ONE
+	elif input_vector != Vector2.ZERO:
 		input_vector = input_vector.normalized()
 		facing_direction = input_vector
 		move_velocity = input_vector * move_speed
@@ -71,11 +103,11 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	
 	# Attack Handling
-	if Input.is_action_just_pressed("attack") and can_attack:
+	if Input.is_action_just_pressed("attack") and can_attack and not is_dashing:
 		perform_attack()
 		
 	# Timers
-	if is_invulnerable:
+	if is_invulnerable and not is_dashing:
 		invulnerable_timer -= delta
 		if sprite:
 			# Hurt blink effect
@@ -84,8 +116,8 @@ func _physics_process(delta: float) -> void:
 			is_invulnerable = false
 			if sprite:
 				sprite.modulate = Color.WHITE
-	else:
-		if sprite and sprite.modulate.a != 1.0:
+	elif not is_dashing:
+		if sprite and sprite.modulate != Color.WHITE:
 			sprite.modulate = Color.WHITE
 			
 	if is_swinging:
@@ -95,8 +127,23 @@ func _physics_process(delta: float) -> void:
 			
 	queue_redraw()
 
+func perform_dash(input_dir: Vector2) -> void:
+	is_dashing = true
+	dash_timer = dash_duration
+	dash_cooldown_timer = dash_cooldown
+	is_invulnerable = true
+	invulnerable_timer = dash_duration + 0.06
+	
+	if input_dir != Vector2.ZERO:
+		dash_direction = input_dir.normalized()
+	else:
+		dash_direction = facing_direction
+		
+	emit_signal("player_dashed")
+
 func apply_knockback(impulse: Vector2) -> void:
-	knockback_velocity = impulse
+	if not is_dashing:
+		knockback_velocity = impulse
 
 func perform_attack() -> void:
 	can_attack = false
@@ -158,19 +205,35 @@ func reset(start_pos: Vector2) -> void:
 	global_position = start_pos
 	current_health = max_health
 	is_invulnerable = false
+	is_dashing = false
 	is_swinging = false
 	can_attack = true
+	dash_cooldown_timer = 0.0
 	knockback_velocity = Vector2.ZERO
 	velocity = Vector2.ZERO
 	if sprite:
 		sprite.modulate = Color.WHITE
 		sprite.rotation = 0.0
 		sprite.position = Vector2(0, -2)
+		sprite.scale = Vector2.ONE
 	emit_signal("health_changed", current_health, max_health)
 
 func _draw() -> void:
 	# Subtle grounded shadow underneath sprite
 	draw_circle(Vector2(0, 10), 16.0, Color(0, 0, 0, 0.4))
+	
+	# Ethereal Dash Afterimage Trail
+	if is_dashing:
+		var trail_p1 = -dash_direction * 16.0
+		var trail_p2 = -dash_direction * 32.0
+		draw_circle(trail_p1, 14.0, Color(0.3, 0.7, 1.0, 0.4))
+		draw_circle(trail_p2, 10.0, Color(0.2, 0.5, 0.9, 0.22))
+		draw_line(Vector2.ZERO, -dash_direction * 40.0, Color(0.6, 0.9, 1.0, 0.75), 3.0)
+	
+	# Subtle dash cooldown ring around feet when cooling down
+	if dash_cooldown_timer > 0.0:
+		var recharge = 1.0 - (dash_cooldown_timer / dash_cooldown)
+		draw_arc(Vector2(0, 10), 18.0, -PI/2, -PI/2 + TAU * recharge, 20, Color(0.3, 0.8, 1.0, 0.5), 2.0)
 	
 	# Sword Attack Arc Visual (Kinetic Slash FX with Radiant Bloom)
 	if is_swinging:
@@ -189,4 +252,3 @@ func _draw() -> void:
 		var tip_vec = Vector2.from_angle(swing_angle) * (arc_radius + 12.0)
 		draw_line(arc_center, arc_center + tip_vec, Color(1.0, 0.9, 0.5, 0.8), 3.0)
 		draw_circle(arc_center + tip_vec, 3.5, Color(1.0, 1.0, 1.0, 0.9))
-

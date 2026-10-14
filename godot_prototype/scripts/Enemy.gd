@@ -16,8 +16,8 @@ var current_health: float = 60.0
 @export var attack_rate: float = 0.8
 
 # Ranged Pyromancer specific variables
-var standoff_min: float = 180.0
-var standoff_max: float = 230.0
+var standoff_min: float = 140.0
+var standoff_max: float = 280.0
 var is_charging: bool = false
 var charge_timer: float = 0.0
 var charge_duration: float = 0.5 # 0.5s yellow telegraph tell
@@ -58,22 +58,26 @@ func _apply_archetype() -> void:
 	if archetype == Archetype.RANGED_PYROMANCER:
 		if sprite:
 			sprite.texture = tex_pyromancer
-		attack_reach = 220.0
+		attack_reach = 360.0
 		attack_rate = 1.6
-		standoff_min = 180.0
-		standoff_max = 230.0
+		standoff_min = 140.0
+		standoff_max = 280.0
+		aggro_radius = 420.0
 	else:
 		if sprite:
 			sprite.texture = tex_crawler
 		attack_reach = 38.0
 		attack_rate = 0.8
+		standoff_min = 34.0
+		standoff_max = 38.0
+		aggro_radius = 240.0
 
 func configure_parameters(p_health: float, p_damage: float, p_speed: float, p_aggro: float) -> void:
 	if archetype == Archetype.RANGED_PYROMANCER:
 		max_health = p_health * 0.75 # Lower HP for ranged caster
 		attack_damage = p_damage * 0.9 # Projectile damage ~18
 		move_speed = p_speed * 0.92
-		aggro_radius = maxf(p_aggro, 260.0)
+		aggro_radius = maxf(p_aggro, 420.0) # Room-wide casting vision
 	else:
 		max_health = p_health
 		attack_damage = p_damage
@@ -182,8 +186,8 @@ func _process_pyromancer_ai(dist_to_player: float, dir_to_player: Vector2, delta
 	if is_charging:
 		current_state = State.CHARGING
 		charge_timer += delta
-		# Slowly drift backwards while casting
-		move_velocity = -dir_to_player * 25.0
+		# Hold ground / slight drift while casting
+		move_velocity = -dir_to_player * 18.0
 		if charge_timer >= charge_duration:
 			is_charging = false
 			shoot_fireball(dir_to_player)
@@ -196,29 +200,27 @@ func _process_pyromancer_ai(dist_to_player: float, dir_to_player: Vector2, delta
 		if wander_timer <= 0.0:
 			wander_timer = randf_range(2.0, 4.0)
 			wander_direction = Vector2(randf_range(-1, 1), randf_range(-1, 1)).normalized()
-		move_velocity = wander_direction * (move_speed * 0.4)
-		return move_velocity
+		return wander_direction * (move_speed * 0.4)
 		
-	# Player is within aggro radius:
-	# 1. Kiting Retreat: Player is too close (< 180px), back away
+	# Player is within aggro radius!
+	# 1. Kiting Retreat: Player is too close (< 140px), back away to maintain distance
 	if dist_to_player < standoff_min:
 		current_state = State.KITE
-		move_velocity = -dir_to_player * (move_speed * 1.1)
-		# Can still cast while backing away if cooldown is ready
-		if attack_cooldown_timer <= 0.0:
-			start_charging()
-	# 2. Approach: Player is beyond standoff range (> 230px), close in
+		move_velocity = -dir_to_player * (move_speed * 1.15)
+	# 2. Beyond preferred range (> 280px): Approach player
 	elif dist_to_player > standoff_max:
 		current_state = State.CHASE
 		move_velocity = dir_to_player * move_speed
-	# 3. Sweet Spot (180px - 230px): Standoff distance maintained!
+	# 3. In preferred standoff zone (140px - 280px): Strafe / hold ground
 	else:
 		current_state = State.ATTACK
-		# Slight strafe to feel alive and avoid feeling static
 		var strafe_dir = Vector2(-dir_to_player.y, dir_to_player.x)
-		move_velocity = strafe_dir * 30.0
-		if attack_cooldown_timer <= 0.0:
-			start_charging()
+		move_velocity = strafe_dir * 32.0
+		
+	# FIREBALL CAST TRIGGER:
+	# Whenever cooldown is ready and player is within room aggro range, start charging!
+	if attack_cooldown_timer <= 0.0 and dist_to_player <= aggro_radius:
+		start_charging()
 			
 	return move_velocity
 
@@ -230,12 +232,11 @@ func start_charging() -> void:
 func shoot_fireball(target_dir: Vector2) -> void:
 	attack_cooldown_timer = attack_rate
 	if projectile_scene:
-		var p = projectile_scene.instantiate() as ProjectileFireball
-		p.global_position = global_position + target_dir * 24.0
-		p.setup(target_dir, attack_damage, 240.0)
+		var p = projectile_scene.instantiate()
+		var spawn_pos = global_position + target_dir * 28.0
 		get_parent().add_child(p)
-		# Light recoil pushback on caster
-		apply_knockback(-target_dir * 120.0)
+		p.setup(target_dir, spawn_pos, attack_damage, 240.0)
+		apply_knockback(-target_dir * 90.0)
 
 func apply_knockback(impulse: Vector2) -> void:
 	knockback_velocity = impulse
@@ -259,10 +260,10 @@ func take_damage(amount: float, from_dir: Vector2 = Vector2.ZERO) -> void:
 		
 	emit_signal("enemy_damaged", amount, global_position)
 	
-	# If was charging, taking heavy damage interrupts charge slightly
-	if is_charging and amount > 25.0:
+	# If hit during early charge, brief interrupt; otherwise finishes casting
+	if is_charging and charge_timer < charge_duration * 0.5:
 		is_charging = false
-		attack_cooldown_timer = 0.6
+		attack_cooldown_timer = 0.35
 		
 	# Apply persistent knockback impulse away from weapon hit
 	if from_dir != Vector2.ZERO:
@@ -296,10 +297,10 @@ func _draw() -> void:
 			# Outer charging ring collapsing in
 			draw_arc(Vector2.ZERO, tell_radius, 0, TAU, 24, Color(1.0, 0.8, 0.1, 0.9), 3.0)
 			# Telegraphed aim indicator line toward player
-			draw_line(Vector2.ZERO, aim_direction * (32.0 + charge_progress * 24.0), Color(1.0, 0.6, 0.1, 0.85), 2.5)
+			draw_line(Vector2.ZERO, aim_direction * (32.0 + charge_progress * 28.0), Color(1.0, 0.6, 0.1, 0.85), 2.5)
 			# Fiery core burst
 			draw_circle(Vector2.ZERO, 10.0 + charge_progress * 6.0, Color(1.0, 0.4, 0.05, 0.4))
-		elif current_state == State.CHASE or current_state == State.KITE:
+		elif current_state == State.CHASE or current_state == State.KITE or current_state == State.ATTACK:
 			# Ambient warm ember aura
 			draw_arc(Vector2.ZERO, 22.0 + pulse_fire, 0, TAU, 24, Color(1.0, 0.45, 0.1, 0.4), 2.0)
 	

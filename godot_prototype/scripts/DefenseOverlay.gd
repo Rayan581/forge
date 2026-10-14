@@ -201,7 +201,8 @@ func update_player_hp(current: float, max_val: float) -> void:
 
 func update_room_info(dungeon_level: int, grid_pos: Vector2i, is_calibrating: bool = false) -> void:
 	var mode_tag = "[CALIBRATION %d/5]" % dungeon_level if is_calibrating else "[ADAPTIVE PPO]"
-	room_label.text = "Floor %d %s | Room: (%d,%d)" % [dungeon_level, mode_tag, grid_pos.x, grid_pos.y]
+	var ranged_pct = int(round(difficulty_manager.ranged_enemy_ratio * 100.0)) if difficulty_manager else 35
+	room_label.text = "Floor %d %s | Room: (%d,%d) | Ranged: %d%%" % [dungeon_level, mode_tag, grid_pos.x, grid_pos.y, ranged_pct]
 
 func setup_minimap(rooms_data: Dictionary, start_pos: Vector2i) -> void:
 	if minimap:

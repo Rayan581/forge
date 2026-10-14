@@ -84,7 +84,7 @@ const CALIBRATION_LEVELS = {
 		"hazard": 0.05,
 		"scarcity": 0.15,
 		"count_scale": 0.7,
-		"ranged_ratio": 0.0,
+		"ranged_ratio": 0.35,
 		"description": "Introductory floor with slow, low-damage adversaries and minimal environmental hazards."
 	},
 	2: {
@@ -98,7 +98,7 @@ const CALIBRATION_LEVELS = {
 		"hazard": 0.15,
 		"scarcity": 0.25,
 		"count_scale": 0.9,
-		"ranged_ratio": 0.0,
+		"ranged_ratio": 0.35,
 		"description": "Standard combat encounter testing basic swordplay, evasion, and crowd engagement."
 	},
 	3: {
@@ -237,6 +237,10 @@ func apply_ppo_action(action: PackedFloat32Array) -> void:
 	hazard_density = _denormalize(action[4], "hazard_density")
 	resource_scarcity = _denormalize(action[5], "resource_scarcity")
 	room_count_target = int(round(_denormalize(action[6], "room_count")))
+	
+	# In adaptive mode (Floor 6+), the RL model's difficulty challenge directly dictates archetype ratio
+	var ppo_challenge = calculate_difficulty_score().score / 100.0
+	ranged_enemy_ratio = clampf(0.15 + ppo_challenge * 0.45, 0.15, 0.60)
 
 # Calculates a 0-100 predicted difficulty score
 func calculate_difficulty_score() -> Dictionary:

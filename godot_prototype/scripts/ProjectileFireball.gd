@@ -4,25 +4,27 @@ extends Area2D
 @export var speed: float = 240.0
 @export var damage: float = 18.0
 var direction: Vector2 = Vector2.RIGHT
-var lifetime: float = 3.5
+var lifetime: float = 4.0
 var current_lifetime: float = 0.0
 
 @onready var sprite: Sprite2D = $Sprite2D
 
 func _ready() -> void:
+	z_index = 15
 	collision_layer = 0
-	collision_mask = 1 | 4 # Layer 1: Player, Layer 3 (mask 4): Dungeon Walls
+	collision_mask = 5 # Layer 1: Player, Layer 3 (mask 4): Dungeon Walls
 	body_entered.connect(_on_body_entered)
 	rotation = direction.angle()
 
-func setup(p_dir: Vector2, p_damage: float = 18.0, p_speed: float = 240.0) -> void:
+func setup(p_dir: Vector2, p_pos: Vector2, p_damage: float = 18.0, p_speed: float = 240.0) -> void:
 	direction = p_dir.normalized()
 	damage = p_damage
 	speed = p_speed
+	global_position = p_pos
 	rotation = direction.angle()
 
 func _physics_process(delta: float) -> void:
-	position += direction * speed * delta
+	global_position += direction * speed * delta
 	current_lifetime += delta
 	
 	# Fiery wobble / pulse animation
@@ -40,8 +42,9 @@ func _on_body_entered(body: Node2D) -> void:
 		body.take_damage(damage, direction)
 		queue_free()
 	elif body is StaticBody2D:
-		# Hit wall - dissolve impact
-		queue_free()
+		# Grace period of 0.08s prevents instant deletion if spawned near room wall
+		if current_lifetime > 0.08:
+			queue_free()
 
 func _draw() -> void:
 	# Trailing fiery embers / outer heat aura

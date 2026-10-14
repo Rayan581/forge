@@ -1,14 +1,20 @@
-﻿"""
+"""
 PPO smoke test — verifies model init, short training, save/load, and inference.
 Does NOT run the full 300k-step research training.
 """
-import sys, os, tempfile
+
+import os
+import sys
+import tempfile
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import json
+
 import numpy as np
 import pytest
 from stable_baselines3 import PPO
+
 from train_ppo_difficulty import DungeonDifficultyEnv, export_policy_to_json
 
 
@@ -22,7 +28,8 @@ class TestPPOSmoke:
     def test_ppo_initializes(self):
         env = DungeonDifficultyEnv()
         model = PPO(
-            "MlpPolicy", env,
+            "MlpPolicy",
+            env,
             policy_kwargs=dict(net_arch=[64, 64]),
             verbose=0,
             n_steps=256,
@@ -33,7 +40,8 @@ class TestPPOSmoke:
     def test_ppo_smoke_training(self):
         env = DungeonDifficultyEnv()
         model = PPO(
-            "MlpPolicy", env,
+            "MlpPolicy",
+            env,
             policy_kwargs=dict(net_arch=[64, 64]),
             verbose=0,
             n_steps=256,
@@ -47,9 +55,13 @@ class TestPPOSmoke:
     def test_ppo_save_and_load(self, tmp_path):
         env = DungeonDifficultyEnv()
         model = PPO(
-            "MlpPolicy", env,
+            "MlpPolicy",
+            env,
             policy_kwargs=dict(net_arch=[64, 64]),
-            verbose=0, n_steps=256, batch_size=64, seed=1,
+            verbose=0,
+            n_steps=256,
+            batch_size=64,
+            seed=1,
         )
         model.learn(total_timesteps=self.SMOKE_STEPS)
         save_path = str(tmp_path / "smoke_model")
@@ -62,9 +74,13 @@ class TestPPOSmoke:
     def test_ppo_inference_produces_valid_action(self, tmp_path):
         env = DungeonDifficultyEnv()
         model = PPO(
-            "MlpPolicy", env,
+            "MlpPolicy",
+            env,
             policy_kwargs=dict(net_arch=[64, 64]),
-            verbose=0, n_steps=256, batch_size=64, seed=2,
+            verbose=0,
+            n_steps=256,
+            batch_size=64,
+            seed=2,
         )
         model.learn(total_timesteps=self.SMOKE_STEPS)
         obs, _ = env.reset(seed=10)
@@ -77,9 +93,13 @@ class TestPPOSmoke:
     def test_policy_export_produces_valid_json(self, tmp_path):
         env = DungeonDifficultyEnv()
         model = PPO(
-            "MlpPolicy", env,
+            "MlpPolicy",
+            env,
             policy_kwargs=dict(net_arch=[64, 64]),
-            verbose=0, n_steps=256, batch_size=64, seed=3,
+            verbose=0,
+            n_steps=256,
+            batch_size=64,
+            seed=3,
         )
         model.learn(total_timesteps=self.SMOKE_STEPS)
         export_path = str(tmp_path / "test_policy.json")

@@ -1,21 +1,23 @@
-﻿"""
+"""
 Shared pytest fixtures for FORGE ML/RL tests.
 Uses deterministic seeds throughout to ensure reproducible CI runs.
 """
-import sys
+
 import os
-import pytest
+import sys
+
 import numpy as np
+import pytest
 
 # Ensure ml_spike is importable when running from repo root
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from train_ppo_difficulty import (
-    DungeonDifficultyEnv,
-    PARAM_RANGES,
     PARAM_ORDER,
-    norm,
+    PARAM_RANGES,
+    DungeonDifficultyEnv,
     denorm,
+    norm,
 )
 
 

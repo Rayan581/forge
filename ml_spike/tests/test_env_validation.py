@@ -1,20 +1,24 @@
-﻿"""
+"""
 Tests for the DungeonDifficultyEnv Gymnasium environment.
 Covers observation/action spaces, reset, step, reward, and termination.
 """
-import sys, os
+
+import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import numpy as np
 import pytest
+
 from train_ppo_difficulty import (
-    DungeonDifficultyEnv,
-    PARAM_RANGES,
-    PARAM_ORDER,
-    norm,
-    denorm,
-    TARGET_TIME,
     MAX_LEVELS,
+    PARAM_ORDER,
+    PARAM_RANGES,
+    TARGET_TIME,
+    DungeonDifficultyEnv,
+    denorm,
+    norm,
 )
 
 
@@ -70,8 +74,9 @@ class TestObservationSpace:
     def test_obs_within_declared_space(self, env):
         for seed in range(5):
             obs, _ = env.reset(seed=seed)
-            assert env.observation_space.contains(obs), \
+            assert env.observation_space.contains(obs), (
                 f"Obs {obs} not in observation_space for seed={seed}"
+            )
 
 
 class TestActionSpace:
@@ -153,8 +158,7 @@ class TestReproducibility:
     def test_fixed_seed_identical_rewards(self):
         action = np.zeros(7, dtype=np.float32)
         rewards1, rewards2 = [], []
-        for e, r_list in [(DungeonDifficultyEnv(), rewards1),
-                          (DungeonDifficultyEnv(), rewards2)]:
+        for e, r_list in [(DungeonDifficultyEnv(), rewards1), (DungeonDifficultyEnv(), rewards2)]:
             e.reset(seed=77)
             for _ in range(10):
                 _, reward, terminated, _, _ = e.step(action)

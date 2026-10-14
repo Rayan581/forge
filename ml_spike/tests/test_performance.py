@@ -1,13 +1,19 @@
-﻿"""
+"""
 Lightweight performance regression tests.
 Measures Python inference latency and policy file size.
 These are NOT hardware-sensitive rendering benchmarks (60 FPS / 250 MB RAM
 cannot be validated on a CPU-only GitHub runner).
 """
-import sys, os, time, json
+
+import json
+import os
+import sys
+import time
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import math
+
 import numpy as np
 import pytest
 
@@ -15,7 +21,7 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 PROD_POLICY_PATH = os.path.join(REPO_ROOT, "godot_prototype", "ai", "policy_weights.json")
 
 # ── Targets from proposal ───────────────────────────────────────────────────
-POLICY_SIZE_KB_LIMIT = 120.0     # §9 — exported policy size
+POLICY_SIZE_KB_LIMIT = 120.0  # §9 — exported policy size
 INFERENCE_LATENCY_MS_LIMIT = 0.5  # §9 — native inference latency
 WARM_UP_RUNS = 20
 TIMED_RUNS = 200

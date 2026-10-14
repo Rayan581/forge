@@ -31,8 +31,9 @@ stays identical, so Main.gd and PPOPolicy.gd don't need to change.
 """
 
 import json
-import numpy as np
+
 import gymnasium as gym
+import numpy as np
 from gymnasium import spaces
 from stable_baselines3 import PPO
 
@@ -40,19 +41,26 @@ from stable_baselines3 import PPO
 # Must match DifficultyManager.gd's PARAM_RANGES / build_observation exactly.
 # ---------------------------------------------------------------------------
 PARAM_RANGES = {
-    "enemy_health":      (20.0, 120.0),
-    "enemy_damage":      (5.0, 50.0),
-    "enemy_speed":       (60.0, 220.0),
-    "enemy_aggro":       (100.0, 450.0),
-    "hazard_density":    (0.05, 0.80),
+    "enemy_health": (20.0, 120.0),
+    "enemy_damage": (5.0, 50.0),
+    "enemy_speed": (60.0, 220.0),
+    "enemy_aggro": (100.0, 450.0),
+    "hazard_density": (0.05, 0.80),
     "resource_scarcity": (0.10, 0.90),
-    "room_count":        (5.0, 9.0),
+    "room_count": (5.0, 9.0),
 }
-PARAM_ORDER = ["enemy_health", "enemy_damage", "enemy_speed", "enemy_aggro",
-               "hazard_density", "resource_scarcity", "room_count"]
+PARAM_ORDER = [
+    "enemy_health",
+    "enemy_damage",
+    "enemy_speed",
+    "enemy_aggro",
+    "hazard_density",
+    "resource_scarcity",
+    "room_count",
+]
 
-TARGET_TIME = 45.0   # seconds — the pace we want a "well-matched" level to take
-MAX_LEVELS = 30       # simulated levels per training episode
+TARGET_TIME = 45.0  # seconds — the pace we want a "well-matched" level to take
+MAX_LEVELS = 30  # simulated levels per training episode
 
 
 def denorm(value, key):
@@ -91,24 +99,31 @@ class DungeonDifficultyEnv(gym.Env):
         self.level = 0
         self.player_skill = self.rng.uniform(0.3, 0.6)  # 0..1, improves slowly over the run
         self.params = {
-            "enemy_health": 60.0, "enemy_damage": 20.0, "enemy_speed": 125.0,
-            "enemy_aggro": 240.0, "hazard_density": 0.35, "resource_scarcity": 0.40,
+            "enemy_health": 60.0,
+            "enemy_damage": 20.0,
+            "enemy_speed": 125.0,
+            "enemy_aggro": 240.0,
+            "hazard_density": 0.35,
+            "resource_scarcity": 0.40,
             "room_count": 6.0,
         }
         self.last_time, self.last_deaths, self.last_dmg_ratio = TARGET_TIME, 0, 0.3
         return self._get_obs(), {}
 
     def _get_obs(self):
-        return np.array([
-            np.clip(self.last_time / (TARGET_TIME * 2.0), 0, 1),
-            np.clip(self.last_deaths / 3.0, 0, 1),
-            np.clip(self.last_dmg_ratio, 0, 1),
-            norm(self.params["enemy_health"], "enemy_health"),
-            norm(self.params["enemy_damage"], "enemy_damage"),
-            norm(self.params["hazard_density"], "hazard_density"),
-            norm(self.params["room_count"], "room_count"),
-            np.clip(self.level / 10.0, 0, 1),
-        ], dtype=np.float32)
+        return np.array(
+            [
+                np.clip(self.last_time / (TARGET_TIME * 2.0), 0, 1),
+                np.clip(self.last_deaths / 3.0, 0, 1),
+                np.clip(self.last_dmg_ratio, 0, 1),
+                norm(self.params["enemy_health"], "enemy_health"),
+                norm(self.params["enemy_damage"], "enemy_damage"),
+                norm(self.params["hazard_density"], "hazard_density"),
+                norm(self.params["room_count"], "room_count"),
+                np.clip(self.level / 10.0, 0, 1),
+            ],
+            dtype=np.float32,
+        )
 
     def _simulate_level(self):
         """Turns current difficulty params + player skill into a
@@ -124,15 +139,22 @@ class DungeonDifficultyEnv(gym.Env):
 
         base_time_per_room = TARGET_TIME / 6.0
         time_mult = 1.0 + gap * 1.8
-        completion_time = max(5.0, rooms * base_time_per_room * time_mult
-                               * self.rng.uniform(0.85, 1.15))
+        completion_time = max(
+            5.0, rooms * base_time_per_room * time_mult * self.rng.uniform(0.85, 1.15)
+        )
 
         death_prob = float(np.clip(0.5 + gap * 1.2, 0.0, 0.95))
-        deaths = self.rng.binomial(3, death_prob) if gap > 0 else self.rng.binomial(1, max(0.0, death_prob))
+        deaths = (
+            self.rng.binomial(3, death_prob)
+            if gap > 0
+            else self.rng.binomial(1, max(0.0, death_prob))
+        )
         dmg_ratio = float(np.clip(0.3 + gap * 0.9 + self.rng.normal(0, 0.05), 0.0, 1.0))
 
         # Player slowly improves regardless of difficulty (learning the game).
-        self.player_skill = float(np.clip(self.player_skill + self.rng.uniform(0.0, 0.01), 0.0, 1.0))
+        self.player_skill = float(
+            np.clip(self.player_skill + self.rng.uniform(0.0, 0.01), 0.0, 1.0)
+        )
         return completion_time, int(deaths), dmg_ratio
 
     def step(self, action):
@@ -185,7 +207,8 @@ class DungeonDifficultyEnv(gym.Env):
 def train():
     env = DungeonDifficultyEnv()
     model = PPO(
-        "MlpPolicy", env,
+        "MlpPolicy",
+        env,
         policy_kwargs=dict(net_arch=[64, 64]),
         verbose=1,
         n_steps=2048,
@@ -206,14 +229,18 @@ def export_policy_to_json(model: PPO, path="policy_weights.json"):
     layers = []
     for module in policy_net:
         if hasattr(module, "weight"):
-            layers.append({
-                "w": module.weight.detach().cpu().numpy().tolist(),
-                "b": module.bias.detach().cpu().numpy().tolist(),
-            })
-    layers.append({
-        "w": action_net.weight.detach().cpu().numpy().tolist(),
-        "b": action_net.bias.detach().cpu().numpy().tolist(),
-    })
+            layers.append(
+                {
+                    "w": module.weight.detach().cpu().numpy().tolist(),
+                    "b": module.bias.detach().cpu().numpy().tolist(),
+                }
+            )
+    layers.append(
+        {
+            "w": action_net.weight.detach().cpu().numpy().tolist(),
+            "b": action_net.bias.detach().cpu().numpy().tolist(),
+        }
+    )
 
     with open(path, "w") as f:
         json.dump({"layers": layers, "activation": "tanh"}, f)

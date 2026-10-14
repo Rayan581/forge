@@ -1,14 +1,18 @@
-﻿"""
+"""
 Policy JSON validation tests.
 Tests the shipped godot_prototype/ai/policy_weights.json against the
 schema expected by PPOPolicy.gd, and validates a freshly exported policy
 from a smoke-trained model.
 """
-import sys, os
+
+import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import json
 import math
+
 import numpy as np
 import pytest
 
@@ -30,13 +34,13 @@ def load_policy(path: str) -> dict:
 
 class TestProdPolicyExists:
     def test_file_exists(self):
-        assert os.path.exists(PROD_POLICY_PATH), \
-            f"Policy not found at {PROD_POLICY_PATH}"
+        assert os.path.exists(PROD_POLICY_PATH), f"Policy not found at {PROD_POLICY_PATH}"
 
     def test_file_size_under_120kb(self):
         size_kb = os.path.getsize(PROD_POLICY_PATH) / 1024
-        assert size_kb < MAX_POLICY_SIZE_KB, \
+        assert size_kb < MAX_POLICY_SIZE_KB, (
             f"Policy is {size_kb:.1f} KB, exceeds {MAX_POLICY_SIZE_KB} KB target"
+        )
 
 
 class TestProdPolicySchema:
@@ -54,8 +58,9 @@ class TestProdPolicySchema:
         assert self.data["activation"] == "tanh"
 
     def test_correct_number_of_layers(self):
-        assert len(self.data["layers"]) == EXPECTED_LAYERS, \
+        assert len(self.data["layers"]) == EXPECTED_LAYERS, (
             f"Expected {EXPECTED_LAYERS} layers, got {len(self.data['layers'])}"
+        )
 
     def test_each_layer_has_w_and_b(self):
         for i, layer in enumerate(self.data["layers"]):
@@ -65,16 +70,18 @@ class TestProdPolicySchema:
     def test_first_layer_input_dim(self):
         w = self.data["layers"][0]["w"]
         in_dim = len(w[0]) if w else 0
-        assert in_dim == EXPECTED_OBS_DIM, \
+        assert in_dim == EXPECTED_OBS_DIM, (
             f"First layer input dim: expected {EXPECTED_OBS_DIM}, got {in_dim}"
+        )
 
     def test_hidden_layer_dims(self):
         for i in range(2):
             w = self.data["layers"][i]["w"]
             b = self.data["layers"][i]["b"]
             out_dim = len(w)
-            assert out_dim == EXPECTED_HIDDEN_DIM, \
+            assert out_dim == EXPECTED_HIDDEN_DIM, (
                 f"Layer {i} out_dim: expected {EXPECTED_HIDDEN_DIM}, got {out_dim}"
+            )
             assert len(b) == EXPECTED_HIDDEN_DIM
 
     def test_action_layer_output_dim(self):
@@ -94,8 +101,7 @@ class TestProdPolicySchema:
         for i, layer in enumerate(self.data["layers"]):
             w = np.array(layer["w"])
             b = np.array(layer["b"])
-            assert w.shape[0] == b.shape[0], \
-                f"Layer {i}: w rows={w.shape[0]} != b len={b.shape[0]}"
+            assert w.shape[0] == b.shape[0], f"Layer {i}: w rows={w.shape[0]} != b len={b.shape[0]}"
 
 
 class TestProdPolicyInference:

@@ -1,4 +1,4 @@
-﻿"""
+"""
 Cross-language inference parity test.
 Creates a deterministic test policy with known small weights,
 runs the Python forward pass, and verifies the output matches
@@ -10,11 +10,15 @@ manually computed expected values from the same algorithm.
 The GDScript implementation (PPOPolicy.gd) is structurally identical —
 see docs/CI_ARCHITECTURE.md §4.8 for the outstanding GDScript parity blocker.
 """
-import sys, os
+
+import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import json
 import math
+
 import numpy as np
 import pytest
 
@@ -45,6 +49,7 @@ def py_forward(layers_data: list, obs: np.ndarray) -> np.ndarray:
 # Architecture: 8 -> 2 -> 2 -> 7  (we shrink hidden for tractability)
 # Weights are all 0.1 so we can hand-compute the expected output.
 
+
 def build_fixture_policy():
     """
     Build a tiny 3-layer policy with known weights.
@@ -53,9 +58,9 @@ def build_fixture_policy():
     Layer 2: w shape [7][2], b shape [7]  — all 0.1
     """
     layers = [
-        {"w": [[0.1] * 8 for _ in range(2)],  "b": [0.1] * 2},
-        {"w": [[0.1] * 2 for _ in range(2)],  "b": [0.1] * 2},
-        {"w": [[0.1] * 2 for _ in range(7)],  "b": [0.1] * 7},
+        {"w": [[0.1] * 8 for _ in range(2)], "b": [0.1] * 2},
+        {"w": [[0.1] * 2 for _ in range(2)], "b": [0.1] * 2},
+        {"w": [[0.1] * 2 for _ in range(7)], "b": [0.1] * 7},
     ]
     return {"layers": layers, "activation": "tanh"}
 
@@ -112,12 +117,8 @@ class TestParityFixturePolicy:
 class TestParityProdPolicy:
     """Run parity checks against the production policy_weights.json."""
 
-    REPO_ROOT = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "..")
-    )
-    PROD_POLICY_PATH = os.path.join(
-        REPO_ROOT, "godot_prototype", "ai", "policy_weights.json"
-    )
+    REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    PROD_POLICY_PATH = os.path.join(REPO_ROOT, "godot_prototype", "ai", "policy_weights.json")
 
     @pytest.fixture(autouse=True)
     def prod_policy(self):

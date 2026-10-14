@@ -1,4 +1,4 @@
-﻿name: FORGE Release
+name: FORGE Release
 
 on:
   push:
@@ -84,6 +84,9 @@ jobs:
           cd /tmp && unzip -q templates.tpz
           mv /tmp/templates/* ~/.local/share/godot/export_templates/4.3.stable/
 
+      - name: Remove nested project if present
+        run: rm -rf godot_prototype/new-game-project
+
       - name: Import project
         run: |
           timeout 60 $GODOT --headless --editor --quit \
@@ -94,9 +97,9 @@ jobs:
 
       - name: Export Windows build
         run: |
-          $GODOT --headless --export-release "Windows Desktop" \
-            dist/FORGE-Windows/FORGE.exe \
-            --path godot_prototype
+          $GODOT --headless --path godot_prototype \
+            --export-release "Windows Desktop" \
+            ${{ github.workspace }}/dist/FORGE-Windows/FORGE.exe
 
       - name: Copy policy JSON to dist
         run: |
@@ -119,7 +122,7 @@ jobs:
           echo "commit_sha=${{ github.sha }}" > dist/FORGE-Windows/build_info.txt
           echo "build_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> dist/FORGE-Windows/build_info.txt
           echo "godot_version=4.3-stable" >> dist/FORGE-Windows/build_info.txt
-          echo "tag=${{ github.ref_name }}" >> dist/FORGE-Windows/build_info.txt
+          echo "tag=${{ inputs.tag_name || github.ref_name }}" >> dist/FORGE-Windows/build_info.txt
           python -c "
           import hashlib, json
           with open('godot_prototype/ai/policy_weights.json','rb') as f:
@@ -127,21 +130,31 @@ jobs:
           print('policy_sha256=' + h)
           " >> dist/FORGE-Windows/build_info.txt
 
+      - name: Determine release tag
+        run: |
+          TAG="${{ inputs.tag_name }}"
+          if [ -z "$TAG" ]; then
+            TAG="${{ github.ref_name }}"
+          fi
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+          echo "Release tag is $TAG"
+
       - name: Package release ZIP
         run: |
           cd dist
-          zip -r FORGE-Windows-${{ github.ref_name }}.zip FORGE-Windows/
+          zip -r "FORGE-Windows-${{ env.RELEASE_TAG }}.zip" FORGE-Windows/
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: forge-windows-build
-          path: dist/FORGE-Windows-${{ github.ref_name }}.zip
+          path: dist/FORGE-Windows-${{ env.RELEASE_TAG }}.zip
           retention-days: 30
 
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') || inputs.tag_name != ''
         with:
-          files: dist/FORGE-Windows-${{ github.ref_name }}.zip
+          tag_name: ${{ env.RELEASE_TAG }}
+          files: dist/FORGE-Windows-${{ env.RELEASE_TAG }}.zip
           generate_release_notes: true

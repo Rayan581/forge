@@ -38,9 +38,9 @@ class TestProdPolicyExists:
 
     def test_file_size_under_120kb(self):
         size_kb = os.path.getsize(PROD_POLICY_PATH) / 1024
-        assert size_kb < MAX_POLICY_SIZE_KB, (
-            f"Policy is {size_kb:.1f} KB, exceeds {MAX_POLICY_SIZE_KB} KB target"
-        )
+        assert (
+            size_kb < MAX_POLICY_SIZE_KB
+        ), f"Policy is {size_kb:.1f} KB, exceeds {MAX_POLICY_SIZE_KB} KB target"
 
 
 class TestProdPolicySchema:
@@ -58,9 +58,9 @@ class TestProdPolicySchema:
         assert self.data["activation"] == "tanh"
 
     def test_correct_number_of_layers(self):
-        assert len(self.data["layers"]) == EXPECTED_LAYERS, (
-            f"Expected {EXPECTED_LAYERS} layers, got {len(self.data['layers'])}"
-        )
+        assert (
+            len(self.data["layers"]) == EXPECTED_LAYERS
+        ), f"Expected {EXPECTED_LAYERS} layers, got {len(self.data['layers'])}"
 
     def test_each_layer_has_w_and_b(self):
         for i, layer in enumerate(self.data["layers"]):
@@ -70,18 +70,18 @@ class TestProdPolicySchema:
     def test_first_layer_input_dim(self):
         w = self.data["layers"][0]["w"]
         in_dim = len(w[0]) if w else 0
-        assert in_dim == EXPECTED_OBS_DIM, (
-            f"First layer input dim: expected {EXPECTED_OBS_DIM}, got {in_dim}"
-        )
+        assert (
+            in_dim == EXPECTED_OBS_DIM
+        ), f"First layer input dim: expected {EXPECTED_OBS_DIM}, got {in_dim}"
 
     def test_hidden_layer_dims(self):
         for i in range(2):
             w = self.data["layers"][i]["w"]
             b = self.data["layers"][i]["b"]
             out_dim = len(w)
-            assert out_dim == EXPECTED_HIDDEN_DIM, (
-                f"Layer {i} out_dim: expected {EXPECTED_HIDDEN_DIM}, got {out_dim}"
-            )
+            assert (
+                out_dim == EXPECTED_HIDDEN_DIM
+            ), f"Layer {i} out_dim: expected {EXPECTED_HIDDEN_DIM}, got {out_dim}"
             assert len(b) == EXPECTED_HIDDEN_DIM
 
     def test_action_layer_output_dim(self):

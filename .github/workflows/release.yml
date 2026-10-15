@@ -1,160 +1,291 @@
 name: FORGE Release
 
+# ── Triggers ──────────────────────────────────────────────────────────────
+# FIX 1: Removed `release: [created]` trigger.
+#   GitHub fires BOTH `push: tags` AND `release: created` when you create a
+#   release via the UI for a new tag. That caused two concurrent workflow
+#   runs to race uploading assets to the same release object.
+#   Tag-push alone is the canonical trigger; manual dispatch covers ad-hoc
+#   re-runs without a tag push.
+#
+# FIX 2: Per-tag concurrency ensures a re-run or slow duplicate never races.
 on:
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
-  release:
-    types: [created]
   workflow_dispatch:
     inputs:
       tag_name:
-        description: "Release tag (e.g. v0.1.0)"
+        description: "Release tag to build (must already exist, e.g. v0.1.0)"
         required: true
         type: string
 
+# One run per tag at a time; additional runs queue, not cancel, because a
+# cancelled in-progress publish could leave a half-uploaded release.
+concurrency:
+  group: release-${{ github.ref }}-${{ inputs.tag_name }}
+  cancel-in-progress: false
+
+# Default: read-only. The publish job overrides to contents: write.
 permissions:
-  contents: write
+  contents: read
+
+env:
+  GODOT_VERSION: "4.3-stable"
+  PYTHON_VERSION: "3.12"
 
 jobs:
+  # ─────────────────────────────────────────────────────────────────────
+  # JOB 0 — Resolve & validate the tag
+  #
+  # FIX 3: Manual dispatch used to build the branch HEAD, not the tag.
+  #   This job pins the checkout SHA to the tag's commit, validates the
+  #   tag exists in the remote, rejects anything that isn't vX.Y.Z, and
+  #   forwards the resolved SHA + tag to every downstream job.
+  # ─────────────────────────────────────────────────────────────────────
+  prepare:
+    name: Resolve Release Tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+      sha: ${{ steps.resolve.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # fetch all tags
+
+      - name: Resolve and validate tag
+        id: resolve
+        run: |
+          # Determine the tag from either the pushed ref or manual input
+          if [ -n "${{ inputs.tag_name }}" ]; then
+            TAG="${{ inputs.tag_name }}"
+          else
+            TAG="${{ github.ref_name }}"
+          fi
+
+          # Reject anything that isn't vX.Y.Z
+          if ! echo "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Tag '$TAG' is not in vX.Y.Z format. Aborting."
+            exit 1
+          fi
+
+          # Verify the tag exists in the remote
+          SHA=$(git rev-list -n 1 "refs/tags/$TAG" 2>/dev/null || true)
+          if [ -z "$SHA" ]; then
+            echo "::error::Tag '$TAG' does not exist in the repository. Push the tag first."
+            exit 1
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA"  >> "$GITHUB_OUTPUT"
+          echo "Resolved: $TAG → $SHA"
+
+  # ─────────────────────────────────────────────────────────────────────
+  # JOB 1 — Pre-release validation (Python tests + policy)
+  # Runs against the exact tag commit resolved above.
+  # ─────────────────────────────────────────────────────────────────────
   validate:
     name: Pre-Release Validation
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
+    needs: prepare
     steps:
+      # Check out the resolved tag SHA, not the branch head
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
 
-      - name: Set up Python 3.12
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: ml_spike/requirements.txt
 
-      - name: Install dependencies
+      - name: Install dependencies (CPU-only torch)
         run: |
           pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -r ml_spike/requirements.txt
           pip install pytest==8.2.2
 
-      - name: Run mandatory tests
-        run: |
-          pytest ml_spike/tests/ -v --tb=short -x
+      - name: Run full test suite (-x stops on first failure)
+        run: pytest ml_spike/tests/ -v --tb=short -x
         env:
           PYTHONPATH: ${{ github.workspace }}
 
-      - name: Validate policy JSON
-        run: |
-          pytest ml_spike/tests/test_policy_validation.py -v
+      - name: Validate policy JSON schema
+        run: pytest ml_spike/tests/test_policy_validation.py -v
         env:
           PYTHONPATH: ${{ github.workspace }}
 
-      - name: Validate policy size
+      - name: Validate policy size (must be < 120 KB)
         run: |
-          python -c "
+          python - <<'EOF'
           import os, sys
-          path = 'godot_prototype/ai/policy_weights.json'
-          size_kb = os.path.getsize(path) / 1024
-          print(f'Policy size: {size_kb:.1f} KB')
-          if size_kb >= 120:
+          path = "godot_prototype/ai/policy_weights.json"
+          if not os.path.exists(path):
+              print(f"ERROR: {path} not found")
               sys.exit(1)
-          "
+          size_kb = os.path.getsize(path) / 1024
+          print(f"Policy size: {size_kb:.1f} KB")
+          if size_kb >= 120:
+              print(f"FAIL: {size_kb:.1f} KB ≥ 120 KB target")
+              sys.exit(1)
+          print("PASS")
+          EOF
 
+  # ─────────────────────────────────────────────────────────────────────
+  # JOB 2 — Build: Godot Windows export
+  #
+  # Key fixes vs. old version:
+  #  * Checks out the tag SHA (not branch head).
+  #  * Godot binary + templates are cached via the shared composite action.
+  #  * Verifies FORGE.pck exists (embed_pck=false produces two files).
+  #  * Verifies FORGE.exe is a valid PE32+ x86-64 binary via `file`.
+  #  * Verifies FORGE.pck starts with GDPC magic bytes.
+  #  * Does NOT copy policy_weights.json beside the exe – it's already
+  #    packed inside FORGE.pck via res://ai/policy_weights.json. An external
+  #    copy next to the exe is silently ignored by the game at runtime.
+  # ─────────────────────────────────────────────────────────────────────
   build-windows:
     name: Export Windows x86-64
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    needs: validate
+    timeout-minutes: 40
+    needs: [prepare, validate]
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
 
-      - name: Download Godot 4.3 headless
-        run: |
-          wget -q https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip \
-            -O /tmp/godot.zip
-          unzip -q /tmp/godot.zip -d /tmp/godot_bin
-          chmod +x /tmp/godot_bin/Godot_v4.3-stable_linux.x86_64
-          echo "GODOT=/tmp/godot_bin/Godot_v4.3-stable_linux.x86_64" >> $GITHUB_ENV
+      - name: Setup Godot (with export templates)
+        uses: ./.github/actions/setup-godot
+        with:
+          godot-version: ${{ env.GODOT_VERSION }}
+          export-templates: "true"
 
-      - name: Download Windows export templates
-        run: |
-          wget -q https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz \
-            -O /tmp/templates.tpz
-          mkdir -p ~/.local/share/godot/export_templates/4.3.stable
-          cd /tmp && unzip -q templates.tpz
-          mv /tmp/templates/* ~/.local/share/godot/export_templates/4.3.stable/
-
-      - name: Remove nested project if present
+      - name: Remove nested project (safety cleanup)
         run: rm -rf godot_prototype/new-game-project
 
-      - name: Import project
+      - name: Import project resources
         run: |
-          timeout 60 $GODOT --headless --editor --quit \
-            --path godot_prototype || true
+          timeout 300 "$GODOT" --headless --import --path godot_prototype
+          if [ ! -d "godot_prototype/.godot/imported" ]; then
+            echo "::error::Import produced no .godot/imported directory"
+            exit 1
+          fi
 
       - name: Create output directory
         run: mkdir -p dist/FORGE-Windows
 
       - name: Export Windows build
         run: |
-          $GODOT --headless --path godot_prototype \
+          "$GODOT" --headless --path godot_prototype \
             --export-release "Windows Desktop" \
-            ${{ github.workspace }}/dist/FORGE-Windows/FORGE.exe
-
-      - name: Copy policy JSON to dist
-        run: |
-          cp godot_prototype/ai/policy_weights.json dist/FORGE-Windows/
+            "${{ github.workspace }}/dist/FORGE-Windows/FORGE.exe"
 
       - name: Verify exported files
         run: |
-          if [ ! -f "dist/FORGE-Windows/FORGE.exe" ]; then
-            echo "ERROR: FORGE.exe not found in dist"
+          EXE="dist/FORGE-Windows/FORGE.exe"
+          PCK="dist/FORGE-Windows/FORGE.pck"
+
+          # Both .exe and .pck must exist (embed_pck=false)
+          if [ ! -f "$EXE" ]; then
+            echo "::error::FORGE.exe not found in dist"
             exit 1
           fi
-          if [ ! -f "dist/FORGE-Windows/policy_weights.json" ]; then
-            echo "ERROR: policy_weights.json not in dist"
+          if [ ! -f "$PCK" ]; then
+            echo "::error::FORGE.pck not found in dist (embed_pck=false, both files required)"
             exit 1
           fi
+
+          # Verify the .exe is a valid PE32+ x86-64 binary
+          FILE_OUTPUT=$(file "$EXE")
+          echo "file: $FILE_OUTPUT"
+          if ! echo "$FILE_OUTPUT" | grep -q "PE32+ executable.*x86-64"; then
+            echo "::error::FORGE.exe is not a valid PE32+ x86-64 binary"
+            exit 1
+          fi
+
+          # Verify the .pck starts with the GDPC magic
+          MAGIC=$(xxd -l 4 "$PCK" | awk '{print $2$3}')
+          echo "PCK magic: $MAGIC"
+          if [ "$MAGIC" != "47445043" ]; then
+            echo "::error::FORGE.pck does not start with GDPC magic (got: $MAGIC)"
+            exit 1
+          fi
+
+          # Verify policy_weights.json was packed
+          if ! strings "$PCK" | grep -q "ai/policy_weights.json"; then
+            echo "::error::policy_weights.json not found inside FORGE.pck"
+            exit 1
+          fi
+
           ls -lh dist/FORGE-Windows/
+          echo "Export verification passed."
 
       - name: Record build metadata
         run: |
-          echo "commit_sha=${{ github.sha }}" > dist/FORGE-Windows/build_info.txt
-          echo "build_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> dist/FORGE-Windows/build_info.txt
-          echo "godot_version=4.3-stable" >> dist/FORGE-Windows/build_info.txt
-          echo "tag=${{ inputs.tag_name || github.ref_name }}" >> dist/FORGE-Windows/build_info.txt
-          python -c "
-          import hashlib, json
-          with open('godot_prototype/ai/policy_weights.json','rb') as f:
+          TAG="${{ needs.prepare.outputs.tag }}"
+          SHA="${{ needs.prepare.outputs.sha }}"
+          {
+            echo "tag=$TAG"
+            echo "commit_sha=$SHA"
+            echo "build_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "godot_version=${{ env.GODOT_VERSION }}"
+            python3 - <<'PYEOF'
+          import hashlib
+          with open("godot_prototype/ai/policy_weights.json", "rb") as f:
               h = hashlib.sha256(f.read()).hexdigest()
-          print('policy_sha256=' + h)
-          " >> dist/FORGE-Windows/build_info.txt
-
-      - name: Determine release tag
-        run: |
-          TAG="${{ inputs.tag_name }}"
-          if [ -z "$TAG" ]; then
-            TAG="${{ github.ref_name }}"
-          fi
-          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
-          echo "Release tag is $TAG"
+          print("policy_sha256=" + h)
+          PYEOF
+          } > dist/FORGE-Windows/build_info.txt
+          cat dist/FORGE-Windows/build_info.txt
 
       - name: Package release ZIP
         run: |
           cd dist
-          zip -r "FORGE-Windows-${{ env.RELEASE_TAG }}.zip" FORGE-Windows/
+          TAG="${{ needs.prepare.outputs.tag }}"
+          zip -r "FORGE-Windows-${TAG}.zip" FORGE-Windows/
+          echo "ZIP_NAME=FORGE-Windows-${TAG}.zip" >> "$GITHUB_ENV"
 
-      - name: Upload build artifact
+      - name: Upload build artifact (30-day retention)
         uses: actions/upload-artifact@v4
         with:
           name: forge-windows-build
-          path: dist/FORGE-Windows-${{ env.RELEASE_TAG }}.zip
+          path: dist/${{ env.ZIP_NAME }}
           retention-days: 30
+
+  # ─────────────────────────────────────────────────────────────────────
+  # JOB 3 — Publish to GitHub Release
+  # Separated from build to give it the narrowest possible write scope.
+  # FIX: softprops/action-gh-release@v2 updates an existing release and
+  # overwrites same-named assets on re-run, which is safe on a fixed tag.
+  # ─────────────────────────────────────────────────────────────────────
+  publish:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [prepare, build-windows]
+    permissions:
+      contents: write   # narrowest scope: only this job can write
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: forge-windows-build
+          path: dist/
+
+      - name: List downloaded files
+        run: ls -lh dist/
 
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/') || inputs.tag_name != ''
         with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          files: dist/FORGE-Windows-${{ env.RELEASE_TAG }}.zip
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          files: dist/FORGE-Windows-${{ needs.prepare.outputs.tag }}.zip
           generate_release_notes: true
+          # If the release already exists (re-run), update it rather than fail
+          fail_on_unmatched_files: true

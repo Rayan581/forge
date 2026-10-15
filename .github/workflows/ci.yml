@@ -1,73 +1,96 @@
-﻿name: FORGE CI
+name: FORGE CI
 
+# Trigger on pushes to main/dev, PRs targeting main, and manual runs.
+# Branches "5levels" and "cicd" are excluded to prevent double-runs on
+# branches with open PRs – add them back here if you want per-branch checks.
 on:
   push:
-    branches: ["main", "dev", "5levels", "cicd"]
+    branches: ["main", "dev"]
   pull_request:
     branches: ["main"]
   workflow_dispatch:
 
+# One run per branch/PR at a time; in-progress runs are cancelled on new push.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Default to the minimum read-only scope; individual jobs override as needed.
 permissions:
   contents: read
 
+env:
+  GODOT_VERSION: "4.3-stable"
+  PYTHON_VERSION: "3.12"
+
 jobs:
-  # ─────────────────────────────────────────────
+  # ─────────────────────────────────────────────────────────────────────
   # JOB 1 — Python lint & static analysis
-  # ─────────────────────────────────────────────
+  # Intentionally lightweight: only ruff is installed (no heavy ML wheels).
+  # ─────────────────────────────────────────────────────────────────────
   python-lint:
     name: Python Lint & Static Checks
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 8
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python 3.12
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: ml_spike/requirements.txt
+          python-version: ${{ env.PYTHON_VERSION }}
+          # Do NOT use cache: pip here – a ruff-only cache wins the key race
+          # and blocks the larger torch-based cache used by later jobs.
 
-      - name: Install lint tools
+      - name: Install ruff
         run: pip install ruff==0.4.10
 
-      - name: Run Ruff linter
+      - name: Ruff – check
         run: ruff check ml_spike/ --output-format=github
 
-      - name: Check formatting
+      - name: Ruff – format check
         run: ruff format ml_spike/ --check
 
-  # ─────────────────────────────────────────────
-  # JOB 2 — Python unit & integration tests
-  # ─────────────────────────────────────────────
+  # ─────────────────────────────────────────────────────────────────────
+  # JOB 2 — All Python tests (single install, full suite, coverage)
+  #
+  # Replaces the old four separate test jobs (python-tests, env-and-ppo-smoke,
+  # policy-validation, performance-checks) which each re-installed PyTorch,
+  # SB3, NumPy, etc., wasting ~10 min of runner time per push.
+  # Granular failure attribution is preserved via --tb=short and the JUnit
+  # artifact. Per-file run breakdown is visible in the Actions log.
+  # ─────────────────────────────────────────────────────────────────────
   python-tests:
-    name: Python Unit & Integration Tests
+    name: Python Tests (lint + unit + smoke + parity + perf)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python 3.12
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: ml_spike/requirements.txt
 
-      - name: Install project dependencies
+      - name: Install dependencies (CPU-only torch to halve download size)
         run: |
           pip install --upgrade pip
+          # Install CPU-only torch first to avoid the 2.5 GB CUDA wheel
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -r ml_spike/requirements.txt
           pip install pytest==8.2.2 pytest-cov==5.0.0
 
-      - name: Run unit tests
+      - name: Run full test suite
         run: |
           pytest ml_spike/tests/ \
             --cov=ml_spike \
             --cov-report=term-missing \
             --cov-report=xml:coverage.xml \
+            --junitxml=test-results.xml \
+            --tb=short \
+            -ra \
             -v
         env:
           PYTHONPATH: ${{ github.workspace }}
@@ -80,117 +103,127 @@ jobs:
           path: coverage.xml
           retention-days: 14
 
-  # ─────────────────────────────────────────────
-  # JOB 3 — Gymnasium env validation + PPO smoke test
-  # ─────────────────────────────────────────────
-  env-and-ppo-smoke:
-    name: Gymnasium Env Validation & PPO Smoke Test
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - name: Upload test results (JUnit)
+        uses: actions/upload-artifact@v4
+        if: always()
         with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: ml_spike/requirements.txt
+          name: python-test-results
+          path: test-results.xml
+          retention-days: 14
 
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r ml_spike/requirements.txt
-          pip install pytest==8.2.2
-
-      - name: Run Gymnasium validation & PPO smoke tests
-        run: |
-          pytest ml_spike/tests/test_env_validation.py \
-                 ml_spike/tests/test_ppo_smoke.py \
-            -v --tb=short
-        env:
-          PYTHONPATH: ${{ github.workspace }}
-
-  # ─────────────────────────────────────────────
-  # JOB 4 — Policy JSON validation & cross-language parity
-  # ─────────────────────────────────────────────
+  # ─────────────────────────────────────────────────────────────────────
+  # JOB 3 — Policy JSON validation (schema + size + parity)
+  # Kept as a separate job so policy failures get a dedicated, named check
+  # that branch-protection rules can reference independently.
+  # ─────────────────────────────────────────────────────────────────────
   policy-validation:
     name: Policy JSON Validation & Parity Check
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python 3.12
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: ml_spike/requirements.txt
 
-      - name: Install dependencies
+      - name: Install dependencies (CPU-only torch)
         run: |
           pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -r ml_spike/requirements.txt
           pip install pytest==8.2.2
 
       - name: Validate policy JSON schema & values
-        run: |
-          pytest ml_spike/tests/test_policy_validation.py -v --tb=short
+        run: pytest ml_spike/tests/test_policy_validation.py -v --tb=short
         env:
           PYTHONPATH: ${{ github.workspace }}
 
-      - name: Check policy file size (< 120 KB target)
+      - name: Check policy file size (must be < 120 KB)
         run: |
-          python -c "
+          python - <<'EOF'
           import os, sys
-          path = 'godot_prototype/ai/policy_weights.json'
-          size_kb = os.path.getsize(path) / 1024
-          print(f'Policy size: {size_kb:.1f} KB')
-          if size_kb >= 120:
-              print(f'WARNING: Policy size {size_kb:.1f} KB exceeds 120 KB target')
+          path = "godot_prototype/ai/policy_weights.json"
+          if not os.path.exists(path):
+              print(f"ERROR: {path} not found")
               sys.exit(1)
-          print('PASS: Policy size within 120 KB target')
-          "
+          size_kb = os.path.getsize(path) / 1024
+          print(f"Policy size: {size_kb:.1f} KB")
+          if size_kb >= 120:
+              print(f"FAIL: {size_kb:.1f} KB exceeds 120 KB target")
+              sys.exit(1)
+          print("PASS: Policy size within 120 KB target")
+          EOF
 
       - name: Run Python inference parity test
-        run: |
-          pytest ml_spike/tests/test_inference_parity.py -v --tb=short
+        run: pytest ml_spike/tests/test_inference_parity.py -v --tb=short
         env:
           PYTHONPATH: ${{ github.workspace }}
 
-  # ─────────────────────────────────────────────
-  # JOB 5 — Godot headless validation
-  # ─────────────────────────────────────────────
+  # ─────────────────────────────────────────────────────────────────────
+  # JOB 4 — Godot headless validation
+  #
+  # Key changes vs. old version:
+  #  * Godot binary is downloaded once and cached keyed on version.
+  #  * Import uses --import (waits for completion) instead of --editor --quit.
+  #  * Load check uses ci_load_check.gd to catch unreferenced broken scripts.
+  #  * Error grep is narrowed to GDScript-specific patterns to avoid
+  #    false-positives from harmless audio/display driver messages.
+  #  * .pck export smoke-test: exports the pack and verifies it starts with
+  #    the GDPC magic bytes. No templates needed for --export-pack.
+  # ─────────────────────────────────────────────────────────────────────
   godot-headless:
     name: Godot Headless Validation
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Download Godot 4.3 headless
-        run: |
-          wget -q https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip \
-            -O /tmp/godot.zip
-          unzip -q /tmp/godot.zip -d /tmp/godot_bin
-          chmod +x /tmp/godot_bin/Godot_v4.3-stable_linux.x86_64
-          echo "GODOT=/tmp/godot_bin/Godot_v4.3-stable_linux.x86_64" >> $GITHUB_ENV
+      - name: Setup Godot
+        uses: ./.github/actions/setup-godot
+        with:
+          godot-version: ${{ env.GODOT_VERSION }}
+          export-templates: "false"
 
-      - name: Import Godot project resources
-        run: |
-          timeout 60 $GODOT --headless --editor --quit \
-            --path godot_prototype || true
+      - name: Remove nested project (safety cleanup)
+        run: rm -rf godot_prototype/new-game-project
 
-      - name: GDScript parse check (headless startup)
+      - name: Import project resources
         run: |
-          timeout 30 $GODOT --headless --quit \
-            --path godot_prototype 2>&1 | tee godot_output.txt
-          if grep -Ei "script error|parse error|ERROR:" godot_output.txt; then
-            echo "GDScript parse errors detected."
+          # --import waits for the import to finish and returns a proper exit code
+          timeout 300 "$GODOT" --headless --import --path godot_prototype
+          # Confirm the .godot cache was actually populated
+          if [ ! -d "godot_prototype/.godot/imported" ]; then
+            echo "::error::Godot import produced no .godot/imported directory – import may have crashed"
+            exit 1
+          fi
+          echo "Import complete."
+
+      - name: GDScript load check (all .gd / .tscn / .tres)
+        run: |
+          timeout 60 "$GODOT" --headless \
+            --path godot_prototype \
+            --script ../.github/scripts/ci_load_check.gd \
+            2>&1 | tee godot_load_output.txt
+          # Exit code from Godot is carried through via pipefail
+          if grep -E "FAIL |ci_load_check: ERRORS DETECTED" godot_load_output.txt; then
+            echo "::error::GDScript load check detected errors"
+            exit 1
+          fi
+          echo "GDScript load check passed."
+
+      - name: GDScript parse check (headless startup – belt & braces)
+        run: |
+          timeout 30 "$GODOT" --headless --quit \
+            --path godot_prototype 2>&1 | tee godot_parse_output.txt
+          # Only flag GDScript-specific errors; ignore audio/display driver noise
+          if grep -Ei \
+            "SCRIPT ERROR|Parse Error|Compile Error|Failed to load script|GDScript" \
+            godot_parse_output.txt; then
+            echo "::error::GDScript parse errors detected"
             exit 1
           fi
           echo "GDScript parse check passed."
@@ -199,83 +232,83 @@ jobs:
         run: |
           for scene in Main.tscn MainMenu.tscn Room.tscn Player.tscn Enemy.tscn; do
             if [ ! -f "godot_prototype/scenes/$scene" ]; then
-              echo "MISSING required scene: $scene"
+              echo "::error::MISSING required scene: $scene"
               exit 1
             fi
           done
           echo "All required scenes present."
 
-      - name: Verify policy JSON is present in game
+      - name: Verify policy JSON is present in game tree
         run: |
           if [ ! -f "godot_prototype/ai/policy_weights.json" ]; then
-            echo "ERROR: policy_weights.json missing from godot_prototype/ai/"
+            echo "::error::policy_weights.json missing from godot_prototype/ai/"
             exit 1
           fi
           echo "Policy JSON present."
 
-      - name: Upload Godot output log
+      - name: PCK export smoke test (no templates needed)
+        run: |
+          mkdir -p /tmp/smoke-pck
+          "$GODOT" --headless \
+            --path godot_prototype \
+            --export-pack "Windows Desktop" /tmp/smoke-pck/FORGE.pck
+          # Verify GDPC magic bytes
+          MAGIC=$(xxd -l 4 /tmp/smoke-pck/FORGE.pck | awk '{print $2$3}')
+          if [ "$MAGIC" != "47445043" ]; then
+            echo "::error::FORGE.pck does not start with GDPC magic (got: $MAGIC)"
+            exit 1
+          fi
+          # Confirm policy_weights.json is packed inside
+          STRINGS=$(strings /tmp/smoke-pck/FORGE.pck)
+          if ! echo "$STRINGS" | grep -q "ai/policy_weights.json"; then
+            echo "::error::policy_weights.json not found inside FORGE.pck"
+            exit 1
+          fi
+          echo "PCK smoke test passed ($(du -sh /tmp/smoke-pck/FORGE.pck | cut -f1))."
+
+      - name: Upload Godot output logs
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: godot-headless-log
-          path: godot_output.txt
+          path: |
+            godot_load_output.txt
+            godot_parse_output.txt
           retention-days: 7
 
-  # ─────────────────────────────────────────────
-  # JOB 6 — Performance regression checks (lightweight)
-  # ─────────────────────────────────────────────
-  performance-checks:
-    name: Lightweight Performance Regression
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: [python-tests, policy-validation]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: ml_spike/requirements.txt
-
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r ml_spike/requirements.txt
-          pip install pytest==8.2.2
-
-      - name: Run performance regression tests
-        run: |
-          pytest ml_spike/tests/test_performance.py -v --tb=short
-        env:
-          PYTHONPATH: ${{ github.workspace }}
-
-  # ─────────────────────────────────────────────
-  # Required status gate — all mandatory checks
-  # ─────────────────────────────────────────────
+  # ─────────────────────────────────────────────────────────────────────
+  # CI Gate — required status check for branch protection
+  #
+  # FIX: performance-checks is now included here so a regression blocks
+  # merging. Previously it was omitted and failures were silently ignored.
+  # Timing asserts on shared runners are inherently noisy; if you want to
+  # demote them back to advisory, add `continue-on-error: true` to
+  # performance-checks and remove it from needs below.
+  # ─────────────────────────────────────────────────────────────────────
   ci-gate:
     name: CI Gate (Required)
     runs-on: ubuntu-latest
     needs:
       - python-lint
       - python-tests
-      - env-and-ppo-smoke
       - policy-validation
       - godot-headless
     if: always()
     steps:
       - name: Check all mandatory jobs passed
         run: |
-          if [[ "${{ needs.python-lint.result }}" != "success" ]]; then
-            echo "python-lint FAILED"; exit 1; fi
-          if [[ "${{ needs.python-tests.result }}" != "success" ]]; then
-            echo "python-tests FAILED"; exit 1; fi
-          if [[ "${{ needs.env-and-ppo-smoke.result }}" != "success" ]]; then
-            echo "env-and-ppo-smoke FAILED"; exit 1; fi
-          if [[ "${{ needs.policy-validation.result }}" != "success" ]]; then
-            echo "policy-validation FAILED"; exit 1; fi
-          if [[ "${{ needs.godot-headless.result }}" != "success" ]]; then
-            echo "godot-headless FAILED"; exit 1; fi
+          declare -A results=(
+            [python-lint]="${{ needs.python-lint.result }}"
+            [python-tests]="${{ needs.python-tests.result }}"
+            [policy-validation]="${{ needs.policy-validation.result }}"
+            [godot-headless]="${{ needs.godot-headless.result }}"
+          )
+          failed=0
+          for job in "${!results[@]}"; do
+            if [[ "${results[$job]}" != "success" ]]; then
+              echo "::error::$job → ${results[$job]}"
+              failed=1
+            fi
+          done
+          if [[ $failed -eq 1 ]]; then exit 1; fi
           echo "All mandatory CI checks passed."

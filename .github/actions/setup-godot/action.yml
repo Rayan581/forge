@@ -1,0 +1,109 @@
+name: "Setup Godot 4.3"
+description: >
+  Download (and cache) the Godot 4.3 headless binary.
+  Optionally download (and cache) Windows export templates.
+  Sets GODOT env-var for subsequent steps.
+
+inputs:
+  godot-version:
+    description: "Exact Godot version string, e.g. 4.3-stable"
+    required: false
+    default: "4.3-stable"
+  export-templates:
+    description: "Set to 'true' to also install Windows export templates"
+    required: false
+    default: "false"
+  # ── known-good SHA-256 of the official artefacts ──────────────────────
+  binary-sha256:
+    description: "SHA-256 of Godot_vX.Y.Z-stable_linux.x86_64.zip"
+    required: false
+    default: "b40218cf4f094e3e40b59ead35491b4a03c19a0a9f1e85f8fdf3aee4a43b64cd"
+  templates-sha256:
+    description: "SHA-256 of Godot_vX.Y.Z-stable_export_templates.tpz"
+    required: false
+    default: "13b4fa2f7985e3b47db4fae7a77e55d36f3c3da2c6a4c7eb4e1e5dbb0e52a5e4"
+
+outputs:
+  godot-path:
+    description: "Absolute path to the Godot binary"
+    value: ${{ steps.locate.outputs.godot-path }}
+
+runs:
+  using: composite
+  steps:
+    # ── 1. Cache the binary ───────────────────────────────────────────────
+    - name: Cache Godot binary
+      id: cache-binary
+      uses: actions/cache@v4
+      with:
+        path: /opt/godot-bin
+        key: godot-binary-${{ inputs.godot-version }}
+
+    - name: Download & verify Godot binary
+      if: steps.cache-binary.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        BASE="https://github.com/godotengine/godot/releases/download/${{ inputs.godot-version }}"
+        ZIPNAME="Godot_v${{ inputs.godot-version }}_linux.x86_64.zip"
+        wget -q "$BASE/$ZIPNAME" -O /tmp/godot.zip
+
+        echo "${{ inputs.binary-sha256 }}  /tmp/godot.zip" | sha256sum -c - || {
+          echo "::error::Godot binary checksum FAILED – possible supply-chain issue"
+          exit 1
+        }
+
+        mkdir -p /opt/godot-bin
+        unzip -q /tmp/godot.zip -d /opt/godot-bin
+        chmod +x /opt/godot-bin/Godot_v${{ inputs.godot-version }}_linux.x86_64
+        rm /tmp/godot.zip
+
+    - name: Locate binary
+      id: locate
+      shell: bash
+      run: |
+        BIN="/opt/godot-bin/Godot_v${{ inputs.godot-version }}_linux.x86_64"
+        echo "GODOT=$BIN" >> "$GITHUB_ENV"
+        echo "godot-path=$BIN" >> "$GITHUB_OUTPUT"
+
+    # ── 2. Cache export templates (optional) ─────────────────────────────
+    - name: Cache export templates
+      id: cache-templates
+      if: inputs.export-templates == 'true'
+      uses: actions/cache@v4
+      with:
+        # Cache only the two x86_64 template files (~165 MB) not the full tpz
+        path: ~/.local/share/godot/export_templates/${{ inputs.godot-version }}/
+        key: godot-templates-${{ inputs.godot-version }}-win64
+
+    - name: Download & install Windows export templates
+      if: inputs.export-templates == 'true' && steps.cache-templates.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        BASE="https://github.com/godotengine/godot/releases/download/${{ inputs.godot-version }}"
+        TPZ="Godot_v${{ inputs.godot-version }}_export_templates.tpz"
+        wget -q "$BASE/$TPZ" -O /tmp/templates.tpz
+
+        echo "${{ inputs.templates-sha256 }}  /tmp/templates.tpz" | sha256sum -c - || {
+          echo "::error::Export templates checksum FAILED – possible supply-chain issue"
+          exit 1
+        }
+
+        TEMPLATE_DIR=~/.local/share/godot/export_templates/${{ inputs.godot-version }}/
+        mkdir -p "$TEMPLATE_DIR"
+
+        # Extract only Windows x86_64 variants to save ~830 MB of disk
+        cd /tmp
+        unzip -q templates.tpz \
+          "templates/windows_release_x86_64.exe" \
+          "templates/windows_debug_x86_64.exe" \
+          2>/dev/null || unzip -q templates.tpz -d /tmp/all_templates
+
+        if [ -d /tmp/all_templates/templates ]; then
+          cp /tmp/all_templates/templates/windows_release_x86_64.exe "$TEMPLATE_DIR/"
+          cp /tmp/all_templates/templates/windows_debug_x86_64.exe "$TEMPLATE_DIR/"
+        else
+          cp /tmp/templates/windows_release_x86_64.exe "$TEMPLATE_DIR/"
+          cp /tmp/templates/windows_debug_x86_64.exe "$TEMPLATE_DIR/"
+        fi
+
+        rm -rf /tmp/templates.tpz /tmp/templates /tmp/all_templates

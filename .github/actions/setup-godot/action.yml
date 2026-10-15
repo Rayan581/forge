@@ -17,11 +17,11 @@ inputs:
   binary-sha256:
     description: "SHA-256 of Godot_vX.Y.Z-stable_linux.x86_64.zip"
     required: false
-    default: "b40218cf4f094e3e40b59ead35491b4a03c19a0a9f1e85f8fdf3aee4a43b64cd"
+    default: "7de56444b130b10af84d19c7e0cf63cf9e9937ee4ba94364c3b7dd114253ca21"
   templates-sha256:
     description: "SHA-256 of Godot_vX.Y.Z-stable_export_templates.tpz"
     required: false
-    default: "13b4fa2f7985e3b47db4fae7a77e55d36f3c3da2c6a4c7eb4e1e5dbb0e52a5e4"
+    default: "f5f10dbaf56a7908349e64b94ea8c2c93c2cc11fb1014c9565b68a2bb437b922"
 
 outputs:
   godot-path:
@@ -72,7 +72,7 @@ runs:
       uses: actions/cache@v4
       with:
         # Cache only the two x86_64 template files (~165 MB) not the full tpz
-        path: ~/.local/share/godot/export_templates/${{ inputs.godot-version }}/
+        path: ~/.local/share/godot/export_templates/
         key: godot-templates-${{ inputs.godot-version }}-win64
 
     - name: Download & install Windows export templates
@@ -88,8 +88,11 @@ runs:
           exit 1
         }
 
-        TEMPLATE_DIR=~/.local/share/godot/export_templates/${{ inputs.godot-version }}/
+        # Godot expects template directory formatted as X.Y.status (e.g. 4.3.stable), while release tags use 4.3-stable
+        TEMPLATE_VER=$(echo "${{ inputs.godot-version }}" | sed 's/-stable$/.stable/')
+        TEMPLATE_DIR=~/.local/share/godot/export_templates/$TEMPLATE_VER
         mkdir -p "$TEMPLATE_DIR"
+        mkdir -p ~/.local/share/godot/export_templates/${{ inputs.godot-version }}
 
         # Extract only Windows x86_64 variants to save ~830 MB of disk
         cd /tmp
@@ -105,5 +108,8 @@ runs:
           cp /tmp/templates/windows_release_x86_64.exe "$TEMPLATE_DIR/"
           cp /tmp/templates/windows_debug_x86_64.exe "$TEMPLATE_DIR/"
         fi
+
+        # Also provide copies/symlinks under the hyphenated name just in case
+        cp "$TEMPLATE_DIR"/* ~/.local/share/godot/export_templates/${{ inputs.godot-version }}/
 
         rm -rf /tmp/templates.tpz /tmp/templates /tmp/all_templates

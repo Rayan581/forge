@@ -122,6 +122,8 @@ func build_new_dungeon(level_num: int) -> void:
 	
 	if is_calibrating:
 		cal_data = difficulty_manager.apply_calibration_level(level_num)
+	elif difficulty_manager.static_baseline_mode:
+		difficulty_manager.apply_static_baseline(level_num)
 	
 	defense_overlay.sync_ui_with_manager()
 	
@@ -223,6 +225,19 @@ func _on_dungeon_escaped() -> void:
 
 	var next_level = current_dungeon_level + 1
 
+	# Static baseline: no calibration, no PPO. Difficulty follows the fixed +8 % per floor rule.
+	if difficulty_manager.static_baseline_mode:
+		difficulty_manager.apply_static_baseline(next_level)
+		defense_overlay.sync_ui_with_manager()
+		print("[FORGE][STATIC] Level %d cleared in %.1fs, %d deaths -> next: hp=%.0f dmg=%.0f (x%.2f)" % [
+			current_dungeon_level, completion_time_sec, deaths_this_level,
+			difficulty_manager.enemy_health, difficulty_manager.enemy_damage,
+			difficulty_manager.static_scale(next_level)
+		])
+		telemetry_logger.save_to_file()
+		call_deferred("build_new_dungeon", next_level)
+		return
+
 	# Record calibration performance for floors 1 to 5
 	if difficulty_manager.is_in_calibration(current_dungeon_level):
 		telemetry_logger.record_calibration_floor(
@@ -283,7 +298,8 @@ func _on_dungeon_escaped() -> void:
 			current_dungeon_level, completion_time_sec, deaths_this_level, next_level
 		])
 
-	# 3. Advance to next level
+	# 3. Save telemetry snapshot and advance to next level
+	telemetry_logger.save_to_file()
 	call_deferred("build_new_dungeon", next_level)
 
 func _on_enemy_killed() -> void:

@@ -48,6 +48,7 @@ var font_inter: Font = null
 @onready var telemetry_summary_label: Label = $Control/DefensePanel/MarginContainer/VBoxContainer/TelemetryBox/TelemetrySummaryLabel
 
 var is_panel_open: bool = false
+var _current_floor: int = 1
 
 func _ready() -> void:
 	# Load Google Fonts
@@ -64,6 +65,13 @@ func _ready() -> void:
 	btn_expert.pressed.connect(func(): _on_preset_selected(DifficultyManager.ProfileTier.EXPERT))
 	btn_regen.pressed.connect(func(): emit_signal("regenerate_room_requested"))
 	btn_auto_kill.toggled.connect(_on_auto_kill_toggled)
+
+	# Static non-adaptive baseline toggle (created in code so the scene file stays unchanged)
+	var static_btn := CheckButton.new()
+	static_btn.text = "Static Baseline (+8% / floor)"
+	btn_auto_kill.get_parent().add_child(static_btn)
+	btn_auto_kill.get_parent().move_child(static_btn, btn_auto_kill.get_index() + 1)
+	static_btn.toggled.connect(_on_static_baseline_toggled)
 	
 	slider_hp.value_changed.connect(_on_slider_changed)
 	slider_dmg.value_changed.connect(_on_slider_changed)
@@ -127,6 +135,17 @@ func _on_auto_kill_toggled(enabled: bool) -> void:
 	emit_signal("auto_kill_toggled", enabled)
 	if minimap:
 		minimap.set_reveal_exit(enabled)
+
+func _on_static_baseline_toggled(enabled: bool) -> void:
+	difficulty_manager.static_baseline_mode = enabled
+	if enabled:
+		difficulty_manager.apply_static_baseline(_current_floor)
+	elif difficulty_manager.is_in_calibration(_current_floor):
+		difficulty_manager.apply_calibration_level(_current_floor)
+	sync_ui_with_manager()
+	update_room_info(_current_floor, Vector2i.ZERO, difficulty_manager.is_in_calibration(_current_floor))
+	emit_signal("parameters_updated")
+	emit_signal("regenerate_room_requested")
 
 func _on_preset_selected(tier: DifficultyManager.ProfileTier) -> void:
 	difficulty_manager.apply_preset(tier)
@@ -200,7 +219,10 @@ func update_player_hp(current: float, max_val: float) -> void:
 	hp_text.text = str(int(current)) + " / " + str(int(max_val)) + " HP"
 
 func update_room_info(dungeon_level: int, grid_pos: Vector2i, is_calibrating: bool = false) -> void:
+	_current_floor = dungeon_level
 	var mode_tag = "[CALIBRATION %d/5]" % dungeon_level if is_calibrating else "[ADAPTIVE PPO]"
+	if difficulty_manager and difficulty_manager.static_baseline_mode:
+		mode_tag = "[STATIC +8%/floor]"
 	var ranged_pct = int(round(difficulty_manager.ranged_enemy_ratio * 100.0)) if difficulty_manager else 35
 	room_label.text = "Floor %d %s | Room: (%d,%d) | Ranged: %d%%" % [dungeon_level, mode_tag, grid_pos.x, grid_pos.y, ranged_pct]
 

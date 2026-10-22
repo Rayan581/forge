@@ -146,7 +146,34 @@ const CALIBRATION_LEVELS = {
 }
 
 func is_in_calibration(level_num: int) -> bool:
+	# The static baseline has no calibration phase and no PPO phase.
+	if static_baseline_mode:
+		return false
 	return level_num >= 1 and level_num <= 5
+
+# --- Static non-adaptive roguelike baseline (comparison condition) ---
+# When enabled, PPO adaptation and cold-start calibration are bypassed. Enemy
+# health and damage grow by a fixed 8 % of their Intermediate-preset value for
+# every floor after Floor 1; all other parameters stay at the Intermediate preset.
+const STATIC_STEP: float = 0.08
+var static_baseline_mode: bool = false
+
+func static_scale(level_num: int) -> float:
+	return 1.0 + STATIC_STEP * float(maxi(level_num - 1, 0))
+
+func apply_static_baseline(level_num: int) -> void:
+	var p = PRESETS[ProfileTier.INTERMEDIATE]
+	var f: float = static_scale(level_num)
+	current_profile = ProfileTier.CUSTOM
+	enemy_health = p.health * f
+	enemy_damage = p.damage * f
+	enemy_speed = p.speed
+	enemy_aggro = p.aggro
+	hazard_density = p.hazard
+	resource_scarcity = p.scarcity
+	ranged_enemy_ratio = p.get("ranged_ratio", 0.35)
+	room_count_target = 6
+	enemy_count_scale = 1.0
 
 func apply_calibration_level(level_num: int) -> Dictionary:
 	if CALIBRATION_LEVELS.has(level_num):

@@ -40,3 +40,8 @@
     GitHub Actions Tutorial for Beginners – CI/CD Pipeline from Scratch (2026)https://www.youtube.com/watch?v=0PbxpIao_EU
 
     Mastering GitHub Actionshttps://www.youtube.com/watch?v=zH8hz_21x_0&list=PLLrA_pU9-Gz2GnvKN0kzVfIZVEUApgjTN"
+
+- architecture diagram
+- behavior design (fix)
+- implementation documentation
+- [] testing, validation and tool/risk disclosure

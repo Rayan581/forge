@@ -480,7 +480,7 @@ In strict accordance with the FAST FYP Guide requirements for measurable enginee
 - **NFR-01 (Inference Latency — Performance):** The embedded neural inference engine shall complete an observation-to-action MLP forward pass in $< 0.5\text{ ms}$ in native GDScript without invoking external network sockets, threads, or child processes.
 - **NFR-02 (Generation Throughput — Performance):** Complete procedural dungeon generation (graph synthesis, tilemap instantiation, entity placement) shall execute in $\le 2.0\text{ seconds}$ on the baseline evaluation machine.
 - **NFR-03 (Frame Rate Stability — Efficiency):** The game client shall maintain a sustained frame rate of $\ge 60\text{ FPS}$ at $1080\text{p}$ native resolution during active combat encounters containing up to 15 concurrent enemy entities.
-- **NFR-04 (Memory Footprint — Resource Utilization):** The serialized neural weights bundle (`policy_weights.json`) shall not exceed $50\text{ KB}$, and total client process RAM utilization shall remain $\le 250\text{ MB}$ under full dungeon asset load.
+- **NFR-04 (Memory Footprint — Resource Utilization):** The serialized neural weights bundle (`policy_weights.json`) shall not exceed $150\text{ KB}$ (using ASCII JSON serialization for developmental auditability and inspectability; binary tensor packing deferred to Gate 3), and total client process RAM utilization shall remain $\le 250\text{ MB}$ under full dungeon asset load.
 - **NFR-05 (Cold Startup Time — Usability):** Application cold launch from desktop execution to interactive main menu shall complete within $\le 3.0\text{ seconds}$ on standard solid-state drive (SSD) storage.
 - **NFR-06 (Client Portability — Deployability):** The standalone client shall execute on target consumer hardware (Intel Core i3 6th Gen / AMD Ryzen 3, 4 GB RAM, Intel HD Graphics 520, Windows 10/11 64-bit) as a self-contained executable bundle with zero third-party ML runtime installations.
 
@@ -937,7 +937,7 @@ action_net = model.policy.action_net
 # Extract weights and biases to clean JSON dictionary
 json.dump({"layers": [{"w": module.weight.tolist(), "b": module.bias.tolist()}, ...], "activation": "tanh"}, f)
 ```
-The serialized `policy_weights.json` ($<120\text{KB}$) was copied directly to Godot (`res://ai/policy_weights.json`). In Godot, `PPOPolicy.gd` parses these arrays at startup and performs forward passes in **$0.42\text{ms}$** using pure GDScript vector dot products—achieving complete zero-dependency offline ML execution.
+The serialized `policy_weights.json` ($<150\text{KB}$) was copied directly to Godot (`res://ai/policy_weights.json`). In Godot, `PPOPolicy.gd` parses these arrays at startup and performs forward passes in **$0.42\text{ms}$** using pure GDScript vector dot products—achieving complete zero-dependency offline ML execution.
 
 ---
 

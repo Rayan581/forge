@@ -1,0 +1,131 @@
+\chapter{Proposal Feedback and Iteration Plan}
+\label{chap:plan}
+
+\section{Proposal Feedback Summary}
+Project FORGE was defended at the FYP Proposal Defense I before the Evaluation Committee of the FAST School of Computing, FAST-NUCES, Islamabad. The committee officially issued the following verdict:
+\begin{quote}
+\textbf{Decision:} \textit{Approved with Minor Modifications (Project Code: F26-012-FORGE)}\\
+\textbf{Committee Summary:} \textit{``Good project. Good presentation and demonstration. Demonstrates satisfactory understanding of the project concepts and approach. The game's aesthetics should be improved. They should study related literature review deeply as the game is based on research... Extend the literature review to comprehensively cover Dynamic Difficulty Adjustment (DDA)... Strengthen the technical justification for PPO... Define and validate the judge model using empirical player data... Clearly distinguish procedural level generation from difficulty adaptation... Specify measurable acceptance criteria... Document risks, fallback strategies, and ethical considerations.''}
+\end{quote}
+
+Rather than treating these modifications as superficial corrections, the project team treated the committee's feedback as a binding technical contract that reshaped our development roadmap across Iterations 1 and 2.
+
+\section{Proposal Action Register}
+Table~\ref{tab:action_register} documents the complete Proposal Action Register, mapping every committee directive to the specific engineering action taken, its implementation status, and its location in the project documentation and codebase.
+
+\begin{table}[!htbp]
+\centering
+\caption{Proposal Feedback Resolution Action Register}
+\label{tab:action_register}
+\scriptsize
+\begin{tabular}{p{0.04\textwidth}p{0.22\textwidth}p{0.32\textwidth}p{0.12\textwidth}p{0.22\textwidth}}
+\toprule
+\textbf{No.} & \textbf{Directive / Required Change} & \textbf{Action Taken in Iteration 1 \& 2} & \textbf{Status} & \textbf{Evidence} \\
+\midrule
+1 & Improve game aesthetics (sprites, juice, feedback). & Replaced procedural vector circles with custom 2D pixel-art sprites; integrated trauma camera shake, floating damage text, and Cinzel/Inter typography. & Completed & Chapter~\ref{chap:iter1}, §\ref{sec:iter1_features}; Figs. in App.~\ref{app:diagrams} \\
+\midrule
+2 & Variety of attacks for enemy and player powers. & Developed Ranged Pyromancer with telegraphed fireball projectile and retreat AI; implemented player dodge roll with invulnerability frames and cooldown. & Completed & \texttt{Enemy.gd}, \texttt{Player.gd}, \texttt{ProjectileFireball.gd} \\
+\midrule
+3 & Engaging, playable game experience without AI. & Engineered a ``Static Roguelike Baseline'' mode toggle in Defense Overlay scaling difficulty deterministically by $+8\%$ per floor. & Completed & \texttt{DefenseOverlay.gd}, Chapter~\ref{chap:iter1} \\
+\midrule
+4 & Clarify project scope boundaries (in-scope vs. out). & Formulated a strict three-tier Scope Boundary Matrix defining Mid-1 commitments, Final-1/FYP-2 deliverables, and out-of-scope items. & Completed & Table~\ref{tab:scope_matrix}, §\ref{sec:scope} \\
+\midrule
+5 & Clear, measurable evaluation criteria for RL and game. & Formulated 8 quantitative success metrics (solvability, latency, DER, $CR_0$ convergence) and standardized psychometrics (GEQ, PENS). & Completed & Table~\ref{tab:success_criteria}, Chapter~\ref{chap:testing} \\
+\midrule
+6 & Comprehensive DDA literature review. & Conducted systematic survey of 32 sources; classified DDA into 3 generational paradigms; synthesized flow and engagement literature. & Completed & Chapter~\ref{chap:research}, Table~\ref{tab:lit_comparison} \\
+\midrule
+7 & Strengthen technical justification for PPO vs. alternatives. & Compared PPO with SAC, DQN, and Bandits; mathematically formulated clipped surrogate objective as an intrinsic skill shock-absorber. & Completed & Section~\ref{sec:ppo_proof}, Table~\ref{tab:rl_comparison} \\
+\midrule
+8 & Define and validate judge model empirically. & Maintained linear proxy for Mid-1; scheduled the offline supervised Gradient Boosted Regressor with TreeSHAP and a 25-session empirical corpus for FYP-1 Final (Gate 3 Exit, Weeks 11--14). & Scheduled for Final-1 & Section~\ref{sec:domain}, Chapter~\ref{chap:fyp2} \\
+\midrule
+9 & Distinguish procedural level generation from DDA. & Formally decoupled architecture into Stage 1 (Connected Spatial Topology, BFS-verified in CI) and Stage 2 (Closed-Loop PPO Combat Adapter). & Completed & Section~\ref{sec:proposed}, Chapter~\ref{chap:design} \\
+\midrule
+10 & Document risks, fallbacks, and telemetry ethics. & Developed zero-crash heuristic fallback in GDScript; implemented client-side zero-PII local data governance; formulated risk register. & Completed & Section~\ref{sec:ethics}, Section~\ref{sec:risk} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Iterative Development Strategy}
+Project FORGE follows an Agile iterative lifecycle structured into five formal evaluation gates across two academic semesters:
+\begin{itemize}
+    \item \textbf{Gate 1 (Inception \& Technical Spike — Weeks 1--6):} Verified feasibility of training a PPO policy in Python and running an MLP forward pass in pure GDScript.
+    \item \textbf{Gate 2 (Requirements \& SRS Elaboration — Weeks 7--8):} Formalized testable functional and non-functional specifications; baselined cold-start calibration mathematics.
+    \item \textbf{Gate 3 (Architecture Baseline \& Mid-1 Evaluation — Weeks 9--10):} Integrated visual aesthetics, ranged combat behaviors, static baseline mode, and automated headless CI solvability testing.
+    \item \textbf{Gate 4 (System Integration \& Mid-2 Evaluation — Weeks 11--26):} Full 5-archetype ecosystem, empirical Judge model, and TreeSHAP explainability engine (delivered at FYP-1 Final, Weeks 11--14), followed by the equipment shop economy, system integration and performance benchmarking through Week 26.
+    \item \textbf{Gate 5 (Production Acceptance \& Final-2 Evaluation — Weeks 27--32):} 10-participant human UAT study, psychometric evaluation, and public release distribution.
+\end{itemize}
+
+\section{Iteration 1 Plan (Weeks 1--6 / Proposal \& POC Spike)}
+The primary objective of Iteration 1 was de-risking the fundamental technical hypothesis: can an RL policy trained offline control difficulty parameters inside Godot?
+\begin{itemize}
+    \item \textbf{Deliverables:} Godot 4.x prototype with rudimentary geometric shapes (white circle player, red circle enemy), basic sword slash, flat 3-room layout, preliminary \texttt{train\_ppo\_difficulty.py} script exporting JSON weights, and basic telemetry recording.
+    \item \textbf{Outcome:} Confirmed that pure-GDScript matrix math could execute forward passes without relying on external Python or ONNX runtimes.
+\end{itemize}
+
+\section{Iteration 2 Plan (Weeks 7--10 / Mid-1 Evaluation Sprint)}
+Iteration 2 focused directly on fulfilling the committee's mandate and preparing the production-grade Mid-1 deliverable:
+\begin{itemize}
+    \item \textbf{Objectives:} Elevate game aesthetics to commercial standards; introduce enemy attack variety; implement the cold-start calibration protocol; engineer a static roguelike baseline; establish an automated CI pipeline.
+    \item \textbf{Delivered Features:}
+    \begin{enumerate}
+        \item Integrated 2D pixel-art sprites, camera trauma shake (decay rate $3.6$\,s$^{-1}$), and floating combat text.
+        \item Created Ranged Pyromancer with retreat AI and telegraphed fireball projectiles; added player dodge roll ($0.2$\,s dash with invulnerability).
+        \item Implemented 5-Floor Cold-Start Protocol with weighted $CR_0$ baseline aggregation ($\vec{w} = [1.0, 1.5, 2.0, 2.5, 3.0]$).
+        \item Added Static Roguelike Baseline mode toggle in the live Defense Telemetry Overlay.
+        \item Built GitHub Actions CI pipeline executing headless Godot 4.3 solvability simulations across 500 seeds.
+        \item Compiled formal SRS and SDS engineering specifications.
+    \end{enumerate}
+\end{itemize}
+
+\section{Work Breakdown and Responsibilities}
+Table~\ref{tab:wbs} details the individual technical ownership and task allocation among the three team members.
+
+\begin{table}[!htbp]
+\centering
+\caption{Team Member Technical Responsibility Allocation Matrix}
+\label{tab:wbs}
+\small
+\begin{tabular}{p{0.25\textwidth}p{0.25\textwidth}p{0.42\textwidth}}
+\toprule
+\textbf{Team Member} & \textbf{Primary Role} & \textbf{Core Module Ownership \& Tasks} \\
+\midrule
+\textbf{Rayan Ahmed}\newline (23i-0018) & Engine Architecture \& Gameplay Lead & Godot engine framework, player combat mechanics, dodge roll iframes, enemy finite state machines (Melee \& Ranged), projectile kinematics, visual juice (camera shake, damage floaters), sprite pipeline. \\
+\midrule
+\textbf{Rana Raza Ahmed}\newline (23i-0060) & Machine Learning \& PCG Lead & Offline Gymnasium environment, PPO reward formulation, policy weight serialization, in-engine GDScript forward pass (\texttt{PPOPolicy.gd}), cold-start $CR_0$ mathematical formulation. \\
+\midrule
+\textbf{Uwaid Munir}\newline (23i-2574) & Telemetry Analytics \& Evaluation Lead & Telemetry logging engine (\texttt{TelemetryLogger.gd}), event capture, GitHub Actions CI/CD headless solvability test pipeline, test case authoring, verification suite, and SRS/SDS documentation. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Progress Against Plan}
+Table~\ref{tab:milestones} presents the progress tracking against the original project schedule.
+
+\begin{table}[!htbp]
+\centering
+\caption{Milestone Tracking and Schedule Progress}
+\label{tab:milestones}
+\small
+\begin{tabular}{p{0.32\textwidth}p{0.18\textwidth}p{0.18\textwidth}p{0.18\textwidth}}
+\toprule
+\textbf{Milestone / Deliverable} & \textbf{Planned Date} & \textbf{Actual Date} & \textbf{Status} \\
+\midrule
+Proposal Defense & Week 4 & Week 4 & Completed (Approved) \\
+Literature Survey & Week 6 & Week 6 & Completed (32 Sources) \\
+Dungeon Sprites \& Visual Juice & Week 8 & Week 8 & Completed \\
+Ranged Enemy \& Dodge Roll & Week 9 & Week 9 & Completed \\
+5-Floor Cold-Start Protocol & Week 9 & Week 9 & Completed \\
+Static Roguelike Baseline Mode & Week 10 & Week 10 & Completed \\
+Headless CI Solvability Pipeline & Week 10 & Week 10 & Completed \\
+Mid-1 Formal Report Submission & Week 10 & Week 10 & Completed (On Schedule) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Delays, Deviations and Recovery Plan}
+During Iteration 2, two technical deviations arose, both of which were successfully resolved:
+\begin{enumerate}
+    \item \textbf{Deviation 1: Godot 4 Headless Export CI Template Overhead.} Running full headless game exports in GitHub Actions initially failed due to missing Windows export templates. \textbf{Recovery:} We restructured the CI workflow into a dedicated two-stage check: (1) headless Godot scene/script syntax compilation check via \texttt{--headless --quit}; and (2) headless automated solvability verification executing a lightweight test harness runner script across 500 random seeds.
+    \item \textbf{Deviation 2: PPO Reward Hacking in Simulated Training.} The first reward compared the total clearing time with a fixed target, which the agent satisfied by manipulating the room count instead of combat difficulty. \textbf{Recovery:} We redesigned the reward function in \texttt{train\_ppo\_difficulty.py} to judge pace per room, add death and pacing penalties, and penalize room counts that do not track the combat challenge.
+\end{enumerate}
+All milestones for Mid-1 have been completed on schedule with zero debt carried into Iteration 3.

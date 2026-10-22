@@ -1,0 +1,60 @@
+\chapter{Detailed Test Cases and Verification Procedures}
+\label{app:test_cases}
+
+This appendix provides the step-by-step execution procedures for the primary test cases documented in Chapter~\ref{chap:testing}.
+
+\section{TC-01: In-Session Telemetry Event Capture}
+\begin{itemize}
+    \item \textbf{Objective:} Verify that \texttt{TelemetryLogger.gd} logs combat events accurately.
+    \item \textbf{Setup:} Run game in debug mode; enter Floor 1.
+    \item \textbf{Procedure:}
+    \begin{enumerate}
+        \item Allow player to be damaged by an enemy ($20$\,dmg).
+        \item Inflict 3 sword hits on an enemy ($3 \times 35 = 105$\,dmg).
+        \item Enter exit portal to complete floor.
+        \item Inspect \texttt{user://session\_telemetry.json}.
+    \end{enumerate}
+    \item \textbf{Expected Output:} Entry contains \texttt{"damage\_taken": 20.0} and \texttt{"damage\_dealt": 105.0}.
+    \item \textbf{Actual Output:} Matches expected values with zero deviation. \textbf{Status: Pass.}
+\end{itemize}
+
+\section{TC-04: Fault-Tolerant Heuristic Fallback Verification}
+\begin{itemize}
+    \item \textbf{Objective:} Verify that missing or corrupted policy weights engage the heuristic fallback without crashing.
+    \item \textbf{Setup:} Rename \texttt{res://ai/\allowbreak policy\_\-weights.json} to \texttt{policy\_weights.json.bak}.
+    \item \textbf{Procedure:}
+    \begin{enumerate}
+        \item Launch game from main executable.
+        \item Observe console output during initialization.
+        \item Advance from Floor 1 to Floor 2.
+    \end{enumerate}
+    \item \textbf{Expected Output:} Console logs warning: \texttt{"[PPOPolicy] No trained weights found..."}; engine engages \texttt{\_fallback\_heuristic()}; Floor 2 loads successfully.
+    \item \textbf{Actual Output:} Smooth gameplay continuation; zero unhandled exceptions. \textbf{Status: Pass.}
+\end{itemize}
+
+\section{TC-06: Automated Headless CI Solvability Verification}
+\begin{itemize}
+    \item \textbf{Objective:} Assert 100\% topological reachability across 500 randomized procedural seeds.
+    \item \textbf{Setup:} GitHub Actions Ubuntu runner with Godot 4.3 headless binary.
+    \item \textbf{Procedure:}
+    \begin{enumerate}
+        \item CI workflow invokes: \texttt{godot --headless -s tests/ci\_solvability\_runner.gd}.
+        \item Script iterates seeds $1$ through $500$, seeding the RNG and calling \texttt{generate\_dungeon()} with the default difficulty parameters.
+        \item For each seed, script runs a breadth-first search over the door graph from the start room to the exit room.
+    \end{enumerate}
+    \item \textbf{Expected Output:} Script logs \texttt{"Solvability Results: 500 / 500 Solvable"}; exits with return code \texttt{0}.
+    \item \textbf{Actual Output:} Passed 500/500 seeds with exit code \texttt{0}. \textbf{Status: Pass.}
+\end{itemize}
+
+\section{TC-09: Player Dodge Roll Invulnerability (iframes)}
+\begin{itemize}
+    \item \textbf{Objective:} Verify that active dash grants complete damage immunity.
+    \item \textbf{Setup:} Position player directly in trajectory of incoming Pyromancer fireball.
+    \item \textbf{Procedure:}
+    \begin{enumerate}
+        \item Press \texttt{Spacebar} $0.1$\,s prior to projectile impact.
+        \item Observe player health bar and floating combat indicators.
+    \end{enumerate}
+    \item \textbf{Expected Output:} Fireball overlaps player sprite; zero damage deducted; no red damage floater pops.
+    \item \textbf{Actual Output:} Full invulnerability confirmed; dash cooldown bar activates on HUD. \textbf{Status: Pass.}
+\end{itemize}

@@ -1,0 +1,143 @@
+\chapter{Research and Existing Solutions}
+\label{chap:research}
+
+\section{Research Method and Literature Survey Approach}
+To establish a rigorous theoretical foundation and address the FYP Committee's mandate regarding state-of-the-art Dynamic Difficulty Adjustment (DDA) and Procedural Content Generation via Reinforcement Learning (PCGRL), the project team conducted a systematic literature review covering \textbf{32 sources} (peer-reviewed publications, preprints and foundational benchmarks) across premier game AI, human-computer interaction, and machine learning venues (IEEE Transactions on Games, IEEE Conference on Games, ACM CHI, Foundations of Digital Games, and Springer Multimedia Tools and Applications).
+
+Our investigation followed a structured three-tier review methodology:
+\begin{enumerate}
+    \item \textbf{Generational DDA Survey:} Examining the evolution of difficulty adjustment algorithms from heuristic threshold triggers to modern statistical, continuous, and personalized reinforcement learning models~\cite{mortazavi2024dda, zohaib2018dynamic, fisher2024exploring, pfau2020enemy, fuchs2024personalized}.
+    \item \textbf{PCGRL State-of-the-Art Analysis:} Reviewing learned procedural generators conditioned on target features, open-ended environments, multi-objective Pareto optimization, GPU-accelerated environments, and graph topologies~\cite{khalifa2020pcgrl, earle2021illuminating, earle2021controllable, yuan2026mopcgrl, li2025measuring, bazzaz2026imitation, earle2024pcgrlplus, rupp2024gpcgrl, yannakakis2018ai}.
+    \item \textbf{Human-Centered Psychometric Instruments:} Evaluating standardized psychological scales designed to measure player flow, immersion, perceived competence, and autonomy in real-time gaming environments~\cite{denisova2016convergence, tyack2020sdt, michailidis2018flow}.
+\end{enumerate}
+
+\section{Existing Solutions and Products}
+The academic and commercial landscape of adaptive content generation is categorized into three distinct evolutionary paradigms, summarized below.
+
+\subsection{Generation 1: Heuristic and Rule-Based Systems (1990s--2000s)}
+Early commercial difficulty adaptation relied on deterministic conditional triggers ($\text{IF}/\text{THEN}$ rules) operating on scalar difficulty ranks. Notable examples include:
+\begin{itemize}
+    \item \textbf{Resident Evil 4 (Capcom):} Implements a hidden 1--10 ``Dynamic Rank'' variable. Headshots and rapid kills increment the rank, while taking damage or dying decrements it. The rank scales adversary health and reaction speeds linearly.
+    \item \textbf{Left 4 Dead (Valve):} Features the ``AI Director''~\cite{zohaib2018dynamic, mortazavi2024dda}, which monitors player stress levels (computed from health and zombie proximity) to cycle through Build-Up, Peak, and Relax phases.
+    \item \textbf{Hades (Supergiant Games):} Employs an optional ``God Mode'' providing a flat $+20\%$ damage resistance upon activation, incrementing by $+2\%$ on every subsequent run death.
+\end{itemize}
+\textbf{Limitation:} These systems operate via scalar multipliers, suffer from high transparency, and frequently trigger the ``rubber-banding penalty,'' wherein players feel patronized upon discovering that their struggles artificially weaken enemies.
+
+\subsection{Generation 2: Statistical and Probabilistic Modeling (2010s)}
+To mitigate the rigidity of rule-based triggers, second-generation systems incorporated probabilistic inference, Markov Decision Processes (MDPs), and fuzzy logic controllers:
+\begin{itemize}
+    \item \textbf{Fuzzy-Logic Difficulty Controllers:} Chrysafiadi et al.~\cite{chrysafiadi2023fuzzy} designed a fuzzy-logic controller for an educational 3D game that maps imprecise descriptors of player performance onto graded difficulty adjustments.
+    \item \textbf{Dynamic Elo Matchmaking:} Matchmaking algorithms adapted from chess to predict win probabilities and modulate spawn counts accordingly.
+\end{itemize}
+\textbf{Limitation:} While smoother than Generation 1, statistical models lack the temporal credit assignment needed to anticipate multi-room player fatigue across extended roguelike runs.
+
+\subsection{Generation 3: Deep Reinforcement Learning (SOTA / 2020s)}
+Modern research frames game generation and difficulty adaptation as reinforcement learning problems:
+\begin{itemize}
+    \item \textbf{PCGRL Benchmark (Khalifa et al.~\cite{khalifa2020pcgrl}):} Formulates level generation as an MDP where an agent acts as an iterative brush placing tiles to maximize path length and reachability.
+    \item \textbf{Controllable Content Generators (Earle et al.~\cite{earle2021controllable}):} Conditions PCGRL generators on designer-specified numerical control targets (e.g., target path length).
+    \item \textbf{Quality-Diversity and Multi-Objective PCGRL (Earle et al.~\cite{earle2021illuminating}; Yuan et al.~\cite{yuan2026mopcgrl}):} Extend learned generators to diverse level archives and to multiple simultaneous objectives (Pareto trade-offs), the latter being directly relevant to FORGE's competing goals of challenge, solvability and frame budget. Li et al.~\cite{li2025measuring} survey metrics for measuring the diversity of generated scenarios, and Bazzaz and Cooper~\cite{bazzaz2026imitation} show that players' enjoyment ratings of generated levels depend on whether they believe a human or an AI created them.
+    \item \textbf{PCGRL+ Scaled Level Generators (Earle et al.~\cite{earle2024pcgrlplus}):} Demonstrates billion-step parallel level generation on GPUs, overcoming long-standing training bottlenecks in reinforcement learning procedural level generators.
+    \item \textbf{Graph-Based PCGRL (Rupp \& Eckert~\cite{rupp2024gpcgrl}):} Extends PCGRL beyond 2D tile matrices to graph data (e.g., game economies and skill trees) by editing a graph's adjacency matrix, a representation that could in principle also describe room adjacency and progression graphs.
+    \item \textbf{Encounter Generation for DDA (Romeo \& Bagdanov~\cite{romeo2025ntrl}):} Proposes NTRL (2025), which generates tabletop role-playing combat encounters from the real-time attributes of the party, framed as a contextual bandit, to hit a high (about 70\%) win-rate target.
+    \item \textbf{Personalized Imitation-RL DDA (Fuchs et al.~\cite{fuchs2024personalized}):} Trains one agent to imitate the individual player and a second agent to defeat that imitation, personalizing opponent difficulty in a fighting-game setting.
+    \item \textbf{Continuous Difficulty-Space DDA (Rahim et al.~\cite{rahim2023continuous}):} Replaces the small discrete state--action spaces of earlier RL-based DDA with a continuous difficulty metric in a visual working-memory game, reporting better competence ratings and a smaller score decline over a session than rule-based baselines in a 52-participant study.
+    \item \textbf{Long-Term Adaptation Effects (Pfau et al.~\cite{pfau2020enemy}):} Reports a long-term study in a live MMORPG in which deep player-behavior models for DDA improved intrinsic motivation compared with heuristic parameter tuning, whose adjustments players often notice (e.g., rubber-banding).
+    \item \textbf{Industrial Engagement Optimization (Xue et al.~\cite{xue2017dynamic}):} Formulates DDA for a commercial game as an optimization problem that selects difficulty to maximize player engagement (session length and retention).
+    \item \textbf{DDA Methods Comparison (Fisher \& Kulshreshth~\cite{fisher2024exploring}):} Compares five performance-based, emotion-based and hybrid adjustment strategies in a custom first-person shooter within-subjects study, finding no single method that clearly beat static difficulty, which underlines the difficulty of tuning adaptation well.
+\end{itemize}
+
+\section{Comparison of Existing Solutions}
+Table~\ref{tab:lit_comparison} evaluates Project FORGE against representative systems from both commercial gaming and peer-reviewed literature.
+
+\begin{table}[!htbp]
+\centering
+\caption{Systematic Comparison of Game Difficulty Adjustment and PCG Paradigms}
+\label{tab:lit_comparison}
+\scriptsize
+\begin{tabular}{p{0.20\textwidth}p{0.14\textwidth}p{0.14\textwidth}p{0.13\textwidth}p{0.12\textwidth}p{0.13\textwidth}}
+\toprule
+\textbf{System / Reference} & \textbf{Paradigm} & \textbf{Adaptation Loop} & \textbf{Action Space} & \textbf{Solvability Proof} & \textbf{In-Engine Overhead} \\
+\midrule
+\textit{Resident Evil 4} & Gen 1 Heuristic & Reactive scalar rank & Scalar health/dmg & Fixed design & Negligible \\
+\textit{Left 4 Dead} AI Director~\cite{zohaib2018dynamic} & Gen 1 Heuristic & Pacing state machine & Spawn wave timer & Fixed design & Low \\
+Fuzzy DDA~\cite{chrysafiadi2023fuzzy} & Gen 2 Statistical & Reactive fuzzy rules & Graded multipliers & Fixed design & Low \\
+\texttt{gym-pcgrl}~\cite{khalifa2020pcgrl} & Gen 3 RL & Open-loop target & Discrete tile grid & Heuristic reward & High (Python env) \\
+Controllable PCGRL~\cite{earle2021controllable} & Gen 3 RL & Open-loop designer & Scalar target vector & Path-length reward & High (External) \\
+NTRL~\cite{romeo2025ntrl} & Gen 3 RL & Party-state bandit & Encounter composition & N/A (tabletop) & Not reported \\
+\textbf{FORGE (Ours)} & \textbf{Gen 3 RL + DDA} & \textbf{Closed-loop telemetry} & \textbf{Continuous 7D ($\vec{E}, \vec{M}$)} & \textbf{Connected by construction (BFS-verified)} & \textbf{Zero ($\approx 0.2$\,ms GDScript)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Limitations and Gaps in Existing Literature}
+Our literature review isolates three critical scientific and architectural gaps:
+\begin{enumerate}
+    \item \textbf{The Closed-Loop Personalization Void:} Prevailing PCGRL algorithms generate layouts conditioned either on random seeds or on explicit, designer-crafted target constraints~\cite{earle2021controllable, earle2024pcgrlplus}, rather than from a model of the individual player's experience as advocated by experience-driven PCG~\cite{yannakakis2011experience}. Furthermore, while foundational literature surveys evaluate the recent rise of Large Language Models (LLMs) for high-level creative game design~\cite{gallotta2024llmsurvey}, LLMs lack sub-millisecond real-time predictability for runtime combat modulation. No literature framework connects continuous, unprompted player behavioral profiling directly into an active, multi-attribute procedural generator.
+    \item \textbf{The Scalar Combat Balancing Oversimplification:} Most DDA systems reduce difficulty to a one-dimensional multiplier (e.g., enemy health $+10\%$). Real combat difficulty is fundamentally combinatorial: a high-speed adversary with low health requires quick reflexes, whereas a slow, heavily armored adversary requires spatial kiting. Existing systems fail to navigate this multi-attribute trade-off.
+    \item \textbf{The Sim-to-Real Deployment Gap:} Benchmark PCGRL systems rely on external Python runtimes, Torch environments, or heavy socket connections that introduce unacceptable latency and deployment hurdles for commercial standalone games.
+\end{enumerate}
+
+\section{Proposed Solution: The FORGE Architecture}\label{sec:proposed}
+FORGE directly addresses these limitations through a \textbf{Two-Stage Decoupled System Architecture}:
+\begin{itemize}
+    \item \textbf{Stage 1: Deterministic Spatial Topology Synthesis.} The dungeon structure is generated by a random walk with branching on a grid, where each new room is attached to an existing room through a matching door pair. The resulting room graph is connected by construction, so the exit room is always reachable from the start room; the CI harness confirms this with a breadth-first search over the door graph on 500 seeds.
+    \item \textbf{Stage 2: Closed-Loop PPO Combat Ecology.} A Proximal Policy Optimization agent observes a normalized 8-dimensional state vector ($s_t \in \mathbb{R}^8$: three player-performance signals, four current difficulty settings and run depth) and outputs a continuous 7D action vector ($a_t \in [-1, 1]^7$). This action modulates enemy physical attributes (health, damage, speed, aggro radius), hazard frequency, and room density.
+    \item \textbf{Zero-Dependency Embedded Inference:} The trained policy weights are exported from PyTorch to a compact JSON file. At runtime, an optimized matrix multiplication engine in native GDScript executes the neural forward pass in about $0.2$\,ms (measured), guaranteeing client-side platform portability with zero external dependencies.
+\end{itemize}
+
+\section{Complex Computing Problem (CCP) Justification}
+Under the FAST-NUCES and Washington Accord engineering criteria, Project FORGE qualifies as a \textbf{Complex Computing Problem (CCP)} across multiple dimensions:
+\begin{itemize}
+    \item \textbf{WP-1 (In-depth Computing Knowledge):} Integrates advanced reinforcement learning (PPO clipped surrogate optimization), state-space observation modeling, procedural level synthesis algorithms, and real-time game engine physics.
+    \item \textbf{WP-2 (Conflicting Requirements \& Multi-Objective Trade-offs):} The generator must simultaneously balance competing objectives: maintaining player challenge within the flow channel, guaranteeing topological solvability, avoiding repetitive level layouts, and maintaining a strict $16.6$\,ms (60\,FPS) rendering frame budget.
+    \item \textbf{WP-3 (Non-Trivial Mathematical \& Analytical Formulation):} Involves non-linear observation-action mappings, non-uniform difficulty-weighted temporal aggregation ($\sum w_i S_i$), matrix algebra for forward propagation in GDScript, and clipped policy gradient bounds.
+    \item \textbf{WP-4 (Infrequent \& Novel Problems):} Formulates real-time sim-to-real transfer of offline RL policies into a lightweight client-side game engine without external Python/ONNX runtimes.
+    \item \textbf{WP-5 (Engineering Integration):} Bridges offline deep RL training frameworks (Stable-Baselines3, PyTorch, Gymnasium) with real-time 2D game architecture (Godot 4.x).
+    \item \textbf{WP-6 (Significance of Non-Functional Constraints):} Strict latency bounds ($<1.0$\,ms inference), zero-crash reliability under missing weights, and client-side privacy governance.
+\end{itemize}
+
+\section{Technical Challenges Anticipated and Encountered}
+During design and initial implementation, the team encountered and resolved three major technical hurdles:
+\begin{enumerate}
+    \item \textbf{Sim-to-Real Transfer and Player Modeling:} In offline training, real human playtesters cannot provide the millions of frames required by PPO. We engineered a stochastic simulated player whose skill drifts smoothly and whose clearing time is a function of room difficulty, drawing on automated playtesting for parameter tuning, curiosity-conditioned trajectories, and procedural personas~\cite{holmgard2019procedural, zook2014playtesting, sestini2024automated}.
+    \item \textbf{Reward Hacking During Offline Policy Training:} In the first version of the reward, completion time was compared with a fixed total-time target. Because total time equals room count times time per room, the PPO agent could satisfy the target by pinning the room count at an extreme without adjusting any combat parameter. We resolved this by judging pace per room and adding a penalty for room counts that do not track the combat challenge (Equation~\ref{eq:reward_function}).
+    \item \textbf{Difficulty Thrashing and Player Frustration:} Sudden spikes in player clearing time could cause an unconstrained policy to swing wildly between extreme difficulty tiers. We mitigate this with PPO's clipped objective during training, hard bounds on every output parameter (Table~\ref{tab:param_ranges}) and the cold-start anchor. The runtime does not yet include an explicit inter-floor rate limiter, and the shipped policy can move parameters by a large fraction of their range in a single step (Section~\ref{sec:policy_eval}); a limiter is planned for FYP-2.
+\end{enumerate}
+
+\section{Research Findings and Core Design Decisions}
+
+\subsection{Why PPO Over SAC, DQN, and Contextual Bandits?}
+A core inquiry raised during the Proposal Defense was the theoretical justification for selecting PPO over alternative reinforcement learning paradigms. Table~\ref{tab:rl_comparison} details this algorithmic trade-off.
+
+\begin{table}[!htbp]
+\centering
+\caption{Algorithmic Comparison: Justifying PPO for Dynamic Difficulty Adjustment}
+\label{tab:rl_comparison}
+\small
+\begin{tabular}{p{0.18\textwidth}p{0.2\textwidth}p{0.27\textwidth}p{0.25\textwidth}}
+\toprule
+\textbf{Algorithm} & \textbf{Action Space} & \textbf{Sample / Stability Profile} & \textbf{Suitability for DDA} \\
+\midrule
+\textbf{DQN}~\cite{mnih2015human} & Discrete Only & High sample efficiency; prone to Q-value overestimation & Poor: Discretizing 7 continuous parameters leads to curse of dimensionality. \\
+\textbf{Contextual Bandits} & Discrete/Continuous & Myopic single-step; cannot model multi-room credit assignment & Poor: Ignores long-term fatigue across multi-floor dungeon runs. \\
+\textbf{SAC}~\cite{haarnoja2018soft} & Continuous & Off-policy; highly sample efficient but prone to hyperparameter volatility & Moderate: Maximum entropy can produce aggressive difficulty swings. \\
+\textbf{PPO (Ours)}~\cite{schulman2017proximal} & Continuous & On-policy; monotonic policy improvement via clipped surrogate objective & \textbf{Exemplary:} Clipped objective acts as an intrinsic skill shock-absorber. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Mathematical Proof: PPO Clipped Objective as a Skill Shock-Absorber}\label{sec:ppo_proof}
+The core vulnerability in online difficulty adjustment is the occurrence of sudden player skill shocks (e.g., an expert player dying due to an accidental trap trigger, or a novice speedrunning through a sparsely populated room). In unconstrained actor-critic frameworks, such extreme gradient signals cause catastrophic policy shifts, inducing severe difficulty thrashing.
+
+PPO resolves this by optimizing the clipped surrogate objective function:
+\begin{equation}
+L^{CLIP}(\theta) = \hat{\mathbb{E}}_t \left[ \min\left(r_t(\theta)\hat{A}_t, \, \text{clip}\left(r_t(\theta), \, 1-\epsilon, \, 1+\epsilon\right)\hat{A}_t\right) \right]
+\label{eq:ppo_clip}
+\end{equation}
+where $r_t(\theta) = \frac{\pi_\theta(a_t | s_t)}{\pi_{\theta_{old}}(a_t | s_t)}$ represents the probability ratio of the proposed action under the updated versus previous policy, $\hat{A}_t$ is the estimated advantage function, and $\epsilon \approx 0.2$ is the clipping boundary.
+
+Because the policy ratio $r_t(\theta)$ is strictly constrained within the interval $[1-\epsilon, 1+\epsilon]$, the gradient update is bounded. Even when an abrupt change in player performance generates an enormous advantage signal $\hat{A}_t$, the maximum update per iteration is bounded by $\epsilon$. Consequently, PPO's trust region keeps each \emph{training} update small and makes learning robust to noisy or extreme episodes. At deployment the actor is a fixed network, so how smoothly difficulty evolves across floors depends on the learned mapping and on the hard output bounds; we therefore measure it (Section~\ref{sec:policy_eval}) instead of assuming it.
+
+\subsection{Preserving the Principle of Change Blindness}
+In game psychology, ``change blindness'' refers to the human inability to detect gradual, continuous alterations in visual or environmental features~\cite{simons2005change}. The design goal is that difficulty parameters ($\vec{E}, \vec{M}$) change gradually between floors so that players do not notice the intervention; the current prototype bounds them to fixed ranges, and an explicit per-floor rate limiter that enforces gradual change is scheduled for FYP-2. They experience the game as an intrinsically fair, consistently challenging world, preserving their feelings of competence and self-efficacy~\cite{tyack2020sdt}.

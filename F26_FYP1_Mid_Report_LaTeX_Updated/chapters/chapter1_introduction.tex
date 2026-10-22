@@ -1,0 +1,181 @@
+\chapter{Introduction and Project Vision}
+\label{chap:intro}
+
+\section{Project Overview}
+Video games represent one of the most prominent sectors of modern entertainment, increasingly relying on Procedural Content Generation (PCG) to maintain long-term replayability, mitigate content exhaustion, and reduce escalating production overhead. While early algorithmic generation depended on deterministic cellular automata, grammars, or Binary Space Partitioning (BSP), recent developments have advanced toward learned policies trained through Reinforcement Learning (PCGRL)~\cite{khalifa2020pcgrl}. 
+
+However, existing PCGRL systems typically generate game content optimized for an abstract, aggregate statistical average or require human designers to author explicit target vectors manually~\cite{earle2021controllable}. When real human players interact with such systems, the static nature of generation inevitably conflicts with the broad distribution of human motor skill, tactical risk tolerance, spatial navigation pacing, and combat capabilities.
+
+Project \textbf{FORGE} (\textit{Personalized Procedural Content Generation via Reinforcement Learning}, Project ID: F26-012-FORGE) is an online, closed-loop adaptive dungeon synthesizer engineered for 2D top-down combat roguelikes within the Godot 4.x engine. Rather than generating content offline or relying on intrusive questionnaires, FORGE actively and passively records in-session gameplay telemetry (clearing time, death count, and damage-taken ratio). Together with the current difficulty settings and run depth, this telemetry forms an 8-dimensional observation that conditions a Proximal Policy Optimization (PPO)~\cite{schulman2017proximal} actor policy that dynamically outputs a continuous 7-dimensional difficulty action vector. This action vector modulates adversary combat attributes (health, damage, speed, aggro radius), environmental hazards, and dungeon complexity in real time. 
+
+By marrying an offline Python training pipeline with a zero-latency pure-GDScript neural network forward pass, FORGE creates an authentic, responsive game environment that sustains player engagement without causing perceptible difficulty thrashing.
+
+\section{Problem Statement}
+Procedural level generation in combat dungeon crawlers faces a critical trade-off between infinite variety and calibrated challenge:
+\begin{enumerate}
+    \item \textbf{The One-Size-Fits-All Failure Mode:} Content tuned for a nominal player inevitably under-challenges highly skilled veterans (inducing boredom and disengagement) and over-penalizes novice players (inducing anxiety, frustration, and premature churn).
+    \item \textbf{The Brittle Rubber-Banding Fallacy:} Traditional Dynamic Difficulty Adjustment (DDA) systems adjust game parameters reactively using hardcoded threshold triggers (such as scalar health or damage multipliers). These systems are readily transparent to players, produce jarring swings in difficulty, and undermine player agency by penalizing proficient play.
+    \item \textbf{The PCGRL Personalization Void:} While reinforcement learning has proven effective for synthesizing topologically valid level structures, prevailing PCGRL algorithms operate open-loop: they do not ingest continuous in-session human telemetry to adapt the generated challenges dynamically to individual capabilities.
+\end{enumerate}
+
+\subsection*{Central Research Question}
+To address these interrelated deficiencies, Project FORGE is guided by the following central research question:
+\begin{quote}
+\textit{``Can a reinforcement-learning-based procedural content generation system utilize continuous in-session gameplay telemetry to infer an individual player's behavioral profile and synthesize solvable dungeon content whose multi-dimensional combat and environmental difficulty is measurably better matched to that player's observed capability than non-personalized procedural baselines?''}
+\end{quote}
+
+\section{Problem Context and Motivation}
+The psychological foundation of interactive entertainment rests upon the Theory of Flow in digital games~\cite{michailidis2018flow}. Flow represents an optimal mental state characterized by deep absorption and intrinsic motivation, achieved when the challenges presented by an activity precisely balance the actor's perceived skills. When challenges outstrip capability, anxiety ensues; conversely, when skill dominates challenge, boredom terminates engagement.
+
+In action roguelikes (e.g., \textit{Hades}, \textit{The Binding of Isaac}, \textit{Enter the Gungeon}), per-run replayability is paramount. However, players possess vastly different learning curves. A rigid difficulty curve leads to asymmetric retention: novices abandon the game within the first few floors, while experts speedrun through content without experiencing tactical resistance. 
+
+Attempts by commercial studios to mitigate this via reactive DDA (such as Capcom's Dynamic Rank in \textit{Resident Evil 4} or Valve's AI Director in \textit{Left 4 Dead}~\cite{zohaib2018dynamic, mortazavi2024dda}) highlight the industry's demand for adaptive pacing. However, heuristic rule sets often create artificial difficulty adjustments that break immersion. There is an acute engineering and research demand for an AI system that treats difficulty as an organic, multi-attribute parameter space—incorporating adversary speed, aggro geometry, hazard density, and tactical archetype composition—learned and navigated via deep reinforcement learning.
+
+\section{Project Vision}
+The overarching vision of Project FORGE is to establish a unified, open-source, reproducible paradigm for player-conditioned procedural generation in action games. FORGE envisions a gameplay experience where:
+\begin{itemize}
+    \item Game content seamlessly conforms to the player's evolving flow channel without requiring manual difficulty selection menus (e.g., Easy, Normal, Hard).
+    \item The adaptation mechanism operates unobtrusively, preserving the principle of ``change blindness'' so that players perceive the world as challenging yet fair, attributing their survival to personal mastery rather than patronizing AI assistance.
+    \item The generative system runs deterministically on client hardware with zero cloud latency, zero external server dependencies, and rigorous mathematical guarantees of topological reachability and solvability.
+\end{itemize}
+
+\section{Project Objectives}
+To realize this vision, the project team formulated six specific, measurable engineering and research objectives:
+\begin{itemize}
+    \item \textbf{OBJ-1 (Continuous Telemetry \& Profiling Engine):} Construct an unobtrusive telemetry logging framework capturing fine-grained in-session performance metrics (room traversal velocity, hit-to-damage ratio, trap trigger frequency, death count) at 60\,FPS without frame drops.
+    \item \textbf{OBJ-2 (Reinforcement Learning Difficulty Policy):} Train a stable PPO policy in a simulated multi-room Gymnasium environment capable of mapping 8-dimensional observation states (three player-performance signals, four current difficulty settings and run depth) into smooth 7-dimensional difficulty parameter updates.
+    \item \textbf{OBJ-3 (Two-Stage Decoupled Dungeon Synthesizer):} Implement a modular generator separating spatial topology generation from combat encounter placement, ensuring topological reachability (connected by construction and verified by a breadth-first search over the door graph on 500 CI seeds).
+    \item \textbf{OBJ-4 (Multi-Archetype Combat Dynamics):} Develop distinct adversary behavioral archetypes (Melee Crawlers, Ranged Pyromancers) with telegraphed combat tells, projectile collisions, and active player defensive mechanics (dodge roll).
+    \item \textbf{OBJ-5 (Automated Continuous Integration Solvability Testing):} Establish a headless CI/CD pipeline using GitHub Actions that compiles Godot scripts, executes headless room solvability simulations across 500 random seeds, and verifies policy export integrity on every commit.
+    \item \textbf{OBJ-6 (Empirical \& Psychometric Validation):} Establish a formal verification framework evaluating both objective performance metrics (solvability rate, difficulty error rate $\text{DER}$, inference latency) and standardized psychometric instruments (Game Engagement Questionnaire, Player Experience of Need Satisfaction).
+\end{itemize}
+
+\section{Project Scope}\label{sec:scope}
+To ensure rigorous progress while avoiding scope creep, the project scope is formally partitioned across project milestones as shown in Table~\ref{tab:scope_matrix}.
+
+\begin{table}[!htbp]
+\centering
+\caption{FORGE Project Scope Boundary and Delivery Matrix}
+\label{tab:scope_matrix}
+\small
+\begin{tabular}{p{0.32\textwidth}p{0.32\textwidth}p{0.28\textwidth}}
+\toprule
+\textbf{In-Scope: Mid-1 (Completed)} & \textbf{In-Scope: Final-1 / FYP-2} & \textbf{Explicitly Out-of-Scope} \\
+\midrule
+1. Pixel-art dungeon sprites \& aesthetic juice (camera shake, damage numbers). & 1. Expanded 5-archetype enemy ecosystem (Brute, Skirmisher, Swarmer). & 1. 3D graphics rendering or VR/AR interfaces. \\
+2. Multi-archetype combat: Melee Crawler \& Ranged Pyromancer with projectiles. & 2. In-run equipment shop economy with currency (\textit{Forge Embers}) (Mid-2). & 2. Online/LAN multiplayer networking. \\
+3. Player dodge roll with invulnerability frames and cooldown. & 3. Rule-based BSP generator comparison baseline. & 3. Procedural music or audio synthesis. \\
+4. 5-Floor Cold-Start Calibration Protocol with weighted $CR_0$ baseline. & 4. Migration of telemetry store from flat JSON to embedded SQLite. & 4. Client-side continuous policy training (RL training remains offline). \\
+5. In-engine pure-GDScript PPO actor forward pass (about $0.2$\,ms). & 5. Supervised empirical Judge model ($\text{MAE} \le 0.15$) with TreeSHAP (Final-1). & 5. Intrusive biometric or eye-tracking hardware dependencies. \\
+6. Static non-adaptive roguelike baseline toggle for comparative benchmarking. & 6. 10-participant human UAT study with GEQ/PENS validation. & 6. Complex procedural narrative/dialogue generation. \\
+7. Automated headless Godot CI solvability pipeline (GitHub Actions). & 7. Multi-objective Pareto optimization across difficulty dimensions. & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Project Modules}
+The FORGE system architecture is partitioned into four decoupled modules, depicted conceptually in Figure~\ref{fig:modular_arch}:
+\begin{enumerate}
+    \item \textbf{Module 1: Telemetry \& Behavioral Profiling Engine (\texttt{TelemetryLogger.gd}):} Intercepts real-time gameplay events (player damage taken, death events, room entry/exit timestamps) and computes the three normalized player-performance signals (clearing time, deaths, damage-taken ratio) of the observation vector $s_t \in \mathbb{R}^8$; \texttt{DifficultyManager.gd} completes it with the four current difficulty settings and run depth. Computes the Initial Combat Rating ($CR_0$) during cold-start calibration.
+    \item \textbf{Module 2: RL Generator \& In-Engine Inference Engine (\texttt{PPOPolicy.gd}):} Ingests observation vectors and executes an embedded matrix forward pass of the trained actor network to output normalized action vectors ($a_t \in [-1, 1]^7$). Manages graceful degradation via rule-based heuristic fallback if weights are inaccessible.
+    \item \textbf{Module 3: Dungeon Layout \& Encounter Synthesizer (\texttt{DungeonGenerator.gd}, \texttt{DifficultyManager.gd}):} Operates the two-stage generation pipeline. Synthesizes spatial room layouts, opens matching doors between adjacent rooms so that the layout is a connected graph, denormalizes PPO action parameters into concrete game bounds ($\vec{E}, \vec{M}$), and populates rooms with adversary groups and hazards.
+    \item \textbf{Module 4: Core Roguelike Gameplay \& Presentation Engine (\texttt{Main.gd}, \texttt{Player.gd}, \texttt{Enemy.gd}, \texttt{DefenseOverlay.gd}):} Drives 60\,FPS real-time physics, combat hitboxes, projectile kinematics, health tracking, player dash mechanics, camera shake decay, floating combat indicators, and the supervisor defense inspection overlay.
+\end{enumerate}
+
+\begin{figure}[!htbp]
+\centering
+\begin{tikzpicture}[node distance=1.5cm, auto,
+    block/.style={rectangle, draw=blue!70, fill=blue!10, rounded corners, text width=3.2cm, text centered, minimum height=1.2cm, font=\small\bfseries},
+    data/.style={rectangle, draw=orange!70, fill=orange!10, text width=2.8cm, text centered, minimum height=1.0cm, font=\footnotesize},
+    line/.style={draw, -latex, thick}]
+    
+    \node [block] (game) {Module 4: Core Gameplay Engine (Godot 4.x)};
+    \node [block, right=3.0cm of game] (telem) {Module 1: Telemetry Profiling Engine};
+    \node [block, below=1.3cm of telem] (rl) {Module 2: PPO Policy Inference};
+    \node [block, below=1.3cm of game] (dungeon) {Module 3: Dungeon \& Encounter Generator};
+    \node [data, above=0.9cm of game] (player) {Player (human)};
+    \node [data, below=0.9cm of rl] (offline) {Offline PPO training (Python)};
+
+    \path [line, <->] (player) -- node [right, font=\footnotesize] {controls $\leftrightarrow$ game view} (game);
+    \path [line] (game) -- node [above, font=\footnotesize] {Combat events} (telem);
+    \path [line] (telem) -- node [right, font=\footnotesize] {Observation $s_t$} (rl);
+    \path [line] (rl) -- node [below, font=\footnotesize] {Action $a_t$} (dungeon);
+    \path [line] (dungeon) -- node [left, font=\footnotesize] {Generated level} (game);
+    \path [line, dashed] (offline) -- node [right, font=\footnotesize] {trained weights (JSON)} (rl);
+\end{tikzpicture}
+\caption{High-Level Modular Interaction Flow of Project FORGE}
+\label{fig:modular_arch}
+\end{figure}
+
+\section{Stakeholders and User Classes}
+The primary stakeholders and user classes interacting with FORGE are summarized in Table~\ref{tab:stakeholders}.
+
+\begin{table}[!htbp]
+\centering
+\caption{Stakeholders and User Classification}
+\label{tab:stakeholders}
+\small
+\begin{tabular}{p{0.22\textwidth}p{0.35\textwidth}p{0.35\textwidth}}
+\toprule
+\textbf{User Class / Stakeholder} & \textbf{Characteristics \& Needs} & \textbf{System Interaction Points} \\
+\midrule
+\textbf{End-User Player} & Casual or enthusiast action roguelike gamers seeking engaging, personalized challenge without tedious setup. & Gameplay controls (WASD, Mouse Sword Attack, Spacebar Dash), HUD, room traversal. \\
+\textbf{Game Balance Designer} & Evaluators requiring transparency into how AI difficulty parameters adjust relative to telemetry. & Real-time Defense Overlay, parameter manual sliders, telemetry export logs. \\
+\textbf{Academic Researchers} & Investigators evaluating PCGRL adaptability, solvability, and psychometric flow alignment. & Offline training scripts, policy weights JSON, automated headless CI test reports. \\
+\textbf{Supervisory Panel} & Evaluators assessing project progress, code ownership, engineering rigor, and rubric compliance. & Form 2 Live Demonstration, Form 3 Written Mid-Report, Git commit evidence. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Success Criteria}
+To provide objective benchmarks for project evaluation, the success criteria listed in Table~\ref{tab:success_criteria} were baselined.
+
+\begin{table}[!htbp]
+\centering
+\caption{Measurable Project Success Criteria}
+\label{tab:success_criteria}
+\small
+\begin{tabular}{p{0.1\textwidth}p{0.32\textwidth}p{0.25\textwidth}p{0.23\textwidth}}
+\toprule
+\textbf{ID} & \textbf{Success Metric} & \textbf{Target Threshold} & \textbf{Mid-1 Status} \\
+\midrule
+SC-01 & Topological Solvability Rate & $100\%$ across random seeds & Verified (500/500 seeds) \\
+SC-02 & In-Engine Neural Inference Latency & $<1.0$\,ms per invocation & Verified (mean $0.21$\,ms, max $0.36$\,ms) \\
+SC-03 & Frame Rate Stability & $\ge 60$\,FPS at the $1280\times720$ project resolution & Verified (60\,FPS constant) \\
+SC-04 & Cold-Start Calibration Stability & Stable $CR_0 \in [10, 95]$ in 5 floors & Verified via $\vec{w}$ aggregation \\
+SC-05 & System Fault Tolerance & Zero crash on missing weights & Verified (Heuristic fallback) \\
+SC-06 & Automated CI Solvability Pass Rate & $100\%$ build pass on GitHub Actions & Verified via Headless Godot CI \\
+SC-07 & Difficulty Error Rate ($\text{DER}$) & $\text{DER} \le 0.15$ against target pace & Targeted for Gate 3 Exit \\
+SC-08 & Psychometric Flow Elevation & Statistically significant GEQ gain & Scheduled for FYP-2 UAT \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Constraints and Assumptions}
+\subsection*{Technical Constraints}
+\begin{itemize}
+    \item \textbf{Engine Constraints:} Development is confined to the Godot Engine 4.x: CI targets 4.3, and the prototype is also developed and benchmarked locally on 4.7.2. In-game forward passes must be coded in native GDScript to prevent external library or DLL installation failures on end-user machines.
+    \item \textbf{Execution Budget:} Total frame compute time must not exceed $16.6$\,ms to maintain 60\,FPS vertical sync on standard hardware (Intel Core i5 / GTX 1060 equivalent).
+    \item \textbf{Offline Training Horizon:} Policy training is constrained to CPU/GPU environments running Python 3.10 or newer (CI uses 3.12) with PyTorch and Stable-Baselines3.
+\end{itemize}
+
+\subsection*{Operational Assumptions}
+\begin{itemize}
+    \item Players interact using standard keyboard and mouse peripherals.
+    \item Single-player execution without concurrent cloud dependency.
+    \item Player performance changes gradually across floors, with sudden skill deviations limited in effect by the hard bounds on every difficulty parameter.
+\end{itemize}
+
+\section{Ethical, Legal and DEI Considerations}
+\subsection*{Data Privacy and Player Governance}
+Dynamic difficulty adaptation systems routinely raise ethical concerns regarding non-consensual biometric tracking and behavioral profiling. Project FORGE enforces a strict \textbf{Privacy-by-Design} protocol:
+\begin{itemize}
+    \item \textbf{Zero PII Collection:} Telemetry logs contain exclusively abstracted game mechanics data (timestamps, hit counts, health deltas). No IP addresses, device serials, or personal identifiers are captured.
+    \item \textbf{Client-Side Local Storage:} Telemetry data is saved locally to user-accessible JSON files (\texttt{user://session\_telemetry.json}). No external telemetry beaconing or cloud analytics tracking is implemented.
+\end{itemize}
+
+\subsection*{Game Addiction and Dark Pattern Safeguards}
+Commercial engagement-driven DDA often employs predatory algorithms designed to artificially induce near-miss scenarios to maximize monetization or daily active time. FORGE explicitly rejects dark patterns: difficulty adaptation is oriented purely toward sustaining Csikszentmihalyi's flow channel for intrinsic player satisfaction, without manipulative churn mechanics or artificial loot throttling.
+
+\subsection*{Diversity, Equity, and Inclusion (DEI)}
+By calibrating combat difficulty to individual motor abilities, FORGE inherently enhances gameplay accessibility. Novice players or players with motor impairments are accommodated without experiencing repeated, punitive failure walls, while expert players encounter escalating challenges. Visual indicators (such as glowing yellow telegraph rings on Pyromancer fireballs) ensure tactical clarity for players with varying reaction times.

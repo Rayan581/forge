@@ -1,0 +1,27 @@
+\chapter{Conclusion}
+\label{chap:conclusion}
+
+This report documented the research methodology, engineering requirements, system architecture, implementation deliverables, and verification evidence for Project \textbf{FORGE} (\textit{Personalized Procedural Content Generation via Reinforcement Learning}, Project ID: F26-012-FORGE) at the FYP-1 Mid-Term Evaluation milestone.
+
+\section*{Problem and Research Contributions}
+Procedural level generation in video games has historically balanced replayability against an abstract aggregate player average, failing to accommodate individual differences in motor ability, combat pacing, and tactical risk tolerance. Concurrently, existing commercial Dynamic Difficulty Adjustment systems rely on brittle, reactive scalar multipliers that trigger jarring rubber-banding and erode feelings of player competence. 
+
+FORGE bridges this gap by engineering a two-stage decoupled generation architecture:
+\begin{enumerate}
+    \item \textbf{Stage 1:} Synthesizes discrete dungeon room layouts, producing connected layouts (random walk with branching) whose start-to-exit reachability is verified by a breadth-first search over the door graph on 500 CI seeds.
+    \item \textbf{Stage 2:} Ingests continuous, unprompted in-session telemetry (clearing time, death count, damage ratio) into a Proximal Policy Optimization (PPO) policy to output a continuous 7-dimensional combat difficulty action vector ($\vec{E}, \vec{M}$).
+\end{enumerate}
+By establishing a zero-latency pure-GDScript neural network forward pass executing in about $0.2$\,ms, FORGE eliminates runtime dependencies and sim-to-real latency, proving that learned generative policies can execute deterministically on client hardware.
+
+\section*{Mid-1 Implementation and Verification Achievements}
+During Iterations 1 and 2 (Weeks 1 through 10), the project team resolved all 10 directives mandated by the FYP Evaluation Committee:
+\begin{itemize}
+    \item Elevated visual aesthetics to commercial quality by deploying 2D pixel-art sprites, trauma-based non-linear camera shake, floating combat damage indicators, and professional typography.
+    \item Expanded combat variety by introducing Melee Crawlers, kiting Ranged Pyromancers with telegraphed fireball projectiles, and a player dodge roll with invulnerability frames.
+    \item Resolved initial cold-start volatility by engineering a 5-floor calibration sequence calculating an empirical Initial Combat Rating ($CR_0 \in [10, 95]$) using escalating difficulty weights ($\vec{w} = [1.0, 1.5, 2.0, 2.5, 3.0]$).
+    \item Provided a deterministic $+8\%$ per-floor Static Roguelike Baseline mode toggle in the live Defense Telemetry Overlay for rigorous A/B benchmarking.
+    \item Built an automated GitHub Actions CI/CD pipeline verifying headless Godot syntax compilation and validating $100\%$ topological solvability across 500 random seeds on every commit.
+\end{itemize}
+
+\section*{Path Forward into FYP-2}
+Comprehensive verification confirmed zero critical defects, continuous 60\,FPS execution, and zero-crash fault tolerance via heuristic fallback. With the core architectural and generative baseline firmly established, the team is fully prepared to execute the upcoming phases: expanding the combat ecosystem to 5 archetypes and training an empirical supervised Judge regressor with TreeSHAP feature attribution at Gate 3 Exit (Final-1); deploying the equipment shop economy, system integration and benchmarking at Gate 4 (Mid-2); and conducting a formal 10-participant human User Acceptance Testing study with GEQ and PENS psychometrics at Gate 5 (Final-2). Project FORGE remains on schedule, technically sound, and firmly grounded in contemporary academic literature.

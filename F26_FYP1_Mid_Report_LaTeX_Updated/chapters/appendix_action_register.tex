@@ -1,0 +1,38 @@
+\chapter{Proposal Action Register}
+\label{app:action_reg}
+
+This appendix provides the complete, unabridged record of feedback received during the FYP Proposal Defense I for Project \textbf{F26-012-FORGE}, alongside the formal engineering resolutions executed during Iterations 1 and 2.
+
+\section*{Official Evaluation Committee Review}
+\begin{itemize}
+    \item \textbf{Project Code:} F26-012-FORGE
+    \item \textbf{Decision:} Approved with Minor Modifications
+    \item \textbf{Issuing Authority:} FYP Committee, School of Computing, FAST-NUCES, Islamabad
+\end{itemize}
+
+\section*{Detailed Resolution Register}
+\begin{longtable}{p{0.05\textwidth}p{0.26\textwidth}p{0.32\textwidth}p{0.12\textwidth}p{0.19\textwidth}}
+\toprule
+\textbf{No.} & \textbf{Committee Directive} & \textbf{Action Taken in Code \& Architecture} & \textbf{Status} & \textbf{Evidence} \\
+\midrule
+1 & ``The game's aesthetics should be improved. They should also work on the aesthetics of the application, as in the game industry there is a lot of competition with respect to features as well as aesthetics.'' & Replaced geometric circles with 2D pixel-art top-down sprites; integrated trauma-based camera shake (decay rate $3.6$\,s$^{-1}$), animated floating combat text (\texttt{DamageFloater.tscn}), and Cinzel/Inter typography. & Completed & §\ref{sec:iter1_features}, Figs.~\ref{fig:app_sprites}, \texttt{Main.gd} \\
+\midrule
+2 & ``Focus also on aesthetics; also keep a variety of attacks for enemy and player powers.'' & Engineered Ranged Pyromancer with kiting AI and telegraphed fireball projectiles; added player Spacebar dodge roll dash with invulnerability frames and cooldown. & Completed & \texttt{Enemy.gd}, \texttt{Player.gd}, \texttt{ProjectileFireball.gd} \\
+\midrule
+3 & ``Your game should also give a good, playable, engaging experience without AI.'' & Developed an in-engine toggle in the Defense Telemetry Overlay enabling real-time switching to a deterministic $+8\%$ per-floor stat progression static baseline. & Completed & §\ref{sec:iter1_features}, \texttt{DefenseOverlay.gd} \\
+\midrule
+4 & ``Write the scope clearly regarding what you will do and what you will not.'' & Formulated a formal three-tier Scope Boundary Matrix defining strict Mid-1 deliverables, Final-1/FYP-2 commitments, and explicitly out-of-scope boundaries. & Completed & Table~\ref{tab:scope_matrix}, §\ref{sec:scope} \\
+\midrule
+5 & ``The final game/product should have a clear, measurable way of evaluating your RL model and game.'' & Formulated 8 quantitative evaluation metrics (solvability, latency, DER, $CR_0$ convergence) and standardized psychometric instruments (GEQ, PENS). & Completed & Table~\ref{tab:success_criteria}, Chapter~\ref{chap:testing} \\
+\midrule
+6 & ``Extend the literature review to comprehensively cover Dynamic Difficulty Adjustment (DDA)... identify established player-performance, engagement, satisfaction, and difficulty measures.'' & Conducted systematic survey of 32 sources across IEEE ToG, ACM CHI, and Springer MTAP; synthesized 3 DDA generational paradigms and Flow metrics. & Completed & Chapter~\ref{chap:research}, Table~\ref{tab:lit_comparison} \\
+\midrule
+7 & ``Strengthen the technical justification for PPO by comparing it with appropriate alternative reinforcement-learning approaches and explaining why PPO is suitable for gradual and abrupt changes.'' & Evaluated PPO against SAC, DQN, and Contextual Bandits; formulated mathematical proof showing PPO's clipped surrogate objective ($r_t(\theta) \in [1-\epsilon, 1+\epsilon]$) serves as a skill shock-absorber. & Completed & Section~\ref{sec:ppo_proof}, Table~\ref{tab:rl_comparison} \\
+\midrule
+8 & ``Define and validate the judge model using empirical player data rather than primarily manually assigned difficulty weights.'' & Gate 1 linear proxy active for Mid-1; supervised Gradient Boosted Regressor with TreeSHAP and 25-player empirical corpus formally scheduled for FYP-1 Final (Gate 3 Exit, Weeks 11--14). & Scheduled for Final-1 & Section~\ref{sec:domain}, Chapter~\ref{chap:fyp2} \\
+\midrule
+9 & ``Clearly distinguish procedural level generation from difficulty adaptation and demonstrate the benefit of the closed-loop adaptive approach over a strong non-adaptive procedural baseline.'' & Decoupled architecture into Stage 1 (Connected Spatial Topology, BFS-verified in CI) and Stage 2 (Closed-Loop PPO Combat Adapter); provided static roguelike baseline. & Completed & Section~\ref{sec:proposed}, Chapter~\ref{chap:design} \\
+\midrule
+10 & ``Document risks, fallback strategies, and ethical considerations related to player profiling and telemetry data.'' & Developed zero-crash heuristic fallback in \texttt{PPOPolicy.gd}; implemented client-side zero-PII local data governance; formulated risk register. & Completed & Section~\ref{sec:ethics}, Section~\ref{sec:risk} \\
+\bottomrule
+\end{longtable}

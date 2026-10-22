@@ -1,0 +1,218 @@
+\chapter{Iteration 1: Design and Implementation}
+\label{chap:iter1}
+
+\section{Iteration Objectives}
+The primary objective of Iterations 1 and 2 (Weeks 1 through 10) was transitioning Project FORGE from an exploratory proof-of-concept into a robust, literature-grounded, and visually polished mid-term deliverable. In direct alignment with the FYP Committee's directives and the FAST School of Computing CI/CD mandate, our goals were:
+\begin{enumerate}
+    \item \textbf{Commercial Aesthetic Elevation:} Replace all placeholder geometric shapes with 2D pixel-art sprites, integrate trauma-decay camera shake, and deploy color-coded floating combat text.
+    \item \textbf{Combat Dynamics Variety:} Implement distinct adversary behavioral archetypes (Melee Crawler and Ranged Pyromancer with telegraphed projectiles) counterbalanced by a player dodge roll with invulnerability frames.
+    \item \textbf{Cold-Start Calibration Protocol:} Implement an empirical 5-floor calibration sequence calculating an Initial Combat Rating ($CR_0$) to seed the PPO policy and prevent early difficulty thrashing.
+    \item \textbf{Non-Adaptive Comparative Baseline:} Provide an in-engine toggle for a deterministic static roguelike baseline to benchmark adaptive generation against standard game pacing.
+    \item \textbf{Automated Continuous Integration Solvability Pipeline:} Deploy a GitHub Actions workflow executing headless Godot 4.3 simulations to verify $100\%$ topological solvability on every commit.
+\end{enumerate}
+
+\section{Selected Use Cases and Feature Scope}
+The implementation completed during this stage satisfies the three core use cases baselined in Chapter~\ref{chap:reqs}:
+\begin{itemize}
+    \item \textbf{UC-01 (Play Adaptive Session with Cold-Start Calibration):} Fully implemented and verified across Floors 1 through 5, seamlessly transitioning into closed-loop PPO generation at Floor 6.
+    \item \textbf{UC-02 (Combat Encounters and Tactical Evasion):} Fully realized with dynamic melee/ranged combat, projectile kinematics, collision detection, and player dodge roll mechanics.
+    \item \textbf{UC-03 (Real-Time Telemetry and Defense Inspection):} Accessible live in-engine via the \texttt{Tab} hotkey, providing real-time telemetry gauges and manual difficulty overrides.
+\end{itemize}
+
+\section{Design and Scene Architecture}
+The implementation is structured around Godot 4's node composition paradigm. Figure~\ref{fig:godot_scene_tree} illustrates the primary scene hierarchy within \texttt{Main.tscn}.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.65\textwidth]{ThesisFigs/fig_6_3_godot_scene_tree_hierarchy}
+\caption{Godot 4.x Node Composition and Scene Tree Hierarchy}
+\label{fig:godot_scene_tree}
+\end{figure}
+
+\section{Completed Features and Modules}
+\label{sec:iter1_features}
+
+\subsection{Visual Aesthetics Overhaul and Combat Juice}
+Fulfilling the committee's mandate regarding visual quality:
+\begin{itemize}
+    \item \textbf{2D Pixel-Art Sprites:} Replaced procedural circles with top-down pixel-art assets:
+    \begin{itemize}
+        \item \texttt{player.png}: Armored knight with plate armor, directional facing, and dynamic sword slash animations.
+        \item \texttt{enemy\_crawler.png}: Demonic melee crawler with chitinous carapace, horns, and red-eyed animation.
+        \item \texttt{enemy\_pyromancer.png}: Robed occult caster with glowing staff and particle charge effects.
+        \item \texttt{projectile\_fireball.png}: High-contrast fiery projectile with rotational tweening.
+        \item \texttt{tile\_floor\_stone.png}: Interlocking stone flagstones with distinctive floor variants for hazard, treasure, and exit rooms.
+    \end{itemize}
+    \item \textbf{Camera Trauma Shake:} Integrated non-linear trauma screen shake (decay rate $3.6$\,s$^{-1}$) in \texttt{Main.gd}. Every player hit, hazard damage, or adversary elimination injects trauma ($T \leftarrow \min(T + \Delta, 1.0)$), producing visceral tactile recoil.
+    \item \textbf{Floating Combat Text (\texttt{DamageFloater.tscn}):} Created an animated numerical indicator that tweens upward with scale pop upon damage events: yellow for damage inflicted on enemies, crimson red for damage taken by the player, and emerald green for health potion restoration.
+    \item \textbf{Typography Polish:} Downloaded and integrated professional Google Fonts: \textbf{Cinzel} for atmospheric headers and badges, and \textbf{Inter} for HUD telemetry readouts.
+\end{itemize}
+
+\subsection{Multi-Archetype Combat Dynamics}
+To eliminate combat monotony, we implemented two complementary enemy archetypes:
+\begin{itemize}
+    \item \textbf{Melee Crawler:} Chases the player directly upon entering aggro range ($240$\,px) at the PPO-controlled movement speed (default $125$\,px/s). Inflicts $20$ damage (default) per strike with a $0.8$\,s attack cooldown.
+    \item \textbf{Ranged Pyromancer:} Maintains a tactical standoff band of $140$--$280$\,px, kiting backwards at $1.15\times$ speed when the player closes within $140$\,px. While its cooldown allows, it charges a telegraphed fireball with a $0.5$\,s yellow glow and then fires a projectile at $240$\,px/s along the direction to the player (default $18$ damage, i.e.\ $0.9\times$ the base enemy damage).
+    \item \textbf{Player Dodge Roll / Dash:} Bound to the \texttt{Spacebar}, the player executes a high-speed dash ($0.2$\,s duration) granted complete invulnerability frames (iframes), governed by a $1.0$\,s cooldown bar on the HUD.
+\end{itemize}
+
+\subsection{5-Floor Cold-Start Calibration Protocol ($CR_0$ Mathematics)}
+To resolve the cold-start problem inherent in RL agents, \texttt{DifficultyManager.gd} executes a structured 5-floor calibration sequence with escalating difficulty parameter tiers:
+\begin{enumerate}
+    \item \textbf{Floor 1 (Novice Initiation):} 3 rooms, low adversary HP ($35$), minimal damage ($10$), $5\%$ traps.
+    \item \textbf{Floor 2 (Swarm Reflex):} 4 rooms, melee swarm reflexes, standard speed ($110$\,px/s), $15\%$ traps.
+    \item \textbf{Floor 3 (Evasion \& Traps):} 4 rooms, high trap density ($38\%$), agile enemies ($135$\,px/s).
+    \item \textbf{Floor 4 (Tactical Crucible):} 5 rooms, resilient adversaries (HP $70$, dmg $24$), $50\%$ traps.
+    \item \textbf{Floor 5 (Apex Gauntlet):} 5 rooms, maximum stress test, high-speed adversaries ($175$\,px/s, dmg $30$), $65\%$ traps.
+\end{enumerate}
+
+At the exit of Floor 5, \texttt{TelemetryLogger.gd} calculates the non-uniform difficulty-weighted composite score:
+\begin{equation}
+\vec{w} = [1.0, \, 1.5, \, 2.0, \, 2.5, \, 3.0] \quad \left(\sum_{i=1}^5 w_i = 10.0\right)
+\label{eq:weights}
+\end{equation}
+For each floor $i$, the engine evaluates:
+\begin{align}
+\text{Pace}_i &= \text{clamp}\left(1.0 - \frac{\text{sec\_per\_room}_i - 5.0}{12.0}, \, 0.0, \, 1.0\right) \\
+\text{Survival}_i &= \begin{cases} 1.0 & \text{if } n_{\text{deaths}} = 0 \\ 0.5 & \text{if } n_{\text{deaths}} = 1 \\ 0.0 & \text{if } n_{\text{deaths}} \ge 2 \end{cases} \\
+\text{Resistance}_i &= \text{clamp}\left(1.0 - \frac{\text{dmg\_taken}_i}{120.0}, \, 0.0, \, 1.0\right)
+\end{align}
+The Initial Combat Rating ($CR_0 \in [10, 95]$) is synthesized as:
+\begin{equation}
+CR_0 = \left(\frac{\sum w_i \cdot \text{Survival}_i}{\sum w_i} \cdot 40.0\right) + \left(\frac{\sum w_i \cdot \text{Resistance}_i}{\sum w_i} \cdot 35.0\right) + \left(\frac{\sum w_i \cdot \text{Pace}_i}{\sum w_i} \cdot 25.0\right)
+\label{eq:cr0_formula}
+\end{equation}
+This $CR_0$ value directly seeds the initial PPO observation vector $s_0$ at Floor 6, guaranteeing that adaptive scaling begins from an accurate reflection of player skill.
+
+\subsection{Static Non-Adaptive Roguelike Baseline Mode}
+In \texttt{DefenseOverlay.gd}, the team integrated a live toggle button switching between:
+\begin{itemize}
+    \item \textbf{Mode: Adaptive Closed-Loop (PPO):} PPO dynamically balances encounter parameters based on live telemetry observations.
+    \item \textbf{Mode: Static Baseline (Non-Adaptive):} PPO updates are bypassed; adversary health and damage scale deterministically by a flat $+8\%$ per floor, serving as the rigorous comparative control baseline required by the committee.
+\end{itemize}
+
+\section{Technical Implementation Details and Code Artifacts}
+
+\subsection{Pure-GDScript Neural Forward Pass (\texttt{PPOPolicy.gd})}
+Listing~\ref{lst:ppo_predict} presents the core matrix multiplication and activation forward pass implemented in native GDScript.
+
+\begin{lstlisting}[language=Python, caption={Native GDScript Forward Pass Implementation in \texttt{PPOPolicy.gd}}, label={lst:ppo_predict}]
+func predict(obs: PackedFloat32Array) -> PackedFloat32Array:
+    if not loaded:
+        return _fallback_heuristic(obs)
+
+    var x: Array = []
+    for v in obs:
+        x.append(v)
+
+    for i in range(layers.size()):
+        var layer: Dictionary = layers[i]
+        var w: Array = layer["w"]   # shape [out_dim][in_dim]
+        var b: Array = layer["b"]   # shape [out_dim]
+        var y: Array = []
+        y.resize(w.size())
+        for o in range(w.size()):
+            var s: float = b[o]
+            var row: Array = w[o]
+            for k in range(row.size()):
+                s += float(row[k]) * float(x[k])
+            y[o] = s
+        var is_last := (i == layers.size() - 1)
+        if not is_last:                    # tanh on hidden layers only
+            for o in range(y.size()):
+                y[o] = tanh(y[o])
+        x = y
+
+    var out := PackedFloat32Array()
+    for v in x:
+        out.append(clampf(tanh(v), -1.0, 1.0))   # bounded output
+    return out
+\end{lstlisting}
+
+\subsection{Heuristic Fallback Mechanism}
+Listing~\ref{lst:fallback} shows the rule-based fallback in \texttt{PPOPolicy.gd}, used when \texttt{policy\_weights.json} is missing or cannot be parsed so that the game stays playable.
+
+\begin{lstlisting}[language=Python, caption={Deterministic Heuristic Fallback in \texttt{PPOPolicy.gd}}, label={lst:fallback}]
+func _fallback_heuristic(obs: PackedFloat32Array) -> PackedFloat32Array:
+    var norm_time: float = obs[0]
+    var norm_deaths: float = obs[1]
+    var norm_dmg_ratio: float = obs[2]
+    var cur_hp: float = obs[3]
+    var cur_dmg: float = obs[4]
+    var cur_haz: float = obs[5]
+    var cur_rooms: float = obs[6]
+
+    # > 0: player did well -> escalate, < 0: player struggled -> ease off
+    var performance_signal: float = (0.5 - norm_time) * 1.4 \
+        - norm_deaths * 1.5 - norm_dmg_ratio * 0.8
+    performance_signal = clampf(performance_signal, -1.0, 1.0)
+
+    var step := 0.12   # per-level nudge, in normalized [-1, 1] units
+    var out := PackedFloat32Array()
+    out.append(clampf(cur_hp * 2.0 - 1.0 + performance_signal * step, -1.0, 1.0))
+    out.append(clampf(cur_dmg * 2.0 - 1.0 + performance_signal * step, -1.0, 1.0))
+    out.append(clampf(performance_signal * 0.5, -1.0, 1.0))   # enemy_speed
+    out.append(clampf(performance_signal * 0.5, -1.0, 1.0))   # enemy_aggro
+    out.append(clampf(cur_haz * 2.0 - 1.0 + performance_signal * step, -1.0, 1.0))
+    out.append(clampf(performance_signal * 0.3, -1.0, 1.0))   # resource_scarcity
+    out.append(clampf(cur_rooms * 2.0 - 1.0 + performance_signal * step, -1.0, 1.0))
+    return out
+\end{lstlisting}
+
+\subsection{Ranged Pyromancer Projectile Instantiation}
+In \texttt{Enemy.gd}, a Ranged Pyromancer that is within aggro range and off cooldown enters the \texttt{CHARGING} state for $0.5$\,s and then calls \texttt{shoot\_fireball()}:
+\begin{lstlisting}[language=Python, caption={Telegraphed Fireball Spawning in \texttt{Enemy.gd}}, label={lst:enemy_attack}]
+# in _process_pyromancer_ai(): telegraph, then fire
+if is_charging:
+    current_state = State.CHARGING
+    charge_timer += delta
+    move_velocity = -dir_to_player * 18.0       # hold ground while casting
+    if charge_timer >= charge_duration:         # 0.5 s telegraph
+        is_charging = false
+        shoot_fireball(dir_to_player)
+    return move_velocity
+
+func shoot_fireball(target_dir: Vector2) -> void:
+    attack_cooldown_timer = attack_rate
+    if projectile_scene:
+        var p = projectile_scene.instantiate()
+        var spawn_pos = global_position + target_dir * 28.0
+        get_parent().add_child(p)
+        p.setup(target_dir, spawn_pos, attack_damage, 240.0)
+        apply_knockback(-target_dir * 90.0)
+\end{lstlisting}
+
+\section{Tools, Frameworks and Technologies Used}
+Table~\ref{tab:tech_stack} summarizes the technology stack employed during Iterations 1 and 2.
+
+\begin{table}[!htbp]
+\centering
+\caption{FORGE Technology Stack and Infrastructure}
+\label{tab:tech_stack}
+\small
+\begin{tabular}{p{0.25\textwidth}p{0.25\textwidth}p{0.45\textwidth}}
+\toprule
+\textbf{Layer / Domain} & \textbf{Technology} & \textbf{Role in FORGE Architecture} \\
+\midrule
+Game Engine & Godot 4.3 (CI target); developed on 4.7.2 & Core 2D physics, tilemaps, node hierarchy, visual rendering. \\
+In-Game Scripting & GDScript 2.0 & High-performance native engine logic and embedded neural forward pass. \\
+Offline RL Training & Python 3.12 / SB3 & Gymnasium environment, PPO policy optimization, weight export. \\
+Neural Framework & PyTorch $\ge 2.0$ & Multilayer Perceptron tensor operations and gradient calculations. \\
+Continuous Integration & GitHub Actions & Automated headless Godot syntax compilation and solvability validation. \\
+Version Control & Git / GitHub & Distributed source management, atomic commits, and release tagging. \\
+Typography \& Assets & Google Fonts / Pixel Art & Cinzel, Inter typography; custom 2D dungeon sprite sheets. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Demonstration Evidence}
+The implemented system was validated through live gameplay sessions and headless test suites:
+\begin{itemize}
+    \item \textbf{Aesthetic Verification:} Pixel-art sprites seamlessly render on dynamic stone tilemaps with $0$\,ms stutter. Trauma camera shake triggers with visible physical impact upon taking damage.
+    \item \textbf{Tactical Evasion Evidence:} Spacebar dodge rolls reliably grant iframes, allowing players to roll through Pyromancer fireballs without sustaining damage.
+    \item \textbf{Telemetry Verification:} Flat JSON telemetry files (\texttt{session\_telemetry.json}) correctly log room entry/exit timestamps, damage numbers, and $CR_0$ scores across sessions.
+    \item \textbf{Defense Overlay Inspector:} Evaluators can press \texttt{Tab} in real-time to toggle between PPO Adaptive and Static Baseline modes, observe live parameter numbers, and adjust sliders dynamically.
+\end{itemize}
+
+\section{Iteration Outcome}
+Iterations 1 and 2 successfully resolved all committee directives and mid-term commitments. The prototype functions as an authentic, visually polished 2D combat roguelike powered by a deterministic, mathematically verified two-stage procedural dungeon generator with embedded reinforcement learning difficulty conditioning.

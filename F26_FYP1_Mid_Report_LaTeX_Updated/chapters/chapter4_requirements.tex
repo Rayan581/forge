@@ -1,0 +1,181 @@
+\chapter{Software Requirements Specification}
+\label{chap:reqs}
+
+\section{User Interactions and System Actors}
+The FORGE system interacts with three primary classes of actors:
+\begin{enumerate}
+    \item \textbf{Primary Actor (Player):} Navigates the dungeon, engages in melee combat, evades enemy projectiles via dodge rolls, collects health pickups, avoids traps, and transitions through floor portals.
+    \item \textbf{Secondary Actor (Game Balance Evaluator / Supervisor):} Monitors live telemetry via the Defense Overlay HUD, toggles between Adaptive PPO mode and Static Baseline mode, manually overrides difficulty parameters via sliders, and inspects exported session logs.
+    \item \textbf{Automated System Actor (GitHub Actions CI Runner):} Executes automated headless test scripts, parses exit codes, and asserts topological solvability across randomized seeds.
+\end{enumerate}
+
+\section{Use Case Diagram}
+Figure~\ref{fig:use_case_diagram} depicts the core use cases and actor associations within Project FORGE.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{ThesisFigs/fig_4_2_use_case}
+\caption{Unified Use Case Diagram for Project FORGE}
+\label{fig:use_case_diagram}
+\end{figure}
+
+\section{Detailed Use Cases}
+
+\subsection{UC-01: Play Adaptive Session with Cold-Start Calibration}
+\begin{itemize}
+    \item \textbf{Actors:} Player (Primary), PPO Generator (System).
+    \item \textbf{Preconditions:} Game is launched; player selects ``Start Game'' from the main menu; \texttt{policy\_weights.json} exists or heuristic fallback is ready.
+    \item \textbf{Trigger:} Player initiates a new dungeon run.
+    \item \textbf{Main Scenario:}
+    \begin{enumerate}
+        \item System loads Floor 1 in Cold-Start mode with baseline difficulty parameters ($\vec{E}_1, \vec{M}_1$).
+        \item Player traverses rooms, defeats adversaries, and reaches the exit portal.
+        \item \texttt{TelemetryLogger} records clearing time, damage ratio, and deaths.
+        \item Steps 1--3 repeat through Floor 5 with escalating parameter tiers.
+        \item At Floor 5 exit, system computes $CR_0 = \sum w_i \cdot \text{Score}_i / \sum w_i$ ($\vec{w} = [1.0, 1.5, 2.0, 2.5, 3.0]$).
+        \item System seeds the initial PPO observation $s_0$ from $CR_0$ and predicts action $a_0$.
+        \item Floor 6 loads with personalized parameters; closed-loop PPO adaptation governs subsequent floors.
+    \end{enumerate}
+    \item \textbf{Alternative Path:} If player dies, game increments death counter, applies death penalty scaling, and reloads current floor.
+    \item \textbf{Postconditions:} Complete session telemetry written to \texttt{user://session\_telemetry.json}.
+\end{itemize}
+
+\subsection{UC-02: Combat Encounters and Tactical Evasion}
+\begin{itemize}
+    \item \textbf{Actors:} Player, Melee Crawler, Ranged Pyromancer.
+    \item \textbf{Preconditions:} Player enters a non-cleared room containing active enemies.
+    \item \textbf{Main Scenario:}
+    \begin{enumerate}
+        \item Melee Crawlers detect player within aggro radius and initiate pursuit (default $125$\,px/s, PPO-controlled).
+        \item Ranged Pyromancers hold a standoff distance ($140$--$280$\,px) and initiate $0.5$\,s telegraph tell.
+        \item Pyromancers launch a fireball projectile along the direction to the player at the moment the telegraph ends (no lead prediction).
+        \item Player executes Spacebar dodge roll, gaining $0.2$\,s of invulnerability frames to evade the projectile.
+        \item Player delivers sword strike to enemy hitbox; system computes damage, triggers camera shake (decay rate $3.6$\,s$^{-1}$), and pops yellow floating damage text.
+        \item Enemies defeated; doors unlock, and health pickups spawn according to resource scarcity parameter.
+    \end{enumerate}
+    \item \textbf{Postconditions:} Combat damage dealt and received logged by \texttt{TelemetryLogger}.
+\end{itemize}
+
+\subsection{UC-03: Real-Time Telemetry and Defense Inspection}
+\begin{itemize}
+    \item \textbf{Actors:} Game Evaluator / Supervisor.
+    \item \textbf{Preconditions:} Game is actively running in gameplay state.
+    \item \textbf{Trigger:} Evaluator presses the \texttt{Tab} key.
+    \item \textbf{Main Scenario:}
+    \begin{enumerate}
+        \item System renders the semi-transparent Defense Telemetry Overlay HUD.
+        \item HUD displays current floor index, active mode (Adaptive vs. Static), cold-start status, and raw observation signals ($s_t$).
+        \item Displays live sliders showing current enemy health, damage, speed, aggro radius, hazard density, and room count.
+        \item Evaluator adjusts a slider manually; system applies the override dynamically to the current floor.
+    \end{enumerate}
+    \item \textbf{Postconditions:} Parameter overrides reflected in real-time enemy behavior.
+\end{itemize}
+
+\section{Functional Requirements}
+
+\subsection{Module 1: Telemetry and Behavioral Profiling}
+\begin{itemize}
+    \item \textbf{FR-01 (Session Telemetry Collection):} The system shall capture room clearing duration, player damage received, damage dealt to enemies, death events, and potion pickups, logging events at 60\,FPS without frame latency.
+    \item \textbf{FR-02 (Cold-Start Weighted Calibration):} The system shall enforce a 5-floor calibration sequence calculating an Initial Combat Rating ($CR_0 \in [10, 95]$) using non-uniform weights $\vec{w} = [1.0, 1.5, 2.0, 2.5, 3.0]$ across pace, survival, and damage execution.
+    \item \textbf{FR-03 (JSON Telemetry Persistence):} The system shall serialize all session events to \texttt{user://session\_telemetry.json} upon floor completion and game exit.
+\end{itemize}
+
+\subsection{Module 2: Reinforcement Learning and Difficulty Policy}
+\begin{itemize}
+    \item \textbf{FR-04 (PPO Action Inference):} The system shall pass an 8-dimensional normalized observation vector ($s_t$) through an embedded MLP with two hidden layers in GDScript, producing a 7-dimensional continuous action vector ($a_t \in [-1, 1]^7$).
+    \item \textbf{FR-05 (Heuristic Fallback Autonomy):} If \texttt{policy\_weights.json} is missing or corrupted, the system shall engage a deterministic heuristic policy adjusting parameters based on clearing time thresholds without raising unhandled exceptions.
+\end{itemize}
+
+\subsection{Module 3: Dungeon Layout and Encounter Synthesis}
+\begin{itemize}
+    \item \textbf{FR-06 (Topological Solvability Guarantee):} The system shall generate connected room layouts (every room is attached to a previously placed room through a matching door pair), and the CI harness shall verify with a breadth-first search over the door graph that the exit room is reachable from the start room.
+    \item \textbf{FR-07 (Parameter Denormalization):} The system shall map normalized PPO actions ($[-1, 1]$) into bounded game engine ranges: enemy health $[20, 120]$\,HP, enemy damage $[5, 50]$, enemy speed $[60, 220]$\,px/s, aggro radius $[100, 450]$\,px, hazard density $[0.05, 0.80]$, resource scarcity $[0.10, 0.90]$, and room count $[5, 9]$.
+\end{itemize}
+
+\subsection{Module 4: Core Gameplay and Combat}
+\begin{itemize}
+    \item \textbf{FR-08 (Multi-Archetype Enemy Combat):} The system shall instantiate Melee Crawlers (direct path pursuit, melee slash on contact) and Ranged Pyromancers (kiting AI, telegraphed fireball projectile).
+    \item \textbf{FR-09 (Player Dodge Roll):} The system shall execute an evasive dash on Spacebar input, granting $0.2$\,s of invulnerability frames with a $1.0$\,s cooldown timer.
+    \item \textbf{FR-10 (Static Roguelike Baseline Toggle):} The system shall provide an in-engine toggle disabling PPO adaptation and scaling enemy health and damage by a fixed $+8\%$ per floor.
+\end{itemize}
+
+\section{Non-Functional Requirements}
+
+\subsection{Reliability and Fault Tolerance}
+\begin{itemize}
+    \item \textbf{NFR-01 (Zero-Crash Fallback):} The system shall gracefully degrade to the heuristic fallback policy upon missing or malformed JSON weights, maintaining continuous gameplay without crashing.
+    \item \textbf{NFR-02 (Solvability Integrity):} The dungeon generator shall maintain a $100\%$ topological solvability rate across all randomly generated seeds.
+\end{itemize}
+
+\subsection{Usability and Visual Polish}
+\begin{itemize}
+    \item \textbf{NFR-03 (Visual Feedback \& Juice):} Player and enemy damage events shall trigger trauma camera shake decaying in $<0.2$\,s and spawn color-coded floating text numbers (yellow for enemy hit, red for player hurt, green for healing).
+    \item \textbf{NFR-04 (Combat Telegraphing):} Ranged projectile attacks shall display a minimum $0.5$\,s visual tell prior to launch to allow human reaction.
+\end{itemize}
+
+\subsection{Performance and Latency}
+\begin{itemize}
+    \item \textbf{NFR-05 (Rendering Frame Rate):} The game engine shall maintain a stable $\ge 60$\,FPS rendering rate at the $1280\times720$ project resolution, with frame delta not exceeding $16.6$\,ms.
+    \item \textbf{NFR-06 (Neural Inference Latency):} The in-engine pure-GDScript neural network forward pass shall compute action predictions in $<1.0$\,ms per invocation.
+\end{itemize}
+
+\subsection{Security and Data Privacy}
+\begin{itemize}
+    \item \textbf{NFR-07 (Privacy by Design):} The telemetry system shall collect zero Personally Identifiable Information (PII) and store all telemetry locally on the client machine without external internet transmission.
+\end{itemize}
+
+\section{Acceptance Criteria}
+Table~\ref{tab:acceptance_criteria} defines the objective acceptance criteria used to verify requirements completion.
+
+\begin{table}[!htbp]
+\centering
+\caption{Requirements Acceptance Criteria and Verification Protocol}
+\label{tab:acceptance_criteria}
+\small
+\begin{tabular}{p{0.12\textwidth}p{0.32\textwidth}p{0.34\textwidth}p{0.14\textwidth}}
+\toprule
+\textbf{Req. ID} & \textbf{Acceptance Metric} & \textbf{Verification Protocol} & \textbf{Mid-1 Status} \\
+\midrule
+FR-01 & Event Capture Precision & Zero dropped combat events during 60\,FPS play & Passed \\
+FR-02 & $CR_0$ Convergence & Score strictly bounded in $[10, 95]$ in 5 floors & Passed \\
+FR-04 & Inference Execution & Action vector strictly within $[-1, 1]^7$ & Passed \\
+FR-05 & Heuristic Fallback & Game proceeds normally when weights deleted & Passed \\
+FR-06 & Topological Solvability & BFS path exists on 500 seeds & Passed (500/500) \\
+FR-08 & Ranged Attack & Fireball spawns, travels, and inflicts damage & Passed \\
+FR-09 & Dash Invulnerability & Zero damage registered when hit during dash & Passed \\
+FR-10 & Static Baseline Scaling & Exactly $+8\%$ stat increase per floor verified & Passed \\
+NFR-05 & Rendering Performance & No frame drop below 60\,FPS on test rig & Passed \\
+NFR-06 & Inference Latency & Forward pass duration measured $<1.0$\,ms & Passed (mean $0.21$\,ms) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Requirements Traceability Matrix}
+Table~\ref{tab:rtm} maps requirements to system architecture modules, design artifacts, code implementations, and verification test cases.
+
+\begin{table}[!htbp]
+\centering
+\caption{Requirements Traceability Matrix (RTM)}
+\label{tab:rtm}
+\scriptsize
+\begin{tabular}{p{0.10\textwidth}p{0.18\textwidth}p{0.20\textwidth}p{0.24\textwidth}p{0.16\textwidth}}
+\toprule
+\textbf{Req. ID} & \textbf{Module} & \textbf{Design Artifact} & \textbf{Implementation File} & \textbf{Test Case} \\
+\midrule
+FR-01 & Telemetry Engine & Activity Diagram Fig.~\ref{fig:activity_session} & \texttt{TelemetryLogger.gd} & TC-01 \\
+FR-02 & Profiling Engine & Sequence Diagram Fig.~\ref{fig:seq_diagram} & \texttt{TelemetryLogger.gd} & TC-02 \\
+FR-03 & Storage Subsystem & JSON Schema Table~\ref{tab:json_schema} & \texttt{TelemetryLogger.gd} & TC-03 \\
+FR-04 & RL Policy Engine & UML Class Diagram Fig.~\ref{fig:class_diagram} & \texttt{PPOPolicy.gd} & TC-04 \\
+FR-05 & RL Policy Engine & State Machine Fig.~\ref{fig:state_enemy} & \texttt{PPOPolicy.gd} & TC-05 \\
+FR-06 & Dungeon Generator & Two-Stage Pipeline Fig.~\ref{fig:two_stage_detail} & \texttt{DungeonGenerator.gd} & TC-06 (CI Headless) \\
+FR-07 & Encounter Adapter & Parameter Mapping Table~\ref{tab:param_ranges} & \texttt{DifficultyManager.gd} & TC-07 \\
+FR-08 & Combat Engine & Enemy State Machine Fig.~\ref{fig:state_enemy} & \texttt{Enemy.gd}, \texttt{ProjectileFireball.gd} & TC-08 \\
+FR-09 & Player Controller & Player FSM & \texttt{Player.gd} & TC-09 \\
+FR-10 & Evaluation HUD & UI Component Layout & \texttt{DefenseOverlay.gd} & TC-10 \\
+NFR-01 & RL Policy Engine & Heuristic Branch & \texttt{PPOPolicy.gd} & TC-05 \\
+NFR-02 & Dungeon Generator & Solvability Verifier & \texttt{DungeonGenerator.gd} & TC-06 \\
+NFR-05 & Graphics Engine & Frame Profiler & Project Settings / Vulkan & TC-08 \\
+NFR-06 & RL Policy Engine & Benchmark Routine & \texttt{PPOPolicy.gd} & TC-04 \\
+\bottomrule
+\end{tabular}
+\end{table}

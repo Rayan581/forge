@@ -1,0 +1,120 @@
+\chapter{Remaining FYP Plan and FYP-2 Horizon}
+\label{chap:fyp2}
+
+\section{Remaining Project Scope}
+With the fundamental gameplay framework, pure-GDScript neural inference, 5-floor cold-start calibration, and automated headless CI pipeline successfully established and verified at Mid-1, development transitions into subsequent iterations across the remainder of FYP-1 and FYP-2.
+
+The remaining scope is partitioned into two major phases:
+\begin{enumerate}
+    \item \textbf{Phase 1: FYP-1 Final Horizon (Weeks 11--14 / Gate 3 Exit):} Delivering the complete 5-archetype combat ecosystem, the rule-based BSP generator baseline, SQLite telemetry persistence, the empirical supervised Judge model ($\text{MAE} \le 0.15$), and live polynomial TreeSHAP explainability in Godot.
+    \item \textbf{Phase 2: FYP-2 Horizon (Weeks 15--32 / Gates 4 \& 5):} The in-run equipment shop economy, Judge-model re-validation, system integration and performance benchmarking, and a formal 10-participant human User Acceptance Testing (UAT) study.
+\end{enumerate}
+
+\section{Remaining Modules and Features}
+
+\subsection{Full 5-Archetype Combat Ecosystem (Final-1)}
+Expanding the enemy roster from the current 2 archetypes to 5 distinct behavioral classes:
+\begin{itemize}
+    \item \textbf{Melee Crawler (Completed):} Rapid pursuit, contact bite.
+    \item \textbf{Ranged Pyromancer (Completed):} Standoff distance, telegraphed fireball projectile.
+    \item \textbf{Heavy Brute (New):} High hit-points ($120$\,HP), slow speed ($70$\,px/s), area-of-effect ground slam shockwave.
+    \item \textbf{Agile Skirmisher (New):} Flanking movement, hit-and-run sword thrusts.
+    \item \textbf{Swarmers (New):} Low-health, high-count pack adversaries that flank the player.
+\end{itemize}
+
+\subsection{In-Run Equipment Shop Economy (Mid-2)}
+Players collect combat-earned currency (\textit{Forge Embers}) by defeating enemies and clearing rooms. At periodic shop rooms, players can purchase:
+\begin{itemize}
+    \item Weapons: Increasing damage output and modifying attack swing arcs.
+    \item Armor: Reducing incoming damage by a percentage.
+    \item Boots: Increasing base movement speed and shortening dash cooldown.
+\end{itemize}
+The PPO generator will passively detect these player equipment power shifts through telemetry and dynamically scale encounter difficulty to match the augmented capability.
+
+\subsection{Rule-Based BSP Baseline Generator (Final-1)}
+To provide a classic procedural baseline alongside the Static Roguelike Baseline, the team will implement a standard Binary Space Partitioning (BSP) generator. This enables three-way comparative evaluation:
+\begin{itemize}
+    \item Condition A: Static Roguelike Baseline (same generator, fixed $+8\%$ per-floor stat scaling, no PPO; Non-Adaptive).
+    \item Condition B: Deterministic Rule-Based BSP Generator (Non-Adaptive).
+    \item Condition C: FORGE, the Two-Stage Closed-Loop PPO Generator (Player-Conditioned Adaptive).
+\end{itemize}
+
+\subsection{Empirical Judge Model and TreeSHAP Explainability (Final-1)}
+Following the committee's guidance, this module has been moved forward from FYP-2 so that it is delivered and evaluated at the FYP-1 Final evaluation. It replaces the linear difficulty proxy with an offline supervised Gradient Boosted Decision Tree (LightGBM/XGBoost) trained on an empirical corpus of 25+ human playtester sessions ($\text{MAE} \le 0.15$). The model will feed into a live polynomial TreeSHAP engine in Godot~\cite{lundberg2017unified, lundberg2020local}, generating real-time \textit{Design Insight Reports} showing feature attributions for difficulty adjustments. Playtest sessions are collected as anonymised numeric telemetry files, consistent with the zero-PII governance of Section~\ref{sec:ethics}.
+
+\section{Remaining Iterations and Development Sprints}
+The upcoming development schedule is structured into three formal iterations:
+\begin{itemize}
+    \item \textbf{Iteration 3 (Weeks 11--14 / FYP-1 Final):}
+    \begin{itemize}
+        \item Sprint 3.1 (Weeks 11--12): Implement Brute, Skirmisher, and Swarmer archetypes; distribute the playtest build and begin collecting the 25-session telemetry corpus.
+        \item Sprint 3.2 (Weeks 13--14): Close the corpus; train and validate the supervised Judge regressor; port TreeSHAP attribution into GDScript and build the visual explainability inspector; implement BSP generator baseline; migrate telemetry to SQLite; complete FYP-1 Final Report.
+    \end{itemize}
+    \item \textbf{Iteration 4 (Weeks 15--26 / FYP-2 Mid — Release Readiness):}
+    \begin{itemize}
+        \item Sprint 4.1 (Weeks 15--18): Build the in-run equipment shop economy (Forge Embers, shop rooms, weapons, armor, boots); extend the Judge corpus with additional playtester sessions that include equipment.
+        \item Sprint 4.2 (Weeks 19--22): Re-validate and, if needed, retrain the Judge regressor against the equipment-augmented gameplay; refine the explainability inspector and Design Insight Reports; run a pre-UAT pilot session.
+        \item Sprint 4.3 (Weeks 23--26): Complete system integration testing; verify non-functional performance benchmarks.
+    \end{itemize}
+    \item \textbf{Iteration 5 (Weeks 27--32 / FYP-2 Final — Final Acceptance):}
+    \begin{itemize}
+        \item Sprint 5.1 (Weeks 27--29): Conduct 10-participant human UAT study with GEQ and PENS psychometrics.
+        \item Sprint 5.2 (Weeks 30--32): Statistical data analysis (paired t-tests, ANOVA); author Final Thesis; prepare public release.
+    \end{itemize}
+\end{itemize}
+
+\section{Testing, Validation and Psychometric Evaluation Plan}
+In FYP-2, validation expands beyond automated tests to formal human evaluation:
+\begin{itemize}
+    \item \textbf{Participant Cohort:} 10 human playtesters stratified across novice, intermediate, and veteran gaming experience.
+    \item \textbf{Within-Subject Study Protocol:} Each participant plays three randomized 15-minute sessions:
+    \begin{enumerate}
+        \item Condition A: Static Baseline (+8\% per floor).
+        \item Condition B: BSP Baseline (Rule-based non-adaptive).
+        \item Condition C: FORGE Adaptive PPO (Closed-loop player-conditioned).
+    \end{enumerate}
+    \item \textbf{Standardized Psychometric Instruments:}
+    \begin{itemize}
+        \item \textbf{Game Engagement Questionnaire (GEQ; compared with related instruments in~\cite{denisova2016convergence}):} Assessing Absorption, Flow, Presence, and Immersion.
+        \item \textbf{Player Experience of Need Satisfaction (PENS)~\cite{tyack2020sdt}:} Assessing Perceived Competence, Autonomy, and Intuitive Control.
+    \end{itemize}
+    \item \textbf{Statistical Hypothesis Testing:} Paired-sample t-tests and one-way repeated-measures ANOVA to establish whether FORGE achieves statistically significant gains in player flow ($p < 0.05$).
+\end{itemize}
+
+\section{Deployment Plan}
+Project FORGE will be distributed as an open-source, reproducible standalone package:
+\begin{itemize}
+    \item \textbf{Target Platforms:} Standalone 64-bit Windows executable (\texttt{.exe}), Linux 64-bit binary (\texttt{.x86\_64}), and WebAssembly HTML5 export.
+    \item \textbf{Distribution Channels:} Public itch.io game page for player recruitment and GitHub releases for open-source code and trained policy weights.
+\end{itemize}
+
+\section{Tentative Milestone Timeline}
+Table~\ref{tab:gantt_plan} presents the two-semester timeline leading to final project defense.
+
+\begin{table}[!htbp]
+\centering
+\caption{Two-Semester Milestone Timeline and Delivery Horizon}
+\label{tab:gantt_plan}
+\small
+\begin{tabular}{p{0.18\textwidth}p{0.14\textwidth}p{0.48\textwidth}p{0.12\textwidth}}
+\toprule
+\textbf{Milestone} & \textbf{Target Date} & \textbf{Key Deliverables \& Objectives} & \textbf{Status} \\
+\midrule
+Proposal Defense & Week 4 & Problem statement, POC spike, proposal document & Completed \\
+Mid-1 Evaluation & Week 10 & 2 enemy types, cold start, static baseline, CI & \textbf{Completed} \\
+Final-1 Evaluation & Week 14 & 5 archetypes, BSP baseline, SQLite, empirical Judge model, TreeSHAP & Planned \\
+Mid-2 Evaluation & Week 26 & Equipment shop economy, Judge re-validation, system integration, performance benchmarks & Planned \\
+Final-2 Evaluation & Week 32 & 10-player UAT study, GEQ/PENS validation, public build & Planned \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Expected Final Deliverables}
+At the summative FYP-2 defense, Project FORGE will submit:
+\begin{enumerate}
+    \item Fully playable, standalone 2D action roguelike game on Windows, Linux, and Web.
+    \item Complete, documented Godot 4.x and Python Gymnasium source repositories with automated CI pipelines.
+    \item Trained PPO policy weights and empirical Judge regression models.
+    \item Comprehensive UAT evaluation dataset with GEQ/PENS statistical findings.
+    \item Final Year Project Thesis formatted to FAST-NUCES standards.
+\end{enumerate}

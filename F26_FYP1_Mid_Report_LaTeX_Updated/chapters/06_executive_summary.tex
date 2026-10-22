@@ -1,0 +1,34 @@
+\chapter*{Executive Summary}
+\addcontentsline{toc}{chapter}{Executive Summary}
+
+\section*{Strategic Context and Motivation}
+Procedural Content Generation via Reinforcement Learning (PCGRL) has emerged as a state-of-the-art methodology for synthesizing complex, replayable video game levels. Despite substantial advances in benchmark environments such as \texttt{gym-pcgrl}, mainstream procedural level generators remain inherently static: they optimize level layouts against an abstract, aggregate statistical average. In reality, player populations exhibit high variance in mechanical dexterity, tactical risk tolerance, spatial navigation speed, and frustration thresholds. Static generation inevitably under-challenges seasoned veterans (inducing boredom) and overwhelms novices (inducing anxiety), violating Csikszentmihalyi's psychological conditions for player flow. Concurrently, existing Dynamic Difficulty Adjustment (DDA) systems deployed in commercial titles rely on reactionary, transparent heuristic triggers (such as scalar health/damage multipliers) that produce jarring rubber-banding effects and undermine player agency.
+
+\section*{Project Vision and Solution Architecture}
+Project \textbf{FORGE} (\textit{Personalized Procedural Content Generation via Reinforcement Learning}, Project ID: F26-012-FORGE) bridges this gap by engineering an online, closed-loop procedural dungeon generator for 2D top-down action roguelikes built in Godot 4.x. FORGE establishes a two-stage decoupled architecture:
+\begin{enumerate}
+    \item \textbf{Stage 1: Deterministic Spatial Topology Synthesis.} A random-walk-with-branching room layout algorithm attaches every new room to an already placed room through a matching door pair, so each floor is a connected room graph by construction; a headless CI harness verifies start-to-exit reachability with a breadth-first search over the door graph on 500 seeds.
+    \item \textbf{Stage 2: Closed-Loop Reinforcement Learning Combat Adapter.} A Proximal Policy Optimization (PPO) policy observes an 8-dimensional state (three in-session player signals: clearing time, death count and damage-taken ratio; the four current difficulty settings: enemy health, enemy damage, hazard density and room count; and run depth) and synthesizes a structured 7-dimensional difficulty action vector controlling continuous enemy combat attributes (health, damage, speed, aggro radius), environmental hazards, and room count.
+\end{enumerate}
+To avoid sim-to-real latency and eliminate external Python or ONNX runtime dependencies on client machines, FORGE employs an offline training pipeline in Gymnasium with Stable-Baselines3, exporting actor weights to a compact JSON file. At runtime, an embedded, zero-overhead pure-GDScript neural network forward pass computes difficulty adjustments in about $0.2$\,ms.
+
+\section*{Committee Feedback Resolution and Mid-1 Deliverables}
+Following the Proposal Defense in which Project FORGE was approved with minor modifications, the team conducted an exhaustive systematic review of 32 sources (peer-reviewed publications, preprints and foundational texts) across PCGRL and DDA literature. During Iterations 1 and 2 (Weeks 1 through 10), the team fulfilled all mid-term commitments mandated by the FYP Committee and the FAST School of Computing CI/CD Directive:
+\begin{itemize}
+    \item \textbf{Visual Aesthetic Overhaul and Combat Juice:} Replaced preliminary geometric placeholder shapes with custom pixel-art top-down sprites (\texttt{player.png}, \texttt{enemy\_crawler.png}, \texttt{enemy\_pyromancer.png}, dungeon stone flagstones), integrated trauma-decay camera shake ($T \in [0, 1]$), color-coded floating combat text (damage, taken, healing), and professional typography (Cinzel and Inter fonts).
+    \item \textbf{Multi-Archetype Combat Dynamics:} Introduced distinct tactical adversary behaviors---a direct-pursuit Melee Crawler and a kiting Ranged Pyromancer casting telegraphed fireball projectiles---counterbalanced by a player invulnerability dodge roll ($0.2$\,s dash, $1.0$\,s cooldown).
+    \item \textbf{5-Floor Cold-Start Calibration Protocol:} Implemented a weighted initial profiling phase (Floors 1--5) calculating a composite Combat Rating ($CR_0 \in [10, 95]$) with escalating difficulty weights ($\vec{w} = [1.0, 1.5, 2.0, 2.5, 3.0]$) to prevent early difficulty thrashing before closed-loop PPO takes over at Floor 6.
+    \item \textbf{Static Non-Adaptive Roguelike Baseline Mode:} Developed an in-engine toggle in the live Defense Telemetry Overlay enabling evaluators and players to benchmark the adaptive PPO generator against a deterministic $+8\%$ per-floor stat progression baseline.
+    \item \textbf{Automated Headless Godot CI Pipeline:} Engineered a GitHub Actions continuous integration workflow verifying headless script compilation and validating 100\% topological solvability across 500 randomized seeds on every commit.
+\end{itemize}
+
+\section*{Early Validation, Risk Governance, and FYP-2 Horizon}
+Comprehensive testing demonstrated that the pure-GDScript forward pass executes in about $0.2$\,ms (mean $0.21$\,ms, maximum $0.36$\,ms) with 0\% frame drops below 60\,FPS. In fault-injection stress tests (missing or corrupted weights JSON), the engine smoothly engaged a rule-based heuristic fallback without crashing. Telemetry governance operates entirely client-side using local JSON serialization, collecting zero Personally Identifiable Information (PII).
+
+With Mid-1 milestones fully baselined and validated, the remaining project roadmap focuses on:
+\begin{itemize}
+    \item \textbf{FYP-1 Final (Iteration 3, Weeks 11--14):} Expanding the combat ecosystem to 5 archetypes (adding Brute, Skirmisher, and Swarmer), migrating the telemetry store to SQLite, and training the empirical Judge regressor ($\text{MAE} \le 0.15$) with live polynomial TreeSHAP feature attribution inside Godot.
+    \item \textbf{FYP-2 Mid (Iteration 4, Weeks 15--26):} Implementing the in-run equipment shop economy, re-validating the Judge model against it, system integration testing, and non-functional performance benchmarking.
+    \item \textbf{FYP-2 Final (Iteration 5, Weeks 27--32):} Conducting a formal 10-participant human User Acceptance Testing (UAT) study using the Game Engagement Questionnaire (GEQ) and Player Experience of Need Satisfaction (PENS) instruments.
+\end{itemize}
+Project FORGE is on schedule, on budget, and fully aligned with all academic and engineering rubrics of FAST-NUCES.

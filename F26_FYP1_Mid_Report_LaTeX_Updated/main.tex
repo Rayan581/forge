@@ -1,0 +1,103 @@
+\documentclass{fast-nuces-bs}
+
+\usepackage{blindtext}
+\usepackage{mathptmx}% Times Roman font
+\usepackage[T1]{fontenc}
+\usepackage{lipsum} 
+\usepackage{sectsty}
+\usepackage{tikz}
+\usepackage{tikz-uml}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{amsmath,amssymb}
+\usepackage[htt]{hyphenat}
+\usepackage{xurl}
+\setlength{\emergencystretch}{3em}
+\setlength{\tabcolsep}{3pt}
+\usepackage{listings}
+\usetikzlibrary{backgrounds,positioning,shapes.geometric,arrows.meta}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!5},
+  keywordstyle=\color{blue!80!black}\bfseries,
+  commentstyle=\color{green!50!black}\itshape,
+  stringstyle=\color{orange!80!black},
+  showstringspaces=false,
+  tabsize=2
+}
+
+% Custom project helper macros for consistent referencing
+\newcommand{\projecttitle}{FORGE: Personalized Procedural Content Generation via Reinforcement Learning}
+\newcommand{\studentone}{Rayan Ahmed (23i-0018)}
+\newcommand{\studenttwo}{Rana Raza Ahmed (23i-0060)}
+\newcommand{\studentthree}{Uwaid Munir (23i-2574)}
+
+% Information about the Thesis / Report
+% -----------------------------------------------------------------------------
+\department{Department of Artificial Intelligence}
+\faculty{FAST School of Computing}
+\degreeyear{2026}
+\degreemonth{October}
+\degreename{Artificial Intelligence}
+\campuscity{Islamabad}
+\authorone{Rayan Ahmed}{23i-0018}
+\authortwo{Rana Raza Ahmed}{23i-0060}
+\authorthree{Uwaid Munir}{23i-2574}
+\supervisor{Ms. Mehreen Javaid}
+\sessionduration{2023-2027}
+%\cosupervisor{}
+\deanname{Dr. Dean of Computing}
+\directorname{Dr. Waseem Shehzad}
+\hodname{Ahmad Din}
+\fypcoordinatorname{FYP Coordinator}
+\title{FORGE: Personalized Procedural Content Generation via Reinforcement Learning}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\clearpage
+\pagenumbering{roman}
+\input{chapters/01_students_submission}
+\input{chapters/02_anti_plagiarism}
+\input{chapters/03_authors_declaration}
+\input{chapters/04_abstract}
+\input{chapters/05_acknowledgments}
+\input{chapters/06_executive_summary}
+
+\tableofcontents
+\listoffigures
+\listoftables
+\input{chapters/07_abbreviations}
+
+\cleardoublepage
+\pagenumbering{arabic}
+\input{chapters/chapter1_introduction}
+\input{chapters/chapter2_research}
+\input{chapters/chapter3_iteration_plan}
+\input{chapters/chapter4_requirements}
+\input{chapters/chapter5_design}
+\input{chapters/chapter6_iteration1}
+\input{chapters/chapter8_testing}
+\input{chapters/chapter9_development_evidence}
+\input{chapters/chapter10_fyp2_plan}
+\input{chapters/conclusion}
+
+\appendix
+\input{chapters/appendix_action_register}
+\input{chapters/appendix_requirements}
+\input{chapters/appendix_test_cases}
+\input{chapters/appendix_repository}
+\input{chapters/appendix_diagrams}
+\input{chapters/appendix_meetings}
+
+\bibliographystyle{IEEEtran}
+\bibliography{references/references}
+\end{document}

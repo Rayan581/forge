@@ -6,7 +6,9 @@
 # Exits 0 on success, 1 if any error is detected.
 #
 # Usage in CI:
-#   godot --headless --path godot_prototype --script .github/scripts/ci_load_check.gd
+#   cp .github/scripts/ci_load_check.gd godot_prototype/
+#   godot --headless --path godot_prototype --script res://ci_load_check.gd
+# (a path outside the project folder cannot be loaded as res://)
 #
 # NOTE: autoloads ARE registered because we run inside --path, not --script alone.
 
@@ -24,7 +26,7 @@ func _init():
 	print("ci_load_check: scanning %d resources…" % files.size())
 
 	for path in files:
-		var ext := path.get_extension().to_lower()
+		var ext: String = String(path).get_extension().to_lower()
 		if ext not in ["gd", "tscn", "tres"]:
 			continue
 

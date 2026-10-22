@@ -45,6 +45,41 @@ J.~Schulman, F.~Wolski, P.~Dhariwal, A.~Radford, and O.~Klimov, ``Proximal
   2017. [Online]. Available: \url{https://arxiv.org/abs/1707.06347}
 \BIBentrySTDinterwordspacing
 
+\bibitem{earle2024pcgrlplus}
+\BIBentryALTinterwordspacing
+S.~Earle, Z.~Jiang, and J.~Togelius, ``Scaling, control and generalization in
+  reinforcement learning level generators,'' 2024, arXiv preprint
+  arXiv:2408.12525. [Online]. Available: \url{https://arxiv.org/abs/2408.12525}
+\BIBentrySTDinterwordspacing
+
+\bibitem{shu2021edrl}
+\BIBentryALTinterwordspacing
+T.~Shu, J.~Liu, and G.~N. Yannakakis, ``Experience-driven {PCG} via
+  reinforcement learning: A {Super Mario Bros} study,'' 2021, iEEE Conference
+  on Games (CoG); arXiv:2106.15877. [Online]. Available:
+  \url{https://arxiv.org/abs/2106.15877}
+\BIBentrySTDinterwordspacing
+
+\bibitem{wang2022oparl}
+\BIBentryALTinterwordspacing
+Z.~Wang and J.~Liu, ``Online game level generation from music,'' 2022, arXiv
+  preprint arXiv:2207.05271. [Online]. Available:
+  \url{https://arxiv.org/abs/2207.05271}
+\BIBentrySTDinterwordspacing
+
+\bibitem{shaker2010personalized}
+\BIBentryALTinterwordspacing
+N.~Shaker, G.~N. Yannakakis, and J.~Togelius, ``Towards automatic personalized
+  content generation for platform games,'' in \emph{Proceedings of the AAAI
+  Conference on Artificial Intelligence and Interactive Digital Entertainment
+  (AIIDE)}, 2010. [Online]. Available:
+  \url{https://ojs.aaai.org/index.php/AIIDE/article/view/12399}
+\BIBentrySTDinterwordspacing
+
+\bibitem{csikszentmihalyi1990flow}
+M.~Csikszentmihalyi, \emph{Flow: The Psychology of Optimal Experience}.\hskip
+  1em plus 0.5em minus 0.4em\relax New York: Harper \& Row, 1990.
+
 \bibitem{michailidis2018flow}
 \BIBentryALTinterwordspacing
 L.~Michailidis, E.~Balaguer-Ballester, and X.~He, ``Flow and immersion in video
@@ -53,13 +88,17 @@ L.~Michailidis, E.~Balaguer-Ballester, and X.~He, ``Flow and immersion in video
   \url{https://doi.org/10.3389/fpsyg.2018.01682}
 \BIBentrySTDinterwordspacing
 
-\bibitem{zohaib2018dynamic}
+\bibitem{engadget2015re4}
 \BIBentryALTinterwordspacing
-M.~Zohaib, ``Dynamic difficulty adjustment ({DDA}) in computer games: A
-  review,'' \emph{Advances in Human-Computer Interaction}, vol. 2018, p.
-  5681652, 2018. [Online]. Available:
-  \url{https://doi.org/10.1155/2018/5681652}
+{Engadget}, ```{Resident Evil 4}' secretly adjusted its difficulty for you,''
+  2015, published 3 June 2015. [Online]. Available:
+  \url{https://www.engadget.com/2015-06-03-resident-evil-4-difficulty.html}
 \BIBentrySTDinterwordspacing
+
+\bibitem{booth2009l4d}
+M.~Booth, ``The {AI} systems of {Left 4 Dead},'' 2009, keynote, Fifth
+  Artificial Intelligence and Interactive Digital Entertainment Conference
+  (AIIDE), Stanford, CA.
 
 \bibitem{mortazavi2024dda}
 \BIBentryALTinterwordspacing
@@ -67,6 +106,14 @@ F.~Mortazavi, H.~Moradi, and A.-H. Vahabie, ``Dynamic difficulty adjustment
   approaches in video games: A systematic literature review,'' \emph{Multimedia
   Tools and Applications}, vol.~83, pp. 83\,227--83\,274, 2024. [Online].
   Available: \url{https://doi.org/10.1007/s11042-024-18768-x}
+\BIBentrySTDinterwordspacing
+
+\bibitem{zohaib2018dynamic}
+\BIBentryALTinterwordspacing
+M.~Zohaib, ``Dynamic difficulty adjustment ({DDA}) in computer games: A
+  review,'' \emph{Advances in Human-Computer Interaction}, vol. 2018, p.
+  5681652, 2018. [Online]. Available:
+  \url{https://doi.org/10.1155/2018/5681652}
 \BIBentrySTDinterwordspacing
 
 \bibitem{fisher2024exploring}
@@ -94,10 +141,38 @@ R.~Fuchs, R.~Gieseke, and A.~Dockhorn, ``Personalized dynamic difficulty
   \url{https://arxiv.org/abs/2408.06818}
 \BIBentrySTDinterwordspacing
 
+\bibitem{rahim2023continuous}
+\BIBentryALTinterwordspacing
+M.~Rahim, H.~Moradi, A.~hossein Vahabie, and H.~Kebriaei, ``Continuous
+  reinforcement learning-based dynamic difficulty adjustment in a visual
+  working memory game,'' 2023, arXiv preprint arXiv:2308.12726. [Online].
+  Available: \url{https://arxiv.org/abs/2308.12726}
+\BIBentrySTDinterwordspacing
+
+\bibitem{romeo2025ntrl}
+\BIBentryALTinterwordspacing
+C.~Romeo and A.~D. Bagdanov, ``{NTRL}: Encounter generation via reinforcement
+  learning for dynamic difficulty adjustment in {Dungeons \& Dragons},'' 2025,
+  arXiv preprint arXiv:2506.19530. [Online]. Available:
+  \url{https://arxiv.org/abs/2506.19530}
+\BIBentrySTDinterwordspacing
+
+\bibitem{xue2017dynamic}
+\BIBentryALTinterwordspacing
+S.~Xue, M.~Wu, J.~Kolen, N.~Aghdaie, and K.~A. Zaman, ``Dynamic difficulty
+  adjustment for maximized engagement in digital games,'' in \emph{Proceedings
+  of the 26th International Conference on World Wide Web Companion (WWW '17
+  Companion)}, 2017, pp. 465--471. [Online]. Available:
+  \url{https://doi.org/10.1145/3041021.3054170}
+\BIBentrySTDinterwordspacing
+
 \bibitem{earle2021illuminating}
+\BIBentryALTinterwordspacing
 S.~Earle, J.~Snider, M.~C. Fontaine, S.~Nikolaidis, and J.~Togelius,
-  ``Illuminating diverse neural cellular automata for level generation,'' in
-  \emph{Proceedings of the IEEE Conference on Games (CoG)}, 2021.
+  ``Illuminating diverse neural cellular automata for level generation,'' 2021,
+  arXiv preprint arXiv:2109.05489. [Online]. Available:
+  \url{https://arxiv.org/abs/2109.05489}
+\BIBentrySTDinterwordspacing
 
 \bibitem{yuan2026mopcgrl}
 \BIBentryALTinterwordspacing
@@ -123,14 +198,6 @@ M.~Bazzaz and S.~Cooper, ``Playing the imitation game: How perceived generated
   arXiv:2602.14254. [Online]. Available: \url{https://arxiv.org/abs/2602.14254}
 \BIBentrySTDinterwordspacing
 
-\bibitem{earle2024pcgrlplus}
-\BIBentryALTinterwordspacing
-S.~Earle, Z.~Jiang, and J.~Togelius, ``{PCGRL+}: Scaling, control and
-  generalization in reinforcement learning level generators,'' 2024, arXiv
-  preprint arXiv:2408.12525. [Online]. Available:
-  \url{https://arxiv.org/abs/2408.12525}
-\BIBentrySTDinterwordspacing
-
 \bibitem{rupp2024gpcgrl}
 \BIBentryALTinterwordspacing
 F.~Rupp and K.~Eckert, ``{G-PCGRL}: Procedural graph data generation via
@@ -142,8 +209,12 @@ F.~Rupp and K.~Eckert, ``{G-PCGRL}: Procedural graph data generation via
 \BIBentryALTinterwordspacing
 G.~N. Yannakakis and J.~Togelius, \emph{Artificial Intelligence and
   Games}.\hskip 1em plus 0.5em minus 0.4em\relax Springer, 2018. [Online].
-  Available: \url{https://doi.org/10.1007/978-3-319-63534-7}
+  Available: \url{https://doi.org/10.1007/978-3-319-63519-4}
 \BIBentrySTDinterwordspacing
+
+\bibitem{yannakakis2011experience}
+------, ``Experience-driven procedural content generation,'' \emph{IEEE
+  Transactions on Affective Computing}, vol.~2, no.~3, pp. 147--161, 2011.
 
 \bibitem{denisova2016convergence}
 \BIBentryALTinterwordspacing
@@ -169,42 +240,20 @@ K.~Chrysafiadi, M.~Kamitsios, and M.~Virvou, ``Fuzzy-based dynamic difficulty
   \url{https://doi.org/10.1007/s11042-023-14515-w}
 \BIBentrySTDinterwordspacing
 
-\bibitem{romeo2025ntrl}
-\BIBentryALTinterwordspacing
-C.~Romeo and A.~D. Bagdanov, ``{NTRL}: Encounter generation via reinforcement
-  learning for dynamic difficulty adjustment in {Dungeons \& Dragons},'' 2025,
-  arXiv preprint arXiv:2506.19530. [Online]. Available:
-  \url{https://arxiv.org/abs/2506.19530}
-\BIBentrySTDinterwordspacing
-
-\bibitem{rahim2023continuous}
-\BIBentryALTinterwordspacing
-M.~Rahim, H.~Moradi, A.~hossein Vahabie, and H.~Kebriaei, ``Continuous
-  reinforcement learning-based dynamic difficulty adjustment in a visual
-  working memory game,'' 2023, arXiv preprint arXiv:2308.12726. [Online].
-  Available: \url{https://arxiv.org/abs/2308.12726}
-\BIBentrySTDinterwordspacing
-
-\bibitem{xue2017dynamic}
-\BIBentryALTinterwordspacing
-S.~Xue, M.~Wu, J.~Kolen, N.~Aghdaie, and K.~A. Zaman, ``Dynamic difficulty
-  adjustment for maximized engagement in digital games,'' in \emph{Proceedings
-  of the 26th International Conference on World Wide Web Companion (WWW '17
-  Companion)}, 2017, pp. 465--471. [Online]. Available:
-  \url{https://doi.org/10.1145/3041021.3054170}
-\BIBentrySTDinterwordspacing
-
-\bibitem{yannakakis2011experience}
-G.~N. Yannakakis and J.~Togelius, ``Experience-driven procedural content
-  generation,'' \emph{IEEE Transactions on Affective Computing}, vol.~2, no.~3,
-  pp. 147--161, 2011.
-
 \bibitem{gallotta2024llmsurvey}
 \BIBentryALTinterwordspacing
 R.~Gallotta, G.~Todd, M.~Zammit, S.~Earle, A.~Liapis, J.~Togelius, and G.~N.
   Yannakakis, ``Large language models and games: A survey and roadmap,''
   \emph{IEEE Transactions on Games}, 2024, arXiv:2402.18659. [Online].
   Available: \url{https://doi.org/10.1109/TG.2024.3461510}
+\BIBentrySTDinterwordspacing
+
+\bibitem{godotrl}
+\BIBentryALTinterwordspacing
+{Godot RL Agents contributors}, ``Godot {RL} agents (\texttt{godot-rl}): Deep
+  reinforcement learning for the {Godot} game engine,'' 2024, python package;
+  supports exporting trained policies to ONNX for inference in Godot. [Online].
+  Available: \url{https://pypi.org/project/godot-rl}
 \BIBentrySTDinterwordspacing
 
 \bibitem{holmgard2019procedural}
@@ -227,16 +276,18 @@ A.~Zook, E.~Fruchter, and M.~O. Riedl, ``Automatic playtesting for game
 \bibitem{sestini2024automated}
 \BIBentryALTinterwordspacing
 A.~Sestini, L.~Gissl{\'e}n, J.~Bergdahl, K.~Tollmar, and A.~D. Bagdanov,
-  ``Automated gameplay testing and validation with curiosity-conditioned
-  proximal trajectories,'' 2022, arXiv preprint arXiv:2202.10057. [Online].
-  Available: \url{https://arxiv.org/abs/2202.10057}
+  ``{CCPT}: Automatic gameplay testing and validation with
+  curiosity-conditioned proximal trajectories,'' 2022, arXiv preprint
+  arXiv:2202.10057; published in IEEE Transactions on Games,
+  doi:10.1109/TG.2022.3226910. [Online]. Available:
+  \url{https://arxiv.org/abs/2202.10057}
 \BIBentrySTDinterwordspacing
 
 \bibitem{mnih2015human}
 \BIBentryALTinterwordspacing
 V.~Mnih, K.~Kavukcuoglu, D.~Silver, A.~A. Rusu, J.~Veness, M.~G. Bellemare,
   A.~Graves, M.~Riedmiller, A.~K. Fidjeland, G.~Ostrovski, S.~Petersen,
-  C.~Beattie, A.~Sadik, A.~Antonoglou, H.~King, D.~Kumaran, D.~Wierstra,
+  C.~Beattie, A.~Sadik, I.~Antonoglou, H.~King, D.~Kumaran, D.~Wierstra,
   S.~Legg, and D.~Hassabis, ``Human-level control through deep reinforcement
   learning,'' \emph{Nature}, vol. 518, no. 7540, pp. 529--533, 2015. [Online].
   Available: \url{https://doi.org/10.1038/nature14236}
@@ -249,6 +300,14 @@ T.~Haarnoja, A.~Zhou, P.~Abbeel, and S.~Levine, ``Soft actor-critic: Off-policy
   \emph{Proceedings of the 35th International Conference on Machine Learning
   (ICML)}, 2018, pp. 1861--1870. [Online]. Available:
   \url{https://proceedings.mlr.press/v80/haarnoja18b.html}
+\BIBentrySTDinterwordspacing
+
+\bibitem{wang2019truly}
+\BIBentryALTinterwordspacing
+Y.~Wang, H.~He, and X.~Tan, ``Truly proximal policy optimization,'' 2019,
+  proceedings of the 35th Conference on Uncertainty in Artificial Intelligence
+  (UAI); arXiv:1903.07940. [Online]. Available:
+  \url{https://arxiv.org/abs/1903.07940}
 \BIBentrySTDinterwordspacing
 
 \bibitem{simons2005change}

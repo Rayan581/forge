@@ -10,8 +10,10 @@ extends RefCounted
 ##   "layers": [ {"w": [[...]], "b": [...]}, {"w": [[...]], "b": [...]}, ... ],
 ##   "activation": "tanh"
 ## }
-## Hidden layers are followed by tanh; the final layer's output is squashed
-## to [-1, 1] with tanh so it can be mapped onto real difficulty ranges.
+## Hidden layers are followed by tanh. The final layer is the Gaussian mean of the
+## SB3 policy; like SB3's deterministic predict() (and the training env), it is
+## CLIPPED to [-1, 1] -- not squashed with tanh -- so the game acts exactly as the
+## policy did during training.
 
 var layers: Array = []
 var loaded: bool = false
@@ -68,7 +70,7 @@ func predict(obs: PackedFloat32Array) -> PackedFloat32Array:
 
 	var out := PackedFloat32Array()
 	for v in x:
-		out.append(clampf(tanh(v), -1.0, 1.0))
+		out.append(clampf(v, -1.0, 1.0))
 	return out
 
 ## Used only until you've trained and dropped in real weights, so the game is

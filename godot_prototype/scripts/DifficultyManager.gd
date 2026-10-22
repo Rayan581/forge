@@ -235,9 +235,12 @@ func build_observation(completion_time_sec: float, deaths_this_level: int, damag
 ## Builds the initial observation vector s₀ seeded by the composite 5-level CR₀ baseline.
 ## Ensures the entire calibration history directly guides the neural PPO policy for Floor 6+.
 func build_observation_from_cr0(cr0_profile: Dictionary, level_num: int = 6) -> PackedFloat32Array:
-	var norm_time = cr0_profile.get("weighted_time_ratio", 0.5)
-	var norm_deaths = cr0_profile.get("weighted_death_ratio", 0.0)
-	var norm_dmg_ratio = cr0_profile.get("weighted_damage_ratio", 0.3)
+	# Use the calibration averages expressed on the training observation scales
+	# (see TelemetryLogger.compute_cr0_baseline). The CR0 score itself is a
+	# human-readable summary and is not an input of the trained policy.
+	var norm_time = cr0_profile.get("obs_time", 0.5)
+	var norm_deaths = cr0_profile.get("obs_deaths", 0.0)
+	var norm_dmg_ratio = cr0_profile.get("obs_dmg_ratio", 0.3)
 	var norm_hp = _normalize(enemy_health, "enemy_health")
 	var norm_dmg = _normalize(enemy_damage, "enemy_damage")
 	var norm_haz = _normalize(hazard_density, "hazard_density")
@@ -264,6 +267,9 @@ func apply_ppo_action(action: PackedFloat32Array) -> void:
 	hazard_density = _denormalize(action[4], "hazard_density")
 	resource_scarcity = _denormalize(action[5], "resource_scarcity")
 	room_count_target = int(round(_denormalize(action[6], "room_count")))
+	# The training simulator assumes the default enemy count per room, so the
+	# calibration-only count multiplier (up to 1.3 on Floor 5) must not carry over.
+	enemy_count_scale = 1.0
 	
 	# In adaptive mode (Floor 6+), the RL model's difficulty challenge directly dictates archetype ratio
 	var ppo_challenge = calculate_difficulty_score().score / 100.0

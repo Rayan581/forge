@@ -80,10 +80,13 @@ func record_calibration_floor(floor_num: int, completion_time_sec: float, deaths
 ## Floor 4 weight = 2.5 (Tactical Attrition)
 ## Floor 5 weight = 3.0 (Apex Gauntlet Stress Test)
 ## Total Weight = 10.0
-func compute_cr0_baseline() -> Dictionary:
+func compute_cr0_baseline(player_max_health: float = 100.0) -> Dictionary:
 	if calibration_records.is_empty():
 		return {
 			"cr0_score": 50.0,
+			"obs_time": 0.5,
+			"obs_deaths": 0.0,
+			"obs_dmg_ratio": 0.3,
 			"weighted_time_ratio": 0.5,
 			"weighted_death_ratio": 0.0,
 			"weighted_damage_ratio": 0.3,
@@ -95,6 +98,12 @@ func compute_cr0_baseline() -> Dictionary:
 	var weighted_pace_score: float = 0.0
 	var weighted_death_score: float = 0.0
 	var weighted_dmg_score: float = 0.0
+	# Weighted averages of the three player signals on the SAME scales the PPO policy
+	# was trained on (train_ppo_difficulty.py::_get_obs): floor time / 90 s for a
+	# 6-room floor, deaths / 3, damage taken / player max health.
+	var weighted_obs_time: float = 0.0
+	var weighted_obs_deaths: float = 0.0
+	var weighted_obs_dmg: float = 0.0
 	
 	for i in range(calibration_records.size()):
 		var rec = calibration_records[i]
@@ -113,6 +122,10 @@ func compute_cr0_baseline() -> Dictionary:
 		# Damage intake ratio per 100 HP
 		var dmg_ratio = clampf(1.0 - (rec.damage / 120.0), 0.0, 1.0)
 		weighted_dmg_score += dmg_ratio * w
+
+		weighted_obs_time += clampf(rec.sec_per_room * 6.0 / 90.0, 0.0, 1.0) * w
+		weighted_obs_deaths += clampf(float(rec.deaths) / 3.0, 0.0, 1.0) * w
+		weighted_obs_dmg += clampf(rec.damage / maxf(1.0, player_max_health), 0.0, 1.0) * w
 		
 	var avg_pace = weighted_pace_score / total_weight
 	var avg_survival = weighted_death_score / total_weight
@@ -133,6 +146,9 @@ func compute_cr0_baseline() -> Dictionary:
 		
 	return {
 		"cr0_score": cr0,
+		"obs_time": weighted_obs_time / total_weight,
+		"obs_deaths": weighted_obs_deaths / total_weight,
+		"obs_dmg_ratio": weighted_obs_dmg / total_weight,
 		"weighted_time_ratio": clampf(1.0 - avg_pace, 0.0, 1.0),
 		"weighted_death_ratio": clampf(1.0 - avg_survival, 0.0, 1.0),
 		"weighted_damage_ratio": clampf(1.0 - avg_dmg_defense, 0.0, 1.0),

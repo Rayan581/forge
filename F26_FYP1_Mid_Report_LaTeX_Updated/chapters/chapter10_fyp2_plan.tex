@@ -2,11 +2,11 @@
 \label{chap:fyp2}
 
 \section{Remaining Project Scope}
-With the fundamental gameplay framework, pure-GDScript neural inference, 5-floor cold-start calibration, and automated headless CI pipeline successfully established and verified at Mid-1, development transitions into subsequent iterations across the remainder of FYP-1 and FYP-2.
+With the gameplay framework, pure-GDScript neural inference, 5-floor cold-start calibration, and automated headless CI pipeline in place at Mid-1, development transitions into subsequent iterations across the remainder of FYP-1 and FYP-2.
 
 The remaining scope is partitioned into two major phases:
 \begin{enumerate}
-    \item \textbf{Phase 1: FYP-1 Final Horizon (Weeks 11--14 / Gate 3 Exit):} Delivering the complete 5-archetype combat ecosystem, the rule-based BSP generator baseline, SQLite telemetry persistence, the empirical supervised Judge model ($\text{MAE} \le 0.15$), and live polynomial TreeSHAP explainability in Godot.
+    \item \textbf{Phase 1: FYP-1 Final Horizon (Weeks 11--14 / Gate 3 Exit):} Correcting the training simulator and retraining the policy so that all seven parameters are learned (Section~\ref{sec:policy_params}); a simulated comparison against the heuristic fallback and the static baseline; and delivering the complete 5-archetype combat ecosystem, the rule-based BSP generator baseline, SQLite telemetry persistence, the empirical supervised Judge model ($\text{MAE} \le 0.15$), and live polynomial TreeSHAP explainability in Godot.
     \item \textbf{Phase 2: FYP-2 Horizon (Weeks 15--32 / Gates 4 \& 5):} The in-run equipment shop economy, Judge-model re-validation, system integration and performance benchmarking, and a formal 10-participant human User Acceptance Testing (UAT) study.
 \end{enumerate}
 
@@ -40,14 +40,14 @@ To provide a classic procedural baseline alongside the Static Roguelike Baseline
 \end{itemize}
 
 \subsection{Empirical Judge Model and TreeSHAP Explainability (Final-1)}
-Following the committee's guidance, this module has been moved forward from FYP-2 so that it is delivered and evaluated at the FYP-1 Final evaluation. It replaces the linear difficulty proxy with an offline supervised Gradient Boosted Decision Tree (LightGBM/XGBoost) trained on an empirical corpus of 25+ human playtester sessions ($\text{MAE} \le 0.15$). The model will feed into a live polynomial TreeSHAP engine in Godot~\cite{lundberg2017unified, lundberg2020local}, generating real-time \textit{Design Insight Reports} showing feature attributions for difficulty adjustments. Playtest sessions are collected as anonymised numeric telemetry files, consistent with the zero-PII governance of Section~\ref{sec:ethics}.
+Following the committee's guidance, this module has been moved forward from FYP-2 so that it is delivered and evaluated at the FYP-1 Final evaluation. It replaces the linear difficulty proxy with an offline supervised Gradient Boosted Decision Tree (LightGBM/XGBoost) trained on an empirical corpus of 25+ human playtester sessions, with a target mean absolute error of $\le 0.15$ on a difficulty rating normalized to $[0,1]$. The model will feed into a live polynomial TreeSHAP engine in Godot~\cite{lundberg2017unified, lundberg2020local}, generating real-time \textit{Design Insight Reports} showing feature attributions for difficulty adjustments. Playtest sessions are collected as anonymised numeric telemetry files, consistent with the zero-PII governance of Section~\ref{sec:ethics}, and only with participants' informed consent.
 
 \section{Remaining Iterations and Development Sprints}
 The upcoming development schedule is structured into three formal iterations:
 \begin{itemize}
     \item \textbf{Iteration 3 (Weeks 11--14 / FYP-1 Final):}
     \begin{itemize}
-        \item Sprint 3.1 (Weeks 11--12): Implement Brute, Skirmisher, and Swarmer archetypes; distribute the playtest build and begin collecting the 25-session telemetry corpus.
+        \item Sprint 3.1 (Weeks 11--12): Correct the simulator (model aggro, scarcity, enemy count and ranged ratio; calibrate pace from the first playtests), retrain and re-evaluate the policy; add frame-time logging; implement Brute, Skirmisher, and Swarmer archetypes; distribute the playtest build and begin collecting the 25-session telemetry corpus.
         \item Sprint 3.2 (Weeks 13--14): Close the corpus; train and validate the supervised Judge regressor; port TreeSHAP attribution into GDScript and build the visual explainability inspector; implement BSP generator baseline; migrate telemetry to SQLite; complete FYP-1 Final Report.
     \end{itemize}
     \item \textbf{Iteration 4 (Weeks 15--26 / FYP-2 Mid — Release Readiness):}
@@ -67,7 +67,7 @@ The upcoming development schedule is structured into three formal iterations:
 In FYP-2, validation expands beyond automated tests to formal human evaluation:
 \begin{itemize}
     \item \textbf{Participant Cohort:} 10 human playtesters stratified across novice, intermediate, and veteran gaming experience.
-    \item \textbf{Within-Subject Study Protocol:} Each participant plays three randomized 15-minute sessions:
+    \item \textbf{Within-Subject Study Protocol:} Each participant plays three sessions in counterbalanced order, each long enough to reach several adaptive floors after the five calibration floors (session length to be fixed in the pre-UAT pilot; 15 minutes is the current estimate):
     \begin{enumerate}
         \item Condition A: Static Baseline (+8\% per floor).
         \item Condition B: BSP Baseline (Rule-based non-adaptive).
@@ -76,9 +76,9 @@ In FYP-2, validation expands beyond automated tests to formal human evaluation:
     \item \textbf{Standardized Psychometric Instruments:}
     \begin{itemize}
         \item \textbf{Game Engagement Questionnaire (GEQ; compared with related instruments in~\cite{denisova2016convergence}):} Assessing Absorption, Flow, Presence, and Immersion.
-        \item \textbf{Player Experience of Need Satisfaction (PENS)~\cite{tyack2020sdt}:} Assessing Perceived Competence, Autonomy, and Intuitive Control.
+        \item \textbf{Player Experience of Need Satisfaction (PENS; its use in games research is reviewed in~\cite{tyack2020sdt}):} Assessing Perceived Competence, Autonomy, and Intuitive Control. Licensing of the instrument will be confirmed before the study.
     \end{itemize}
-    \item \textbf{Statistical Hypothesis Testing:} Paired-sample t-tests and one-way repeated-measures ANOVA to establish whether FORGE achieves statistically significant gains in player flow ($p < 0.05$).
+    \item \textbf{Statistical Analysis:} One-way repeated-measures ANOVA with paired follow-up tests ($p < 0.05$), reporting effect sizes with 95\% confidence intervals. With 10 participants a paired $t$-test has only about 29\% power for a medium effect ($d = 0.5$) and about 62\% for a large one ($d = 0.8$), so the study is treated as exploratory and a null result will not be read as evidence of no effect.
 \end{itemize}
 
 \section{Deployment Plan}

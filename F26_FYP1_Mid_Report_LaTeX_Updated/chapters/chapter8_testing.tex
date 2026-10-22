@@ -4,9 +4,9 @@
 \section{Testing Strategy}
 To guarantee system stability, algorithmic reliability, and gameplay solvability, Project FORGE employs a structured multi-tier verification strategy. Because FORGE operates at the intersection of game engine physics, procedural generation, and machine learning, testing spans four distinct levels:
 \begin{enumerate}
-    \item \textbf{Unit Testing:} Validating core mathematical routines, observation vector normalization, action denormalization clamping, and non-uniform $CR_0$ weighting formulas.
-    \item \textbf{Engine Integration Testing:} Verifying node lifecycles, signal dispatching between \texttt{Player.gd}, \texttt{Enemy.gd}, and \texttt{Main.gd}, combat collision layer masks, and projectile lifespan cleanup.
-    \item \textbf{Automated Headless CI Solvability Testing:} Executing Godot 4.3 in \texttt{--headless} mode via GitHub Actions across 500 randomized seeds to mathematically verify $100\%$ door connectivity and breadth-first-search reachability over the door graph.
+    \item \textbf{Unit Testing:} Validating core mathematical routines, observation vector normalization, action denormalization clamping, the non-uniform $CR_0$ weighting and the $s_0$ seed (\texttt{pytest} and headless GDScript tests).
+    \item \textbf{Engine Integration Testing:} Verifying signal dispatching between \texttt{Player.gd}, \texttt{Enemy.gd}, \texttt{Main.gd} and \texttt{TelemetryLogger.gd} inside the real game scene (headless TC-01), plus manual play-testing of collisions and projectiles.
+    \item \textbf{Automated Headless CI Solvability Testing:} Executing Godot 4.7.2 in \texttt{--headless} mode via GitHub Actions on 500 seeds for each room count from 3 to 9 (3,500 layouts), checking matching door pairs and breadth-first-search reachability of every room. Because layouts are spanning trees by construction, this is a regression test of that property rather than an independent proof.
     \item \textbf{Simulated Policy Evaluation:} Evaluating the offline PPO policy in Gymnasium (training curves over three seeds and 100 paired 30-level episodes per simulated player profile, Section~\ref{sec:policy_eval}) to verify pacing and detect reward hacking.
 \end{enumerate}
 
@@ -22,8 +22,8 @@ Table~\ref{tab:test_levels} details the specific techniques, tools, and executio
 \toprule
 \textbf{Test Level} & \textbf{Scope} & \textbf{Technique / Tool} & \textbf{Execution Environment} \\
 \midrule
-Unit Tests & Math \& data serialization & Assertion scripts (\texttt{pytest}, GDScript) & Local CLI \& Godot Editor \\
-Integration Tests & Combat \& scene transitions & Live interactive test scenes & Godot 4.x Runtime \\
+Unit Tests & Math \& data serialization & Assertion scripts (\texttt{pytest}, headless GDScript) & Local CLI \& GitHub Actions CI \\
+Integration Tests & Telemetry wiring; combat \& scene transitions & Headless scene test (TC-01); live play-testing & Godot 4.7.2 (headless and editor) \\
 Automated Solvability & Layout reachability (BFS) & Headless seed harness script & GitHub Actions CI (Ubuntu) \\
 Policy Validation & Stability \& reward bounds & Training curves and paired profile evaluation & Python 3.12 / Stable-Baselines3 \\
 \bottomrule
@@ -31,7 +31,7 @@ Policy Validation & Stability \& reward bounds & Training curves and paired prof
 \end{table}
 
 \section{Formal Test Suite and Test Cases}
-Table~\ref{tab:test_cases} documents the primary test suite (TC-01 through TC-10) executed during Iteration 2.
+Table~\ref{tab:test_cases} documents the primary test suite (TC-01 through TC-10) executed during Iteration 2. TC-01, TC-02, TC-06 and TC-10 are automated headless scripts in \texttt{godot\_prototype/tests/} run by CI; TC-03 is covered by \texttt{pytest} and the benchmark script; the others are manual.
 
 \begin{table}[!htbp]
 \centering
@@ -42,40 +42,43 @@ Table~\ref{tab:test_cases} documents the primary test suite (TC-01 through TC-10
 \toprule
 \textbf{Test ID} & \textbf{Component} & \textbf{Test Description} & \textbf{Input / Conditions} & \textbf{Expected Result} & \textbf{Status} \\
 \midrule
-TC-01 & \texttt{TelemetryLogger} & Telemetry event capture & Player takes damage, inflicts hits, clears room & Log dictionary records exact health deltas & Pass \\
-TC-02 & \texttt{TelemetryLogger} & Cold-Start $CR_0$ calculation & Complete 5 floors with varying clearing times & $CR_0$ computes correctly in $[10, 95]$ via $\vec{w}$ & Pass \\
+TC-01 & \texttt{TelemetryLogger} & Telemetry event capture (headless, real scene) & Player takes a 20-damage hit; deals $3\times35$ & Snapshot: \texttt{damage\_taken} 20.0, \texttt{damage\_dealt} 105.0 & Pass\textsuperscript{a} \\
+TC-02 & \texttt{TelemetryLogger} & Cold-start $CR_0$ and $s_0$ (headless) & Three scripted 5-floor profiles & $CR_0$ = 19.65 / 60.25 / 95; $s_0$ on training scales & Pass\textsuperscript{a} \\
 TC-03 & \texttt{PPOPolicy} & Neural forward pass math & Feed 8D normalized vector $s_t \in [0, 1]^8$ & Returns 7D vector $a_t \in [-1, 1]^7$ in $<1$\,ms & Pass \\
 TC-04 & \texttt{PPOPolicy} & Zero-crash heuristic fallback & Delete/corrupt \texttt{policy\_weights.json} & Falls back to heuristic without game crash & Pass \\
 TC-05 & \texttt{DifficultyMgr} & Action denormalization & Inject action $a = [-1.0, 1.0, \dots]$ & Parameters mapped to exact table ranges & Pass \\
-TC-06 & \texttt{DungeonGen} & Headless BFS Solvability & Generate 500 dungeons with random seeds & $100\%$ seeds have valid path to exit & Pass \\
+TC-06 & \texttt{DungeonGen} & Headless BFS reachability & 500 seeds $\times$ room counts 3--9 & All rooms reachable; doors paired & Pass \\
 TC-07 & \texttt{Enemy} & Melee Crawler AI & Player enters $240$\,px detection radius & Enemy pursues directly; bites on contact & Pass \\
 TC-08 & \texttt{Enemy} & Ranged Pyromancer AI & Player enters aggro; range $200$\,px & Shows $0.5$\,s tell; spawns fireball projectile & Pass \\
 TC-09 & \texttt{Player} & Dodge roll invulnerability & Spacebar press during incoming fireball & Player dashes; receives zero damage & Pass \\
 TC-10 & \texttt{DefenseOverlay} & Static baseline toggle & Toggle button in Tab overlay & Stats scale by exactly $+8\%$ per floor & Pass \\
 \bottomrule
 \end{tabular}
+
+\smallskip\footnotesize\textsuperscript{a}\,Failed before fixes DEF-05 (TC-01: both values were 0.0) and DEF-06 (TC-02: script error on the new interface); passing since.
 \end{table}
 
 \section{Test Results and Analysis}
-All 10 formal test cases passed successfully. Key findings include:
+All 10 formal test cases pass on the submitted code. TC-01 and TC-02 failed when first automated and pass after fixes DEF-05 and DEF-06 (Section~\ref{sec:defects}). Key findings include:
 \begin{itemize}
-    \item \textbf{Neural Forward Pass Performance:} Measured with the reproducible script \texttt{tests/benchmark\_inference.gd} (headless Godot 4.7.2, 200 warm-up and 1,000 timed calls of \texttt{PPOPolicy.predict()} on the shipped weights), the mean latency was $0.212$\,ms (median $0.210$\,ms, 95th percentile $0.223$\,ms, 99th percentile $0.241$\,ms, maximum $0.355$\,ms), with no invalid outputs. The mean uses about $1.3\%$ of the $16.6$\,ms frame budget and the maximum is roughly $2.1\%$, well inside the $<1.0$\,ms bound of NFR-06 and imperceptible at 60\,FPS.
-    \item \textbf{Topological Solvability:} In automated CI runs executing \texttt{DungeonGenerator.gd} across 500 randomized seeds, 500 out of 500 layouts established a continuous, walkable path between the player spawn and the exit portal ($100\%$ pass rate).
-    \item \textbf{Cold-Start Numerical Stability:} The non-uniform weighting formula (Equations~\ref{eq:weights}--\ref{eq:cr0_formula}, with the clamp to $[10, 95]$) was evaluated on three scripted profiles; the values below are computed from the stated per-floor inputs:
+    \item \textbf{Neural Forward Pass Performance:} Measured with the reproducible script \texttt{tests/benchmark\_inference.gd} (headless Godot 4.7.2, 200 warm-up and 1,000 timed calls of \texttt{PPOPolicy.predict()} on the shipped weights), the mean latency was $0.212$\,ms (median $0.210$\,ms, 95th percentile $0.223$\,ms, 99th percentile $0.241$\,ms, maximum $0.355$\,ms), with no invalid outputs. The mean uses about $1.3\%$ of the $16.6$\,ms frame budget and the maximum roughly $2.1\%$, inside the $<1.0$\,ms bound of NFR-06. These figures were measured on the development PC before fix DEF-07, which only replaces seven output $\tanh$ calls with clamps. Re-running the fixed code on a shared cloud VM (headless Godot 4.7.2) gave median $0.357$\,ms, p95 $0.461$\,ms and p99 $0.608$\,ms, with a single $2.2$\,ms outlier attributable to VM scheduling. The benchmark therefore gates on the median, and the forward pass runs only once per floor transition.
+    \item \textbf{Topological Solvability:} Over 500 seeds for each room count from 3 to 9, all 3,500 layouts had every room reachable from the start room through matching door pairs. This confirms the construction is implemented correctly; it does not test traversability inside rooms.
+    \item \textbf{Cold-Start Numerical Stability:} The non-uniform weighting formula (Equations~\ref{eq:weights}--\ref{eq:cr0_formula}, with the clamp to $[10, 95]$) was evaluated on three scripted profiles by the headless test \texttt{tests/test\_cold\_start.gd}, which feeds the per-floor records through \texttt{TelemetryLogger} and \texttt{DifficultyManager}:
     \begin{itemize}
-        \item Novice (pace 10, 12, 15, 15, 15\,s/room; deaths 0, 0, 2, 2, 2; damage 60, 80, 120, 120, 120): $CR_0 \approx 19.6$.
-        \item Intermediate ($9$\,s/room, one death on Floors 4 and 5, $70$ damage per floor): $CR_0 \approx 60.2$.
-        \item Expert ($4.5$\,s/room, no deaths, no damage): raw score $100$, clamped to $CR_0 = 95$.
+        \item Novice (pace 10, 12, 15, 15, 15\,s/room; deaths 0, 0, 2, 2, 2; damage 60, 80, 120, 120, 120): $CR_0 = 19.65$; $s_0[0..2] = (0.94, 0.50, 0.93)$.
+        \item Intermediate ($9$\,s/room, one death on Floors 4 and 5, $70$ damage per floor): $CR_0 = 60.25$; $s_0[0..2] = (0.60, 0.18, 0.70)$.
+        \item Expert ($4.5$\,s/room, no deaths, no damage): raw score $100$, clamped to $CR_0 = 95$; $s_0[0..2] = (0.30, 0.00, 0.00)$.
     \end{itemize}
+    With these seeds the shipped policy sets Floor 6 to enemy health $20$ / $20$ / $120$ and hazard density $0.20$ / $0.60$ / $0.80$ for the three profiles. The Novice and Intermediate profiles thus receive the same (minimum) enemy health and differ only in hazard density, another sign of the limited personalization discussed in Section~\ref{sec:policy_params}.
 \end{itemize}
 
 
 \section{Training Convergence and Unseen-Profile Evaluation}
 \label{sec:policy_eval}
-To address the committee's request for evidence that the learned policy is better than an untrained one, the PPO training run was repeated with logging enabled (same environment, network ($8\rightarrow64\rightarrow64\rightarrow7$), hyper-parameters and 300{,}000 timesteps as \texttt{train\_ppo\_difficulty.py}) for three random seeds. The shipped \texttt{policy\_weights.json} was evaluated separately using a NumPy re-implementation of the forward pass in \texttt{PPOPolicy.gd}.
+To address the committee's request for evidence that the learned policy is better than an untrained one, the PPO training run was repeated with logging enabled (same environment, network ($8\rightarrow64\rightarrow64\rightarrow7$), hyper-parameters and 300{,}000 timesteps as \texttt{train\_ppo\_difficulty.py}) for three random seeds. The shipped \texttt{policy\_weights.json} (identical, weight for weight, to the saved SB3 checkpoint \texttt{ppo\_difficulty\_model.zip}) was evaluated separately using a NumPy re-implementation of the forward pass in \texttt{PPOPolicy.gd}, after fix DEF-07 (clipped rather than $\tanh$-squashed output).
 
 \subsection{Training Curves}
-Figure~\ref{fig:training_curves} shows the three runs. The mean episode return (30 levels per episode) rises from about $-6.5$ at initialization to $16.0$, $15.8$ and $16.2$ for seeds 0, 1 and 2 respectively, and flattens after roughly 250k timesteps. The policy's exploration standard deviation decreases monotonically from $1.0$ to about $0.6$, and the critic loss settles near a stable plateau; no run diverged.
+Figure~\ref{fig:training_curves} shows the three runs. The mean episode return (30 levels per episode) rises from about $-6.5$ at initialization to $16.0$, $15.8$ and $16.2$ for seeds 0, 1 and 2 respectively, and flattens after roughly 250k timesteps. The policy's exploration standard deviation decreases steadily from $1.0$ to about $0.6$ (with small upticks in under $12\%$ of updates), and the critic loss settles near a stable plateau; no run diverged.
 
 \begin{figure}[!htbp]
 \centering
@@ -84,13 +87,13 @@ Figure~\ref{fig:training_curves} shows the three runs. The mean episode return (
 \label{fig:training_curves}
 \end{figure}
 
-\subsection{Trained vs.\ Randomly Initialized Policy on Unseen Player Profiles}
-\textbf{Protocol.} The simulated player in training starts with skill $\sim U(0.3,0.6)$. Evaluation used profiles with initial skill $0.10$, $0.20$ (novice) and $0.70$, $0.80$, $0.90$ (skilled/expert), none of which occur in training, plus $0.45$ as an in-range reference. Each profile was played for 100 episodes of 30 levels using identical random seeds for every policy (paired comparison). The baseline is a randomly initialized policy: ten untrained networks with the same architecture, deterministic output, averaged. Besides the training reward, two reward-independent metrics are reported: the pacing error $|t_{\text{room}}-7.5\,\text{s}|/7.5\,\text{s}$ and deaths per level.
+\subsection{Trained vs.\ Randomly Initialized Policy on Simulated Player Profiles}
+\textbf{Protocol.} The simulated player in training starts with skill $\sim U(0.3,0.6)$ and improves by $U(0, 0.01)$ per level, so over a 30-level episode skill reaches about $0.60$ on average (95th percentile $0.74$, maximum $0.81$). Evaluation used profiles with initial skill $0.10$, $0.20$ (novice) and $0.90$ (expert), which lie outside the training distribution; $0.80$, at its extreme edge; $0.70$, in its upper tail (3\% of training steps); and $0.45$ as an in-range reference. Each profile was played for 100 episodes of 30 levels using identical random seeds for every policy (paired comparison). The baseline is a randomly initialized policy: ten untrained networks with the same architecture, deterministic output, averaged. Because untrained outputs are close to zero, this baseline effectively holds every parameter near the middle of its range, i.e.\ it behaves like a fixed mid-difficulty setting. It is therefore a weak baseline; comparisons with the heuristic fallback and the static $+8\%$ mode are scheduled. Besides the training reward, two reward-independent metrics are reported: the pacing error $|t_{\text{room}}-7.5\,\text{s}|/7.5\,\text{s}$ and deaths per level.
 
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{ThesisFigs/fig_policy_eval}
-\caption{Mean reward per level (left) and pacing error (right) on simulated player profiles. The shaded band marks the skill range seen in training; error bars are 95\% confidence intervals (shipped, random-init) or the standard deviation over seeds (re-run).}
+\caption{Mean reward per level (left) and pacing error (right) on simulated player profiles. The shaded column marks the profile whose starting skill lies in the training start range; error bars are 95\% confidence intervals (shipped, random-init) or the standard deviation over seeds (re-run). Shipped values use the corrected forward pass (DEF-07).}
 \label{fig:policy_eval}
 \end{figure}
 
@@ -105,31 +108,54 @@ Figure~\ref{fig:training_curves} shows the three runs. The mean episode return (
 \cmidrule(lr){2-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}
 \textbf{Profile (skill)} & Random & Shipped & Re-run & Random & Shipped & Random & Shipped \\
 \midrule
-Novice (0.10) & -1.31 & -0.22 & 0.04$\pm$0.20 & 0.59 & 0.13 & 2.68 & 1.69 \\
+Novice (0.10) & -1.31 & -0.04 & 0.04$\pm$0.20 & 0.59 & 0.11 & 2.68 & 1.48 \\
 \midrule
-Novice (0.20) & -0.92 & 0.41 & 0.58$\pm$0.06 & 0.41 & 0.08 & 2.33 & 0.85 \\
+Novice (0.20) & -0.92 & 0.59 & 0.58$\pm$0.06 & 0.41 & 0.09 & 2.33 & 0.59 \\
 \midrule
-Mid, in training range (0.45) & 0.41 & 0.57 & 0.58$\pm$0.02 & 0.10 & 0.21 & 0.82 & 0.36 \\
+Mid, in training range (0.45) & 0.41 & 0.59 & 0.58$\pm$0.02 & 0.10 & 0.24 & 0.82 & 0.34 \\
 \midrule
-Skilled (0.70) & 0.30 & 0.41 & 0.37$\pm$0.08 & 0.49 & 0.33 & 0.17 & 0.28 \\
+Skilled (0.70) & 0.30 & 0.38 & 0.37$\pm$0.08 & 0.49 & 0.33 & 0.17 & 0.28 \\
 \midrule
-Expert (0.80) & 0.02 & 0.26 & 0.29$\pm$0.13 & 0.67 & 0.46 & 0.05 & 0.19 \\
+Expert (0.80) & 0.02 & 0.27 & 0.29$\pm$0.13 & 0.67 & 0.44 & 0.05 & 0.20 \\
 \midrule
-Expert (0.90) & -0.14 & 0.04 & 0.08$\pm$0.19 & 0.84 & 0.61 & 0.00 & 0.09 \\
+Expert (0.90) & -0.14 & 0.04 & 0.08$\pm$0.19 & 0.84 & 0.59 & 0.00 & 0.11 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Results.} The shipped policy achieves a higher mean reward than the random-initialized policy on all five unseen profiles (paired $t$-test, $p<0.001$ in every case), and the three re-trained runs show the same ordering. The largest gains are for novices, where the untrained policy keeps the game far too hard (2.3--2.7 deaths per level) while the trained policy lowers difficulty and reduces the pacing error from $0.59$ to $0.13$ ($0.10$ skill) and from $0.41$ to $0.08$ ($0.20$ skill).
+\textbf{Results.} The shipped policy achieves a higher mean reward than the random-initialized policy on all six profiles (paired $t$-test, $p<10^{-27}$ in every case; paired effect size $d_z$ from $1.6$ at skill $0.45$ to $14.6$ at skill $0.10$). With 100 simulated episodes even small differences are significant, so the effect sizes and the reward-independent metrics matter more than the $p$-values. The three re-trained runs show the same ordering. The largest gains are for novices, where the untrained policy keeps the game far too hard (2.3--2.7 deaths per level) while the trained policy lowers difficulty and reduces the pacing error from $0.59$ to $0.11$ ($0.10$ skill) and from $0.41$ to $0.09$ ($0.20$ skill).
 
-\textbf{Limitations.} (i) All profiles are simulated; the comparison does not replace the human study planned for FYP-2. (ii) On the in-range profile ($0.45$) the untrained policy is already close to the pacing target, because its near-zero actions map to mid-range difficulty parameters; the trained policy still earns a higher reward through fewer deaths, but its pacing error is larger ($0.21$ vs.\ $0.10$). (iii) For skilled and expert profiles the trained policy is better than the baseline but remains well away from the pacing target ($0.33$--$0.61$ error), because the bounded difficulty ranges saturate; re-trained seeds also vary more there (one seed is no better than the baseline at skill $0.70$). The reward is the quantity PPO was optimized for, which is why pacing error and deaths are reported as secondary checks.
+\textbf{Limitations.} (i) All profiles are simulated; the comparison does not replace the human study planned for FYP-2. (ii) On the in-range profile ($0.45$) the untrained policy is already close to the pacing target, because its near-zero actions map to mid-range difficulty parameters; the trained policy still earns a higher reward through fewer deaths, but its pacing error is larger ($0.24$ vs.\ $0.10$). (iii) For skilled and expert profiles the trained policy is better than the baseline but remains well away from the pacing target ($0.33$--$0.59$ error), because the bounded difficulty ranges saturate; re-trained seeds also vary more there (one seed is no better than the baseline at skill $0.70$). The reward is the quantity PPO was optimized for, which is why pacing error and deaths are reported as secondary checks.
+
+\subsection{What the Shipped Policy Actually Adjusts}
+\label{sec:policy_params}
+Table~\ref{tab:policy_params} shows the mean parameter values the shipped policy chose over the same 100 episodes per profile. Personalization happens through enemy health, hazard density, resource scarcity and, for strong players, room count. Enemy damage stays at its minimum and enemy speed at its maximum for every profile. This is a reward-shaping artifact of the simulator rather than a design choice: low damage reduces simulated deaths, and the simulator's time model rewards fast enemies. Enemy aggro ($a_3$) and resource scarcity ($a_5$) do not affect the simulated player or the reward at all, so their outputs are effectively untrained. The learned action log-std confirms this: it stays near $0$ for those two dimensions ($\sigma \approx 0.9$) but falls to $\sigma \approx 0.39$--$0.49$ for the other five. Correcting the simulator and reward, and retraining, is the first task of Iteration 3.
+
+\begin{table}[!htbp]
+\centering
+\caption{Mean difficulty parameters chosen by the shipped policy per simulated profile (100 episodes $\times$ 30 levels).}
+\label{tab:policy_params}
+\scriptsize
+\begin{tabular}{lccccccc}
+\toprule
+\textbf{Initial skill} & \textbf{HP} & \textbf{Dmg} & \textbf{Speed} & \textbf{Aggro} & \textbf{Hazard} & \textbf{Scarcity} & \textbf{Rooms} \\
+\textit{(range)} & \textit{20--120} & \textit{5--50} & \textit{60--220} & \textit{100--450} & \textit{0.05--0.80} & \textit{0.1--0.9} & \textit{5--9} \\
+\midrule
+0.10 & 20.0 & 5.0 & 220 & 283 & 0.10 & 0.10 & 5.0 \\
+0.20 & 20.0 & 5.0 & 220 & 271 & 0.26 & 0.10 & 5.0 \\
+0.45 & 22.1 & 5.0 & 220 & 226 & 0.75 & 0.19 & 5.0 \\
+0.70 & 97.2 & 5.0 & 220 & 239 & 0.79 & 0.39 & 5.5 \\
+0.90 & 113.6 & 5.0 & 220 & 246 & 0.79 & 0.54 & 6.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Acceptance Testing and Early Validation}
-Acceptance validation confirmed that the system satisfies all Mid-1 criteria established in Table~\ref{tab:acceptance_criteria}:
+Acceptance validation covered the Mid-1 criteria in Table~\ref{tab:acceptance_criteria}; all pass except NFR-05, which is not yet measured:
 \begin{itemize}
-    \item The live playable demo executes reliably at a rock-solid 60\,FPS on test hardware.
-    \item The transition from Cold-Start Floor 5 to Closed-Loop Floor 6 executes smoothly, successfully loading personalized parameters without interruption.
-    \item The Static Roguelike Baseline mode provides a clear, verifiable contrast to PPO adaptation, establishing the comparative baseline required by the committee.
+    \item The live demo ran without visible stutter in supervised play on the development PC; frame times have not yet been logged, so the 60\,FPS requirement is not yet verified.
+    \item The transition from Cold-Start Floor 5 to Closed-Loop Floor 6 loads the PPO-chosen parameters without interruption, and its inputs are checked by TC-02.
+    \item The Static Roguelike Baseline mode provides the non-adaptive comparison condition; the comparison itself is scheduled for FYP-1 Final.
 \end{itemize}
 
 \section{Edge and Failure Case Analysis}
@@ -138,39 +164,45 @@ We deliberately subjected the architecture to severe edge and failure scenarios:
     \item \textbf{Scenario 1: Missing or Malformed Policy Weights.}
     \begin{itemize}
         \item \textit{Condition:} \texttt{policy\_weights.json} was deleted from \texttt{res://ai/}.
-        \item \textit{Observed Behavior:} \texttt{PPOPolicy.gd} issued a warning to the console, set \texttt{loaded = false}, and engaged \texttt{\_fallback\_heuristic()}. The game continued without crashing, adjusting parameters smoothly based on clearing duration.
+        \item \textit{Observed Behavior:} \texttt{PPOPolicy.gd} issued a warning to the console, set \texttt{loaded = false}, and engaged \texttt{\_fallback\_heuristic()}. The game continued without crashing, adjusting parameters from clearing time, deaths and damage taken. (A file that parses as JSON but has wrong layer shapes is not yet handled; a shape check is planned.)
     \end{itemize}
     \item \textbf{Scenario 2: Catastrophic Player Skill Shock (offline probe).}
     \begin{itemize}
         \item \textit{Condition:} Floor 3 with the Intermediate preset active (enemy health 60, damage 20); the observation encodes three deaths and an $80$\,s clear ($s_{\text{deaths}} = 1.0$, $s_{\text{time}} = 0.89$, damage ratio $1.0$). The shipped weights were evaluated with the NumPy mirror of \texttt{PPOPolicy.gd}.
-        \item \textit{Observed Behavior:} The policy eases difficulty in the right direction but in one large step: enemy health $60 \rightarrow 20$ ($-67\%$), damage $20 \rightarrow 6.4$ ($-68\%$), hazard density $0.35 \rightarrow 0.10$. Parameters stay inside their bounds, so the game remains playable, but the step is not gradual; this motivates the inter-floor rate limiter listed in Chapter~\ref{chap:mgmt}.
+        \item \textit{Observed Behavior:} The policy eases health, damage and hazards in one large step: enemy health $60 \rightarrow 20$ ($-67\%$), damage $20 \rightarrow 5$ ($-75\%$), hazard density $0.35 \rightarrow 0.05$. At the same time it \emph{raises} enemy speed from $125$ to $220$\,px/s, its maximum. Parameters stay inside their bounds, so the game remains playable, but the step is neither gradual nor uniformly easier; this motivates the inter-floor rate limiter (Chapter~\ref{chap:mgmt}) and the retraining in Section~\ref{sec:policy_params}.
     \end{itemize}
     \item \textbf{Scenario 3: Zero-Damage Speedrunning (offline probe).}
     \begin{itemize}
         \item \textit{Condition:} Same starting state; the observation encodes a $10$\,s clear with no deaths and no damage taken ($s_{\text{time}} = 0.11$).
-        \item \textit{Observed Behavior:} The policy escalates enemy health ($60 \rightarrow 112$, $+87\%$) and hazard density ($0.35 \rightarrow 0.79$) but lowers enemy damage ($20 \rightarrow 7.4$). The response is therefore only partly consistent with ``escalate for a skilled player'' and illustrates that the policy was trained on a simulated player, which is why real-player validation is planned in FYP-2.
+        \item \textit{Observed Behavior:} The policy escalates enemy health ($60 \rightarrow 120$, $+100\%$), hazard density ($0.35 \rightarrow 0.80$) and speed ($125 \rightarrow 209$\,px/s) but lowers enemy damage ($20 \rightarrow 5$). The response is therefore only partly consistent with ``escalate for a skilled player'' and illustrates that the policy was trained on a simulated player, which is why real-player validation is planned in FYP-2.
     \end{itemize}
 \end{enumerate}
 
 \section{Defects and Corrective Actions}
-Table~\ref{tab:defects} documents the defect log and corrective actions taken during Iteration 2.
+\label{sec:defects}
+Table~\ref{tab:defects} documents the defect log and corrective actions taken during Iteration 2. DEF-05 to DEF-09 were found in a pre-submission audit that compared this report with the code; each now has an automated test.
 
 \begin{table}[!htbp]
 \centering
 \caption{Defect Log and Corrective Resolution Register}
 \label{tab:defects}
-\small
-\begin{tabular}{p{0.14\textwidth}p{0.32\textwidth}p{0.46\textwidth}}
+\scriptsize
+\begin{tabular}{p{0.10\textwidth}p{0.34\textwidth}p{0.48\textwidth}}
 \toprule
 \textbf{Defect ID} & \textbf{Symptom / Fault} & \textbf{Corrective Action Applied} \\
 \midrule
-DEF-01 & Dodge roll permitted receiving damage during active dash. & Invulnerability state in \texttt{Player.gd} lacked collision layer masking. Added temporary hitbox mask disable during dash timer ($0.2$\,s). \\
+DEF-01 & Dodge roll permitted receiving damage during active dash. & \texttt{Player.gd} now sets an invulnerability flag for the dash duration plus $0.06$\,s ($0.26$\,s); \texttt{take\_damage()} ignores hits while it is set. \\
 DEF-02 & Headless Godot CI failed due to missing Windows export templates. & Replaced full binary export step with a lightweight headless script validation harness (\texttt{--headless --quit}). \\
 DEF-03 & Pyromancer fireballs collided with caster upon spawn. & Fireball spawn position updated to spawn $28$\,px ahead of enemy facing vector; added caster collision exclusion. \\
-DEF-04 & Floating damage text overlapped and occluded enemy health bars. & Added randomized horizontal jitter ($\pm 12$\,px) and dynamic upward vertical tweening in \texttt{DamageFloater.gd}. \\
+DEF-04 & Floating damage text overlapped and occluded enemy health bars. & Added a random spawn offset ($\pm 6$\,px), random horizontal drift ($\pm 14$\,px) and upward tweening in \texttt{DamageFloater.gd}. \\
+DEF-05 & Damage taken and dealt were never recorded: \texttt{record\_damage\_taken/dealt()} had no caller, so all telemetry showed 0.0, the PPO damage input was always 0 and $CR_0$ Resistance was always 1.0. & \texttt{Main.gd} now forwards \texttt{player\_damaged} and enemy damage events to \texttt{TelemetryLogger}; covered by TC-01 (\texttt{test\_damage\_telemetry.gd}). \\
+DEF-06 & Floor 6 observation $s_0$ built on different scales from training (e.g., on-target pace encoded as $0.21$ instead of $0.5$). & $s_0$ now uses training scales (Equation~\ref{eq:s0_seed}); covered by TC-02 (\texttt{test\_cold\_start.gd}). \\
+DEF-07 & GDScript applied $\tanh$ to the output layer, whereas training (SB3) clips the Gaussian mean; the game acted differently from the trained policy. & Output now clipped to $[-1,1]$; new \texttt{test\_sb3\_parity.py} compares against SB3 \texttt{predict()}. \\
+DEF-08 & Calibration-only enemy count multiplier ($\times1.3$ on Floor 5) carried into every PPO floor. & Reset to $1.0$ whenever a PPO action is applied; checked in TC-02. \\
+DEF-09 & CI ``GDScript load check'' never ran (script path outside the project; on 4.7 also a parse error) yet the step passed. & Script fixed and copied into the project before running; the step now requires the success line. CI pinned to Godot 4.7.2 to match development. \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \section{Current Validation Status}
-The system has completed Verification Gate 3 with zero open critical or high defects. All core gameplay loops, generative pipelines, neural inference routines, and automated CI workflows are verified and operational.
+All known defects (DEF-01 to DEF-09) are fixed, and the automated suites pass: 3,500/3,500 reachability layouts, TC-01, TC-02 and TC-10 in headless Godot 4.7.2, and the \texttt{pytest} suite. Open items carried into Iteration 3 are the partial personalization of the trained policy (Section~\ref{sec:policy_params}), frame-time measurement (NFR-05), and the comparison against non-adaptive baselines.

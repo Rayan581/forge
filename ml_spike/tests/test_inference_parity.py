@@ -8,7 +8,8 @@ NOTE: Full GDScript headless parity is not directly testable without Godot
 on CI, so this test validates the Python reference implementation against
 manually computed expected values from the same algorithm.
 The GDScript implementation (PPOPolicy.gd) is structurally identical —
-see docs/CI_ARCHITECTURE.md §4.8 for the outstanding GDScript parity blocker.
+Parity between this mirror and the trained Stable-Baselines3 model is checked
+in test_sb3_parity.py; the GDScript side is exercised by the headless Godot tests.
 """
 
 import os
@@ -27,8 +28,9 @@ def py_forward(layers_data: list, obs: np.ndarray) -> np.ndarray:
     """
     Pure-Python forward pass mirroring PPOPolicy.gd predict() exactly:
     - Matrix multiply: y[o] = b[o] + sum_k(w[o][k] * x[k])
-    - tanh on every layer including the last
-    - Final clamp to [-1, 1]
+    - tanh on the hidden layers only
+    - the last layer is the Gaussian mean, clipped to [-1, 1] (as SB3's
+      deterministic predict() and the training environment do)
     """
     x = obs.astype(np.float64).tolist()
     for i, layer in enumerate(layers_data):
@@ -40,8 +42,8 @@ def py_forward(layers_data: list, obs: np.ndarray) -> np.ndarray:
             for k in range(len(w[o])):
                 s += w[o][k] * x[k]
             y.append(s)
-        # tanh on every layer (GDScript applies tanh to all including last)
-        x = [math.tanh(v) for v in y]
+        # tanh on hidden layers only; the output layer stays linear
+        x = y if i == len(layers_data) - 1 else [math.tanh(v) for v in y]
     return np.array([max(-1.0, min(1.0, v)) for v in x])
 
 
@@ -86,11 +88,12 @@ class TestParityFixturePolicy:
         assert np.all(np.isfinite(out))
 
     def test_known_zero_input_output(self):
-        """All-zero input: layer0 pre-act = 0.1 (bias), tanh(0.1) ≈ 0.09967."""
+        """All-zero input: hidden = tanh(0.1) ≈ 0.09967, tanh(0.11993) ≈ 0.11936; output = 0.1 + 0.2·0.11936 ≈ 0.12387."""
         obs = np.zeros(8, dtype=np.float32)
         out = py_forward(self.policy["layers"], obs)
         # All outputs should be identical (symmetric weights)
         assert np.allclose(out, out[0], atol=1e-12)
+        assert np.allclose(out, 0.1 + 0.2 * math.tanh(0.1 + 0.2 * math.tanh(0.1)), atol=1e-12)
         # Output must be in (0, 1) since all weights/biases are positive
         assert np.all(out > 0.0) and np.all(out < 1.0)
 

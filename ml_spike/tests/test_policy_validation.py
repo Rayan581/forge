@@ -117,8 +117,9 @@ class TestProdPolicyInference:
             w = np.array(layer["w"], dtype=np.float64)
             b = np.array(layer["b"], dtype=np.float64)
             x = w @ x + b
-            x = np.tanh(x)  # tanh applied to all layers including last
-        return x
+            if i < len(layers) - 1:
+                x = np.tanh(x)  # tanh on hidden layers only
+        return np.clip(x, -1.0, 1.0)  # output = Gaussian mean clipped, as SB3 predict()
 
     @pytest.fixture(autouse=True)
     def policy(self):
@@ -130,12 +131,12 @@ class TestProdPolicyInference:
         assert out.shape == (EXPECTED_ACTION_DIM,)
 
     def test_inference_output_in_range(self):
-        """tanh output must always be in (-1, 1)."""
+        """Clipped output must always be in [-1, 1]."""
         for seed in range(5):
             rng = np.random.default_rng(seed)
             obs = rng.uniform(0.0, 1.0, EXPECTED_OBS_DIM).astype(np.float32)
             out = self._forward(self.data, obs)
-            assert np.all(out > -1.0) and np.all(out < 1.0)
+            assert np.all(out >= -1.0) and np.all(out <= 1.0)
 
     def test_inference_is_deterministic(self):
         obs = np.full(EXPECTED_OBS_DIM, 0.3, dtype=np.float32)

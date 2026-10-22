@@ -6,16 +6,24 @@ This appendix provides the step-by-step execution procedures for the primary tes
 \section{TC-01: In-Session Telemetry Event Capture}
 \begin{itemize}
     \item \textbf{Objective:} Verify that \texttt{TelemetryLogger.gd} logs combat events accurately.
-    \item \textbf{Setup:} Run game in debug mode; enter Floor 1.
+    \item \textbf{Setup:} Automated headless test \texttt{tests/test\_damage\_telemetry.gd}, which instantiates the real \texttt{Main.tscn}, starts a run and generates Floor 1. Run: \texttt{godot --headless --path godot\_prototype --script res://tests/test\_damage\_telemetry.gd}.
     \item \textbf{Procedure:}
     \begin{enumerate}
-        \item Allow player to be damaged by an enemy ($20$\,dmg).
-        \item Inflict 3 sword hits on an enemy ($3 \times 35 = 105$\,dmg).
-        \item Enter exit portal to complete floor.
-        \item Inspect \texttt{user://session\_telemetry.json}.
+        \item The player takes one $20$\,dmg hit (\texttt{Player.take\_damage}).
+        \item The player lands 3 sword hits on an enemy in the floor ($3 \times 35 = 105$\,dmg).
+        \item The test saves and reads the telemetry snapshot (\texttt{get\_summary()}).
     \end{enumerate}
-    \item \textbf{Expected Output:} Entry contains \texttt{"damage\_taken": 20.0} and \texttt{"damage\_dealt": 105.0}.
-    \item \textbf{Actual Output:} Matches expected values with zero deviation. \textbf{Status: Pass.}
+    \item \textbf{Expected Output:} Snapshot contains \texttt{"damage\_taken": 20.0} and \texttt{"damage\_dealt": 105.0}; exit code \texttt{0}.
+    \item \textbf{Actual Output:} Before fix DEF-05 the snapshot showed \texttt{0.0} for both fields (the test fails on that code). After the fix: \texttt{damage\_taken=20.0}, \texttt{damage\_dealt=105.0}, exit code \texttt{0} (Godot 4.7.2). \textbf{Status: Pass.}
+\end{itemize}
+
+\section{TC-02: Cold-Start $CR_0$ and $s_0$ Seed}
+\begin{itemize}
+    \item \textbf{Objective:} Verify the $CR_0$ formula and that the Floor 6 observation $s_0$ uses the training observation scales.
+    \item \textbf{Setup:} Automated headless test \texttt{tests/test\_cold\_start.gd}.
+    \item \textbf{Procedure:} Play back the three scripted profiles of Section~\ref{sec:policy_eval} as calibration records; compute $CR_0$ and $s_0$; apply one PPO step and check the enemy count multiplier.
+    \item \textbf{Expected Output:} $CR_0$ = 19.65 / 60.25 / 95.0; $s_0[0..2]$ equal to Equation~\ref{eq:s0_seed}; \texttt{enemy\_count\_scale} = 1.0 after the PPO step; all 15 checks executed.
+    \item \textbf{Actual Output:} All 15 checks pass (exit code \texttt{0}). \textbf{Status: Pass.}
 \end{itemize}
 
 \section{TC-04: Fault-Tolerant Heuristic Fallback Verification}
@@ -29,26 +37,26 @@ This appendix provides the step-by-step execution procedures for the primary tes
         \item Advance from Floor 1 to Floor 2.
     \end{enumerate}
     \item \textbf{Expected Output:} Console logs warning: \texttt{"[PPOPolicy] No trained weights found..."}; engine engages \texttt{\_fallback\_heuristic()}; Floor 2 loads successfully.
-    \item \textbf{Actual Output:} Smooth gameplay continuation; zero unhandled exceptions. \textbf{Status: Pass.}
+    \item \textbf{Actual Output:} Smooth gameplay continuation; zero unhandled exceptions. \textbf{Status: Pass.} (A file that parses as JSON but has wrong layer shapes is not covered yet.)
 \end{itemize}
 
 \section{TC-06: Automated Headless CI Solvability Verification}
 \begin{itemize}
-    \item \textbf{Objective:} Assert 100\% topological reachability across 500 randomized procedural seeds.
-    \item \textbf{Setup:} GitHub Actions Ubuntu runner with Godot 4.3 headless binary.
+    \item \textbf{Objective:} Regression-test that every generated room is reachable, for every room count the game can request.
+    \item \textbf{Setup:} GitHub Actions Ubuntu runner with the Godot 4.7.2 headless binary (checksum-pinned).
     \item \textbf{Procedure:}
     \begin{enumerate}
-        \item CI workflow invokes: \texttt{godot --headless -s tests/ci\_solvability\_runner.gd}.
-        \item Script iterates seeds $1$ through $500$, seeding the RNG and calling \texttt{generate\_dungeon()} with the default difficulty parameters.
-        \item For each seed, script runs a breadth-first search over the door graph from the start room to the exit room.
+        \item CI workflow invokes: \texttt{godot --headless --path godot\_prototype --script tests/ci\_solvability\_runner.gd}.
+        \item For each room count from 3 to 9, the script iterates seeds $1$ through $500$, seeding the RNG and calling \texttt{generate\_dungeon()} with that room count.
+        \item For each layout it checks the room count, that every door has a matching door on the neighbouring room, and that a breadth-first search from the start room reaches every room, including the exit.
     \end{enumerate}
-    \item \textbf{Expected Output:} Script logs \texttt{"Solvability Results: 500 / 500 Solvable"}; exits with return code \texttt{0}.
-    \item \textbf{Actual Output:} Passed 500/500 seeds with exit code \texttt{0}. \textbf{Status: Pass.}
+    \item \textbf{Expected Output:} Script logs \texttt{"Solvability Results: 3500 / 3500 Solvable"}; exits with return code \texttt{0}.
+    \item \textbf{Actual Output:} 500/500 for each room count, 3,500/3,500 in total, exit code \texttt{0}. \textbf{Status: Pass.}
 \end{itemize}
 
 \section{TC-09: Player Dodge Roll Invulnerability (iframes)}
 \begin{itemize}
-    \item \textbf{Objective:} Verify that active dash grants complete damage immunity.
+    \item \textbf{Objective:} Verify that the dash grants damage immunity for its duration plus a $0.06$\,s grace period ($0.26$\,s).
     \item \textbf{Setup:} Position player directly in trajectory of incoming Pyromancer fireball.
     \item \textbf{Procedure:}
     \begin{enumerate}

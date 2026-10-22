@@ -4,19 +4,19 @@
 \section{Summary of Work Completed}
 During the first half of the project horizon (Weeks 1 through 10), the FORGE development team completed:
 \begin{itemize}
-    \item \textbf{Theoretical \& Research Foundation:} Conducted an exhaustive literature review of 32 sources spanning DDA, PCGRL, Flow theory, and psychometric instruments, formally resolving all 10 committee directives.
-    \item \textbf{Game Engine Implementation (Godot 4.x):} Developed a complete 2D action roguelike framework with room transitions, player movement, sword attack hitboxes, Spacebar dodge roll ($0.2$\,s iframes, $1.0$\,s cooldown), camera trauma shake (decay rate $3.6$\,s$^{-1}$), and color-coded floating combat numbers.
+    \item \textbf{Theoretical \& Research Foundation:} Conducted a structured review of 40 sources spanning DDA, PCGRL (including player-adaptive PCGRL), flow theory, and psychometric instruments; addressed 7 of the 10 committee directives fully and 3 partially (Table~\ref{tab:action_register}).
+    \item \textbf{Game Engine Implementation (Godot 4.x):} Developed a complete 2D action roguelike framework with room transitions, player movement, sword attack hitboxes, Spacebar dodge roll ($0.2$\,s dash, $0.26$\,s invulnerability, $1.0$\,s cooldown), camera trauma shake (decay rate $3.6$\,s$^{-1}$), and color-coded floating combat numbers.
     \item \textbf{Adversary Combat Behaviors:} Engineered two distinct enemy archetypes: Melee Crawler (direct pursuit and contact bite) and Ranged Pyromancer (standoff distance, kiting AI, telegraphed fireball projectile).
-    \item \textbf{Procedural Generation \& AI Integration:} Engineered a two-stage decoupled generation system producing connected layouts whose start-to-exit reachability is verified by BFS on 500 seeds; implemented a pure-GDScript neural network forward pass executing in about $0.2$\,ms; and deployed a 5-floor cold-start calibration protocol synthesizing an empirical $CR_0 \in [10, 95]$.
+    \item \textbf{Procedural Generation \& AI Integration:} Engineered a two-stage decoupled generation system producing layouts that are connected by construction (BFS regression test over 3,500 layouts); implemented a pure-GDScript neural network forward pass (median $0.21$--$0.36$\,ms); and deployed a 5-floor cold-start calibration protocol that computes $CR_0 \in [10, 95]$ and seeds the first PPO observation.
     \item \textbf{Comparative Control Baseline:} Developed an in-engine toggle in the Defense Telemetry Overlay enabling real-time switching between closed-loop PPO adaptation and a deterministic $+8\%$ per-floor static roguelike baseline.
-    \item \textbf{Automated CI/CD Solvability Testing:} Established a continuous integration pipeline on GitHub Actions verifying headless script syntax and testing topological solvability across 500 random seeds.
+    \item \textbf{Automated CI/CD Solvability Testing:} Established a GitHub Actions pipeline on Godot 4.7.2: headless script loading, the reachability regression test, headless GDScript tests (TC-01, TC-02, TC-10), Python lint, \texttt{pytest} and policy-file validation.
     \item \textbf{Documentation Baseline:} Authored comprehensive SRS, SDS, and Mid-Evaluation reports adhering to Form 2 and Form 3 rubrics.
 \end{itemize}
 
 \section{Work Remaining for Subsequent Gates}
 To maintain transparent project tracking, the work deferred to subsequent gates includes:
 \begin{itemize}
-    \item \textbf{Gate 3 Exit / FYP-1 Final (Weeks 11--14):} Expanding the combat ecosystem to 5 archetypes (adding Brute, Skirmisher, and Swarmer); migrating flat JSON telemetry to SQLite; training the empirical machine-learning Judge regressor ($\text{MAE} \le 0.15$) on a 25-session corpus and integrating live polynomial TreeSHAP feature attribution in Godot.
+    \item \textbf{Gate 3 Exit / FYP-1 Final (Weeks 11--14):} Correcting the training simulator (model aggro, scarcity, enemy count and ranged ratio; calibrate pace from playtests) and retraining the policy; comparing PPO against the heuristic fallback and the static $+8\%$ baseline; logging frame times; expanding the combat ecosystem to 5 archetypes (adding Brute, Skirmisher, and Swarmer); migrating flat JSON telemetry to SQLite; training the empirical machine-learning Judge regressor ($\text{MAE} \le 0.15$) on a 25-session corpus and integrating live polynomial TreeSHAP feature attribution in Godot.
     \item \textbf{Gate 4 / Mid-2 Evaluation (Weeks 15--26):} Implementing the in-run equipment shop economy with currency (\textit{Forge Embers}), Judge-model re-validation against the equipment-augmented gameplay, system integration testing, and non-functional performance benchmarking.
     \item \textbf{Gate 5 / Final-2 Acceptance (Weeks 27--32):} Conducting a formal 10-participant human User Acceptance Testing (UAT) study using standardized psychometric instruments (GEQ and PENS).
 \end{itemize}
@@ -85,19 +85,21 @@ Table~\ref{tab:commit_evidence} summarizes key commit milestones recorded in the
 \end{tabular}
 \end{table}
 
-\section{Tools and Responsible AI-Assisted Development Disclosure}
-In strict adherence to the FAST School of Computing FYP AI Usage Policy, development on Project FORGE operates under \textbf{Level 2: AI-Assisted Development}:
+\section{Tools and Responsible AI-Assisted Development Disclosure}\label{sec:ai_disclosure}
+Under the FAST School of Computing FYP AI Usage Policy, an FYP is conducted at \textbf{Level 2: AI-Assisted Development}, and permitted use must be disclosed. The team's use of AI tools, as recorded in the AI usage log (\texttt{AI Logs/}), is:
 \begin{itemize}
-    \item \textbf{Human Technical Ownership:} Human students conceive all system architectures, define all mathematical formulations, author the core gameplay logic, and maintain complete technical ownership of the codebase.
-    \item \textbf{Scope of AI Assistance:} Assistive AI tools (including Claude 3.5 Sonnet, Cursor, and Google Antigravity) were utilized strictly for localized boilerplate generation, syntax refactoring, and LaTeX formatting assistance.
+    \item \textbf{AI-001 (30 Aug 2026, Google Antigravity / Gemini):} Generated the initial Godot prototype used for the proposal defense (player, enemy with parameter scaling, dungeon generator, rooms, minimap, telemetry logger, defense overlay). The team then debugged it (input-event fix), extended it to multi-room generation, and has since reworked it substantially (combat archetypes, calibration, static baseline). This use went beyond localized assistance and is disclosed here in full.
+    \item \textbf{AI-002 (15 Oct 2026, Claude 3.7 Sonnet):} Audited and refactored the CI/CD workflows (consolidated Python test jobs, a reusable Godot setup action, the load-check script).
+    \item \textbf{Report preparation:} AI tools assisted with drafting and formatting this report, and an AI-assisted pre-submission audit compared the report with the code. That audit found defects DEF-05 to DEF-09 and drafted the code fixes, tests and text corrections, which the team reviewed (Section~\ref{sec:defects}).
+    \item \textbf{Human Technical Ownership:} The team defined the project concept, research question, requirements, success criteria and difficulty formulations, reviewed every AI-generated change before committing it, and takes full responsibility for the codebase and this report.
     \item \textbf{Compliance with Four Tests of Understanding:} All team members are fully capable of:
     \begin{enumerate}
-        \item Explaining any line of code or algorithm in the codebase without reading documentation.
+        \item Explaining the functionality of any module without reading its code.
         \item Justifying all architectural decisions against industry and literature alternatives.
         \item Predicting failure and edge modes under stress conditions.
         \item Modifying any module live during panel interrogation.
     \end{enumerate}
-    \item \textbf{AI Usage Logging:} An explicit usage register is maintained in the repository under the \texttt{AI Logs/} directory, documenting dates, tools used, and task descriptions.
+    \item \textbf{AI Usage Logging:} The register in \texttt{AI Logs/} records date, tool, prompt, output, verification and final use. It currently holds two entries and is being brought up to date for all sessions, including the report and audit work above.
 \end{itemize}
 
 \section{External Components and Third-Party Dependencies}
@@ -112,12 +114,13 @@ Table~\ref{tab:dependencies} provides the formal third-party dependency register
 \toprule
 \textbf{Component / Library} & \textbf{Version} & \textbf{License} & \textbf{Role / Usage in Project} \\
 \midrule
-Godot Engine & 4.3 (CI); 4.7.2 (local) & MIT License & Core 2D game engine runtime and rendering \\
+Godot Engine & 4.7.2 (local and CI) & MIT License & Core 2D game engine runtime and rendering \\
 Stable-Baselines3 & $\ge 2.2.0$ & MIT License & Offline PPO algorithm implementation \\
 PyTorch & $\ge 2.0.0$ & BSD-3-Clause & Deep learning tensor computations \\
 Gymnasium & $\ge 0.29.0$ & MIT License & RL environment simulation interface \\
 Google Fonts (Cinzel / Inter) & Latest & SIL OFL 1.1 & Visual typography and HUD presentation \\
 Pillow (PIL) & Latest & HPND & Script-generated pixel-art sprites and tiles (\texttt{generate\_prototype\_sprites.py}) \\
+AI assistants & see Section~\ref{sec:ai_disclosure} & Vendor terms & Prototype generation, CI refactoring, report drafting and audit (disclosed above) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -137,13 +140,15 @@ Table~\ref{tab:risk_matrix} presents the project risk management register.
 \midrule
 Missing/Corrupt Policy Weights at Runtime & High & Low & Embedded deterministic heuristic fallback in \texttt{PPOPolicy.gd} ensuring zero-crash continuity. \\
 \midrule
-Judge Corpus Shortfall / Schedule Compression (25-session corpus, regressor and TreeSHAP port within Weeks 11--14) & Medium & Medium & Playtest build distributed in Week 11; TreeSHAP validated offline in Python before the GDScript port; the validated linear proxy remains the fallback if the target $\text{MAE}$ is not reached. \\
+Judge Corpus Shortfall / Schedule Compression (25-session corpus, regressor and TreeSHAP port within Weeks 11--14) & Medium & Medium & Playtest build distributed in Week 11; TreeSHAP validated offline in Python before the GDScript port; the current hand-weighted linear proxy (not yet validated) remains the fallback if the target $\text{MAE}$ is not reached. \\
 \midrule
-Sim-to-Real Player Policy Mismatch & High & Medium & 5-Floor Cold-Start Protocol anchors the initial state; hard parameter bounds and the heuristic fallback prevent unplayable configurations. \\
+Sim-to-Real Player Policy Mismatch & High & High & Already observed in simulation (Section~\ref{sec:policy_params}). Correct and retrain the simulator; calibrate pace from playtests; hard parameter bounds and the heuristic fallback keep configurations playable meanwhile. \\
 \midrule
 Difficulty Thrashing / Player Frustration & Medium & Medium & Hard parameter bounds (Table~\ref{tab:param_ranges}) and PPO's clipped training objective; an explicit inter-floor rate limiter is planned for FYP-2 (see Section~\ref{sec:policy_eval} for the measured step sizes). \\
 \midrule
 CI Headless Export Failures on Linux & Medium & Low & Decoupled CI into syntax checks and dedicated lightweight headless test harness runner. \\
+\midrule
+CI Checks Passing Without Running (as found for the load check, DEF-09) & Medium & Low & Each CI step must print and require an explicit success line; engine version pinned with a checksum. \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -157,10 +162,14 @@ Project FORGE enforces a strict \textbf{Privacy-by-Design} architecture:
 \end{itemize}
 
 \section{Current Limitations}
-In the spirit of academic honesty, the prototype currently exhibits four known limitations scheduled for resolution in subsequent gates:
+\label{sec:limitations}
+The prototype currently has seven known limitations, scheduled for resolution in subsequent gates:
 \begin{enumerate}
     \item \textbf{Adversary Diversity:} Currently implements 2 archetypes (Melee Crawler and Ranged Pyromancer). The full 5-archetype ecosystem (including Brute, Skirmisher, and Swarmer) is scheduled for Gate 3 Exit (Final-1).
-    \item \textbf{Difficulty Evaluation Model:} The Judge model currently operates via a validated linear heuristic proxy. The empirical supervised Gradient Boosted Regressor with TreeSHAP feature attribution is scheduled for Gate 3 Exit (Final-1).
+    \item \textbf{Difficulty Evaluation Model:} The Judge model is currently a linear proxy with hand-set weights; it has not been validated against player data. The empirical supervised Gradient Boosted Regressor with TreeSHAP feature attribution is scheduled for Gate 3 Exit (Final-1).
     \item \textbf{Telemetry Storage Format:} Currently utilizes flat JSON files. Migration to an embedded SQLite database is scheduled for Gate 3 Exit (Final-1).
     \item \textbf{No Inter-Floor Rate Limiter:} The PPO action sets the next floor's parameters directly (within the bounds of Table~\ref{tab:param_ranges}), so a single step can change them by a large fraction of their range. A per-floor limiter and its evaluation are scheduled for FYP-2.
+    \item \textbf{Partial Personalization:} In simulation the shipped policy holds enemy damage at its minimum and enemy speed at its maximum for every player, and its aggro and scarcity outputs are untrained (Section~\ref{sec:policy_params}). Retraining against a corrected simulator is scheduled for Gate 3 Exit.
+    \item \textbf{Unmodelled Difficulty Settings:} The ranged-enemy ratio on PPO floors comes from the linear proxy and is not modelled by the training simulator, and the simulator's pace target ($7.5$\,s per room) has not been calibrated against real play.
+    \item \textbf{Frame Rate Not Yet Measured:} NFR-05 (60\,FPS) has been observed in play but not logged on a specified test machine.
 \end{enumerate}

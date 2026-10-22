@@ -5,13 +5,13 @@
 Project FORGE was defended at the FYP Proposal Defense I before the Evaluation Committee of the FAST School of Computing, FAST-NUCES, Islamabad. The committee officially issued the following verdict:
 \begin{quote}
 \textbf{Decision:} \textit{Approved with Minor Modifications (Project Code: F26-012-FORGE)}\\
-\textbf{Committee Summary:} \textit{``Good project. Good presentation and demonstration. Demonstrates satisfactory understanding of the project concepts and approach. The game's aesthetics should be improved. They should study related literature review deeply as the game is based on research... Extend the literature review to comprehensively cover Dynamic Difficulty Adjustment (DDA)... Strengthen the technical justification for PPO... Define and validate the judge model using empirical player data... Clearly distinguish procedural level generation from difficulty adaptation... Specify measurable acceptance criteria... Document risks, fallback strategies, and ethical considerations.''}
+\textbf{Committee Summary (excerpt; full text in Appendix~\ref{app:action_reg}):} \textit{``Good project. Good presentation and demonstration. Demonstrates satisfactory understanding of the project concepts and approach. The game's aesthetics should be improved. They should study related literature review deeply as the game is based on research... Extend the literature review to comprehensively cover Dynamic Difficulty Adjustment (DDA)... Strengthen the technical justification for PPO... Define and validate the judge model using empirical player data... Clearly distinguish procedural level generation from difficulty adaptation... Specify measurable acceptance criteria... Document risks, fallback strategies, and ethical considerations.''}
 \end{quote}
 
 Rather than treating these modifications as superficial corrections, the project team treated the committee's feedback as a binding technical contract that reshaped our development roadmap across Iterations 1 and 2.
 
 \section{Proposal Action Register}
-Table~\ref{tab:action_register} documents the complete Proposal Action Register, mapping every committee directive to the specific engineering action taken, its implementation status, and its location in the project documentation and codebase.
+Table~\ref{tab:action_register} maps every committee directive to the action taken, its status and its location in the documentation and codebase. Seven directives are complete; directives 5, 8 and 9 are partially complete and scheduled for FYP-1 Final.
 
 \begin{table}[!htbp]
 \centering
@@ -30,15 +30,15 @@ Table~\ref{tab:action_register} documents the complete Proposal Action Register,
 \midrule
 4 & Clarify project scope boundaries (in-scope vs. out). & Formulated a strict three-tier Scope Boundary Matrix defining Mid-1 commitments, Final-1/FYP-2 deliverables, and out-of-scope items. & Completed & Table~\ref{tab:scope_matrix}, §\ref{sec:scope} \\
 \midrule
-5 & Clear, measurable evaluation criteria for RL and game. & Formulated 8 quantitative success metrics (solvability, latency, DER, $CR_0$ convergence) and standardized psychometrics (GEQ, PENS). & Completed & Table~\ref{tab:success_criteria}, Chapter~\ref{chap:testing} \\
+5 & Clear, measurable evaluation criteria for RL and game. & Formulated 8 quantitative success metrics (solvability, latency, DER, $CR_0$ convergence) and standardized psychometrics (GEQ, PENS). Convergence time, layout diversity and adaptation stability (requested by the committee) are not yet defined. & Partially completed & Table~\ref{tab:success_criteria}, Chapter~\ref{chap:testing} \\
 \midrule
-6 & Comprehensive DDA literature review. & Conducted systematic survey of 32 sources; classified DDA into 3 generational paradigms; synthesized flow and engagement literature. & Completed & Chapter~\ref{chap:research}, Table~\ref{tab:lit_comparison} \\
+6 & Comprehensive DDA literature review. & Conducted a structured review of 40 sources, including the closest player-adaptive PCGRL work; grouped DDA into 3 paradigms; synthesized flow and engagement literature. & Completed & Chapter~\ref{chap:research}, Table~\ref{tab:lit_comparison} \\
 \midrule
-7 & Strengthen technical justification for PPO vs. alternatives. & Compared PPO with SAC, DQN, and Bandits; mathematically formulated clipped surrogate objective as an intrinsic skill shock-absorber. & Completed & Section~\ref{sec:ppo_proof}, Table~\ref{tab:rl_comparison} \\
+7 & Strengthen technical justification for PPO vs. alternatives. & Compared PPO with SAC, DQN, and Bandits; explained how the clipped surrogate objective keeps training updates small, and its limits. & Completed & Section~\ref{sec:ppo_proof}, Table~\ref{tab:rl_comparison} \\
 \midrule
 8 & Define and validate judge model empirically. & Maintained linear proxy for Mid-1; scheduled the offline supervised Gradient Boosted Regressor with TreeSHAP and a 25-session empirical corpus for FYP-1 Final (Gate 3 Exit, Weeks 11--14). & Scheduled for Final-1 & Section~\ref{sec:domain}, Chapter~\ref{chap:fyp2} \\
 \midrule
-9 & Distinguish procedural level generation from DDA. & Formally decoupled architecture into Stage 1 (Connected Spatial Topology, BFS-verified in CI) and Stage 2 (Closed-Loop PPO Combat Adapter). & Completed & Section~\ref{sec:proposed}, Chapter~\ref{chap:design} \\
+9 & Distinguish procedural level generation from DDA. & Decoupled the architecture into Stage 1 (connected spatial topology, BFS-checked in CI) and Stage 2 (closed-loop PPO combat adapter); implemented a static $+8\%$ baseline. A comparison showing the benefit of adaptation over a strong non-adaptive baseline has not yet been run. & Partially completed (comparison in Final-1) & Section~\ref{sec:proposed}, Chapter~\ref{chap:design} \\
 \midrule
 10 & Document risks, fallbacks, and telemetry ethics. & Developed zero-crash heuristic fallback in GDScript; implemented client-side zero-PII local data governance; formulated risk register. & Completed & Section~\ref{sec:ethics}, Section~\ref{sec:risk} \\
 \bottomrule
@@ -69,10 +69,10 @@ Iteration 2 focused directly on fulfilling the committee's mandate and preparing
     \item \textbf{Delivered Features:}
     \begin{enumerate}
         \item Integrated 2D pixel-art sprites, camera trauma shake (decay rate $3.6$\,s$^{-1}$), and floating combat text.
-        \item Created Ranged Pyromancer with retreat AI and telegraphed fireball projectiles; added player dodge roll ($0.2$\,s dash with invulnerability).
+        \item Created Ranged Pyromancer with retreat AI and telegraphed fireball projectiles; added player dodge roll ($0.2$\,s dash, $0.26$\,s invulnerability).
         \item Implemented 5-Floor Cold-Start Protocol with weighted $CR_0$ baseline aggregation ($\vec{w} = [1.0, 1.5, 2.0, 2.5, 3.0]$).
         \item Added Static Roguelike Baseline mode toggle in the live Defense Telemetry Overlay.
-        \item Built GitHub Actions CI pipeline executing headless Godot 4.3 solvability simulations across 500 seeds.
+        \item Built a GitHub Actions CI pipeline running headless Godot 4.7.2: script loading, a reachability regression test over 3,500 seeded layouts, and headless GDScript tests.
         \item Compiled formal SRS and SDS engineering specifications.
     \end{enumerate}
 \end{itemize}
@@ -111,7 +111,7 @@ Table~\ref{tab:milestones} presents the progress tracking against the original p
 \textbf{Milestone / Deliverable} & \textbf{Planned Date} & \textbf{Actual Date} & \textbf{Status} \\
 \midrule
 Proposal Defense & Week 4 & Week 4 & Completed (Approved) \\
-Literature Survey & Week 6 & Week 6 & Completed (32 Sources) \\
+Literature Survey & Week 6 & Week 6 (extended Week 10) & Completed (40 Sources) \\
 Dungeon Sprites \& Visual Juice & Week 8 & Week 8 & Completed \\
 Ranged Enemy \& Dodge Roll & Week 9 & Week 9 & Completed \\
 5-Floor Cold-Start Protocol & Week 9 & Week 9 & Completed \\
@@ -123,9 +123,10 @@ Mid-1 Formal Report Submission & Week 10 & Week 10 & Completed (On Schedule) \\
 \end{table}
 
 \section{Delays, Deviations and Recovery Plan}
-During Iteration 2, two technical deviations arose, both of which were successfully resolved:
+During Iteration 2, three technical deviations arose:
 \begin{enumerate}
-    \item \textbf{Deviation 1: Godot 4 Headless Export CI Template Overhead.} Running full headless game exports in GitHub Actions initially failed due to missing Windows export templates. \textbf{Recovery:} We restructured the CI workflow into a dedicated two-stage check: (1) headless Godot scene/script syntax compilation check via \texttt{--headless --quit}; and (2) headless automated solvability verification executing a lightweight test harness runner script across 500 random seeds.
-    \item \textbf{Deviation 2: PPO Reward Hacking in Simulated Training.} The first reward compared the total clearing time with a fixed target, which the agent satisfied by manipulating the room count instead of combat difficulty. \textbf{Recovery:} We redesigned the reward function in \texttt{train\_ppo\_difficulty.py} to judge pace per room, add death and pacing penalties, and penalize room counts that do not track the combat challenge.
+    \item \textbf{Deviation 1: Godot 4 Headless Export CI Template Overhead.} Running full headless game exports in GitHub Actions initially failed due to missing Windows export templates. \textbf{Recovery:} We restructured the CI workflow into a dedicated two-stage check: (1) headless Godot scene/script syntax compilation check via \texttt{--headless --quit}; and (2) a headless solvability regression harness (now 500 seeds for each room count from 3 to 9).
+    \item \textbf{Deviation 2: PPO Reward Hacking in Simulated Training.} The first reward compared the total clearing time with a fixed target, which the agent satisfied by manipulating the room count instead of combat difficulty. \textbf{Recovery:} We redesigned the reward function in \texttt{train\_ppo\_difficulty.py} to judge pace per room, add death and pacing penalties, and penalize room counts that do not track the combat challenge. Post-hoc analysis shows the policy still exploits the simulator in other ways (Section~\ref{sec:policy_eval}); a corrected simulator and retraining are scheduled for Iteration 3.
+    \item \textbf{Deviation 3: Defects Found in a Pre-Submission Audit.} An independent review of the code against this report found five defects (DEF-05 to DEF-09 in Table~\ref{tab:defects}). The most serious: damage events were never forwarded to the telemetry logger, and the Floor 6 observation was built on different scales from training. \textbf{Recovery:} All five were fixed before submission, each is covered by a new headless GDScript test in CI, and the affected results in Chapter~\ref{chap:testing} were re-measured.
 \end{enumerate}
-All milestones for Mid-1 have been completed on schedule with zero debt carried into Iteration 3.
+All Mid-1 milestones were delivered on schedule. Carried into Iteration 3: retraining the policy against a corrected simulator, the three partially completed directives (5, 8 and 9), and frame-time logging.

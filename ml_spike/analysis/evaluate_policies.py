@@ -58,7 +58,7 @@ def model_fn(model):
 
 
 def json_policy_fn(path):
-    """Exact NumPy mirror of PPOPolicy.gd: tanh hidden layers, tanh+clamp output."""
+    """Exact NumPy mirror of PPOPolicy.gd: tanh hidden layers, linear output clipped to [-1, 1]."""
     layers = json.load(open(path))["layers"]
     W = [np.array(layer["w"], dtype=np.float64) for layer in layers]
     B = [np.array(layer["b"], dtype=np.float64) for layer in layers]
@@ -69,7 +69,7 @@ def json_policy_fn(path):
             x = w @ x + b
             if i < len(W) - 1:
                 x = np.tanh(x)
-        return np.clip(np.tanh(x), -1.0, 1.0).astype(np.float32)
+        return np.clip(x, -1.0, 1.0).astype(np.float32)
 
     return f
 

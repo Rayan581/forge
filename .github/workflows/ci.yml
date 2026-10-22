@@ -20,7 +20,10 @@ permissions:
   contents: read
 
 env:
-  GODOT_VERSION: "4.3-stable"
+  # Same engine version the project is developed and benchmarked on (project.godot: "4.7").
+  GODOT_VERSION: "4.7.2-stable"
+  # SHA-256 of Godot_v4.7.2-stable_linux.x86_64.zip (matches the official SHA512-SUMS.txt entry).
+  GODOT_SHA256: "cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4"
   PYTHON_VERSION: "3.12"
 
 jobs:
@@ -186,6 +189,7 @@ jobs:
         uses: ./.github/actions/setup-godot
         with:
           godot-version: ${{ env.GODOT_VERSION }}
+          binary-sha256: ${{ env.GODOT_SHA256 }}
           export-templates: "false"
 
       - name: Remove nested project (safety cleanup)
@@ -204,18 +208,25 @@ jobs:
 
       - name: GDScript load check (all .gd / .tscn / .tres)
         run: |
+          # The script must sit inside the project to be loadable as res://
+          cp .github/scripts/ci_load_check.gd godot_prototype/ci_load_check.gd
           timeout 60 "$GODOT" --headless \
             --path godot_prototype \
-            --script ../.github/scripts/ci_load_check.gd \
+            --script res://ci_load_check.gd \
             2>&1 | tee godot_load_output.txt
-          # Exit code from Godot is carried through via pipefail
-          if grep -E "FAIL |ci_load_check: ERRORS DETECTED" godot_load_output.txt; then
+          rm godot_prototype/ci_load_check.gd
+          if grep -E "FAIL |ci_load_check: ERRORS DETECTED|SCRIPT ERROR|Can't load script" godot_load_output.txt; then
             echo "::error::GDScript load check detected errors"
+            exit 1
+          fi
+          # Require a positive result so a script that never ran cannot pass
+          if ! grep -q "ci_load_check: ALL RESOURCES OK" godot_load_output.txt; then
+            echo "::error::GDScript load check did not complete"
             exit 1
           fi
           echo "GDScript load check passed."
 
-      - name: Solvability harness (500 seeds, BFS reachability)
+      - name: Solvability harness (room counts 3-9 x 500 seeds, BFS reachability)
         run: |
           set -o pipefail
           timeout 300 "$GODOT" --headless \
@@ -223,6 +234,19 @@ jobs:
             --script tests/ci_solvability_runner.gd \
             2>&1 | tee godot_solvability_output.txt
           echo "Solvability harness passed."
+
+      - name: GDScript unit/integration tests (TC-01, TC-02, TC-10)
+        run: |
+          set -o pipefail
+          for t in test_damage_telemetry test_cold_start test_static_baseline; do
+            echo "::group::$t"
+            timeout 120 "$GODOT" --headless \
+              --path godot_prototype \
+              --script "tests/$t.gd" \
+              2>&1 | tee -a godot_unit_tests_output.txt
+            echo "::endgroup::"
+          done
+          echo "GDScript tests passed."
 
       - name: GDScript parse check (headless startup – belt & braces)
         run: |
@@ -284,6 +308,7 @@ jobs:
             godot_load_output.txt
             godot_parse_output.txt
             godot_solvability_output.txt
+            godot_unit_tests_output.txt
           retention-days: 7
 
   # ─────────────────────────────────────────────────────────────────────

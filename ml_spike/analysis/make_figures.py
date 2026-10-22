@@ -113,7 +113,7 @@ fig.legend(handles, labels, loc="lower center", ncol=3, frameon=False, fontsize=
 ax[1].text(
     2,
     ax[1].get_ylim()[1] * 0.97,
-    "training\nrange",
+    "training\nstart range",
     ha="center",
     va="top",
     fontsize=7,

@@ -106,6 +106,7 @@ func spawn_damage_floater(pos: Vector2, amount: float, is_player_damage: bool, i
 	floater.setup(amount, is_player_damage, is_heal)
 
 func _on_player_damaged(amount: float) -> void:
+	telemetry_logger.record_damage_taken(amount)
 	add_camera_trauma(0.42) # Screen trauma punch on hit
 	spawn_damage_floater(player.global_position, amount, true)
 
@@ -113,6 +114,7 @@ func _on_player_healed(amount: float) -> void:
 	spawn_damage_floater(player.global_position, amount, false, true)
 
 func _on_enemy_damaged(amount: float, pos: Vector2) -> void:
+	telemetry_logger.record_damage_dealt(amount)
 	spawn_damage_floater(pos, amount, false)
 
 func build_new_dungeon(level_num: int) -> void:
@@ -251,7 +253,7 @@ func _on_dungeon_escaped() -> void:
 
 	# Special milestone: Exiting Floor 5 finishes Cold-Start calibration!
 	if current_dungeon_level == 5:
-		var cr0_profile = telemetry_logger.compute_cr0_baseline()
+		var cr0_profile = telemetry_logger.compute_cr0_baseline(player.max_health)
 		print("[FORGE][COLD-START] All 5 calibration floors complete!")
 		print("[FORGE][COLD-START] Composite Initial Combat Rating CR0: %.1f/100 (%s)" % [
 			cr0_profile.cr0_score, cr0_profile.tier_name

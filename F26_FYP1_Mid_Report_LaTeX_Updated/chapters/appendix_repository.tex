@@ -4,7 +4,7 @@
 This appendix provides concrete version control evidence, repository commit history, and continuous integration pipeline logs from the project repository (\texttt{Rayan581/forge}).
 
 \section[Continuous Integration Workflow Configuration]{Continuous Integration Workflow Configuration}
-Listing~\ref{lst:ci_yaml} gives an abridged outline of the GitHub Actions workflow in the repository: Python lint and tests for the training code, plus a headless Godot validation job (project import, script load and parse checks, required-scene check, policy-file check and a \texttt{.pck} export smoke test). The 500-seed solvability harness (\texttt{godot\_prototype/tests/ci\_solvability\_runner.gd}) runs as its own step of the Godot job (\texttt{godot --headless --path godot\_prototype --script tests/ci\_solvability\_runner.gd}); a single unsolvable seed fails the build.
+Listing~\ref{lst:ci_yaml} gives an abridged outline of the GitHub Actions workflow in the repository: Python lint and tests for the training code, plus a headless Godot 4.7.2 validation job (project import, script load and parse checks, the reachability harness, headless GDScript tests, required-scene check, policy-file check and a \texttt{.pck} export smoke test). The solvability harness (\texttt{godot\_prototype/tests/ci\_solvability\_runner.gd}) runs 500 seeds for each room count from 3 to 9; a single failing layout fails the build. The load-check step now requires an explicit success line, after it was found to pass without running (DEF-09).
 
 \begin{lstlisting}[language=Python, caption={Outline of \texttt{.github/workflows/ci.yml} (abridged)}, label={lst:ci_yaml}]
 name: FORGE CI
@@ -13,20 +13,22 @@ on:
   pull_request: { branches: ["main"] }
   workflow_dispatch:
 env:
-  GODOT_VERSION: "4.3-stable"
+  GODOT_VERSION: "4.7.2-stable"   # pinned with SHA-256
   PYTHON_VERSION: "3.12"
 
 jobs:
   python-lint:        # ruff 0.4.10 on ml_spike/
-  python-tests:       # pytest ml_spike/tests/ (CPU-only torch)
+  python-tests:       # pytest ml_spike/tests/ (CPU-only torch), incl. SB3 parity
   policy-validation:  # test_policy_validation.py, test_inference_parity.py
   godot-headless:     # "Godot Headless Validation"
     steps:
       - Setup Godot (./.github/actions/setup-godot)
       - Import project resources:  godot --headless --import --path godot_prototype
-      - GDScript load check:       --script ../.github/scripts/ci_load_check.gd
+      - GDScript load check:       copy ci_load_check.gd into project; --script res://ci_load_check.gd
+                                   (fails unless "ALL RESOURCES OK" is printed)
+      - Solvability harness:       --script tests/ci_solvability_runner.gd (500 seeds x rooms 3-9)
+      - GDScript tests:            test_damage_telemetry, test_cold_start, test_static_baseline
       - GDScript parse check:      godot --headless --quit --path godot_prototype
-      - Solvability harness:       --script tests/ci_solvability_runner.gd (500 seeds, BFS)
       - Verify required scenes (Main, MainMenu, Room, Player, Enemy) exist
       - Verify godot_prototype/ai/policy_weights.json exists
       - PCK export smoke test (--export-pack, GDPC magic bytes)

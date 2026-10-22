@@ -61,11 +61,12 @@ func _init() -> void:
 			failed_seeds.append(s)
 
 	print("--------------------------------------------------")
-	print("[FORGE CI] Solvability Results: %d / %d Solvable (%.1f%%)" % [passed_count, TOTAL_SEEDS, (float(passed_count) / float(TOTAL_SEEDS)) * 100.0])
+	var pct: float = (float(passed_count) / float(TOTAL_SEEDS)) * 100.0
+	print("[FORGE CI] Solvability Results: %d / %d Solvable (%s percent)" % [passed_count, TOTAL_SEEDS, str(snapped(pct, 0.1))])
 	print("--------------------------------------------------")
 
 	if passed_count == TOTAL_SEEDS:
-		print("[FORGE CI] PASS: 100% Topological Solvability Verified across %d seeds." % TOTAL_SEEDS)
+		print("[FORGE CI] PASS: 100 percent topological Solvability Verified across %d seeds." % TOTAL_SEEDS)
 		quit(0)
 	else:
 		printerr("[FORGE CI] FAIL: %d seeds failed solvability check: %s" % [failed_seeds.size(), str(failed_seeds)])

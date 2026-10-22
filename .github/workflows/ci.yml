@@ -215,6 +215,15 @@ jobs:
           fi
           echo "GDScript load check passed."
 
+      - name: Solvability harness (500 seeds, BFS reachability)
+        run: |
+          set -o pipefail
+          timeout 300 "$GODOT" --headless \
+            --path godot_prototype \
+            --script tests/ci_solvability_runner.gd \
+            2>&1 | tee godot_solvability_output.txt
+          echo "Solvability harness passed."
+
       - name: GDScript parse check (headless startup – belt & braces)
         run: |
           timeout 30 "$GODOT" --headless --quit \
@@ -274,6 +283,7 @@ jobs:
           path: |
             godot_load_output.txt
             godot_parse_output.txt
+            godot_solvability_output.txt
           retention-days: 7
 
   # ─────────────────────────────────────────────────────────────────────

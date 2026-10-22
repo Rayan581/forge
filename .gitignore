@@ -9,3 +9,14 @@ __pycache__/
 venv/
 .env
 astra_session.json
+temp.md
+# LaTeX build artifacts
+*.aux
+*.out
+*.toc
+*.lof
+*.lot
+*.blg
+*.fls
+*.fdb_latexmk
+*.synctex.gz

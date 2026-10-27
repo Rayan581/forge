@@ -9,13 +9,17 @@ signal player_hit_hazard
 var target_player: Player = null
 var tick_timer: float = 0.0
 
-@onready var sprite: Sprite2D = get_node_or_null("Sprite2D")
+@onready var sprite: AnimatedSprite2D = get_node_or_null("AnimatedSprite2D")
+var base_scale: Vector2 = Vector2(2, 2)
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
-	if not sprite and has_node("Sprite2D"):
-		sprite = $Sprite2D
+	if not sprite and has_node("AnimatedSprite2D"):
+		sprite = $AnimatedSprite2D
+	if sprite:
+		base_scale = sprite.scale
+		sprite.play(&"idle") # spikes are always armed: damage logic is unchanged
 
 func _process(delta: float) -> void:
 	if target_player:
@@ -27,11 +31,13 @@ func _process(delta: float) -> void:
 				push_dir = Vector2.UP
 			target_player.take_damage(damage_amount, push_dir * 0.75)
 			emit_signal("player_hit_hazard")
-			# Spike prick juice: punch scale and flash
+			# Spike stab: retract-and-punch-out animation plus a scale punch
 			if sprite:
+				sprite.play(&"stab")
 				var tw = create_tween()
-				tw.tween_property(sprite, "scale", Vector2(1.25, 1.25), 0.06)
-				tw.tween_property(sprite, "scale", Vector2(1.0, 1.0), 0.1)
+				tw.tween_property(sprite, "scale", base_scale * 1.15, 0.06)
+				tw.tween_property(sprite, "scale", base_scale, 0.1)
+				tw.tween_callback(func(): if is_instance_valid(sprite) and not sprite.is_playing(): sprite.play(&"idle"))
 
 func _on_body_entered(body: Node2D) -> void:
 	if body is Player:

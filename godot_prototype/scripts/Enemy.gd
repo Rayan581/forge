@@ -83,16 +83,36 @@ var orbit_switch_timer: float = 2.0
 var orbit_radius: float = 140.0
 var swarm_offset_rad: float = 0.0      # flank angle offset (swarmer), set by Room via set_swarm_offset_deg()
 
-var tex_crawler: Texture2D = preload("res://assets/sprites/enemy_crawler.png")
-var tex_pyromancer: Texture2D = preload("res://assets/sprites/enemy_pyromancer.png")
+## Per-archetype animated art (SpriteFrames built by tools/build_sprite_frames.py).
+## Every set has: idle, move, attack, hurt, death.
+const ARCHETYPE_FRAMES := {
+	Archetype.MELEE_CRAWLER: preload("res://assets/sprites/crawler/crawler_frames.tres"),
+	Archetype.RANGED_PYROMANCER: preload("res://assets/sprites/pyromancer/pyromancer_frames.tres"),
+	Archetype.HEAVY_BRUTE: preload("res://assets/sprites/enemies/brute/brute_frames.tres"),
+	Archetype.AGILE_SKIRMISHER: preload("res://assets/sprites/enemies/skirmisher/skirmisher_frames.tres"),
+	Archetype.SWARMER: preload("res://assets/sprites/enemies/swarmer/swarmer_frames.tres"),
+}
+## [feet row inside the frame, frame height] in source pixels, used to plant the feet on the shadow.
+const ARCHETYPE_FEET := {
+	Archetype.MELEE_CRAWLER: [15.0, 16.0],
+	Archetype.RANGED_PYROMANCER: [15.0, 16.0],
+	Archetype.HEAVY_BRUTE: [32.0, 32.0],
+	Archetype.AGILE_SKIRMISHER: [19.5, 20.0],
+	Archetype.SWARMER: [15.5, 16.0],
+}
+const ATTACK_ANIM_TIME := 0.25
+const DEATH_ANIM_TIME := 0.45
+var sprite_base_y: float = -2.0        # resting local y of the sprite (feet on the shadow)
+var attack_anim_timer: float = 0.0     # one-shot strike pose (crawler strike, bite, fireball release)
+var is_dying: bool = false             # death animation playing; body is inert (no collision/damage)
 var projectile_scene: PackedScene = preload("res://scenes/ProjectileFireball.tscn")
 
-@onready var sprite: Sprite2D = get_node_or_null("Sprite2D")
+@onready var sprite: AnimatedSprite2D = get_node_or_null("AnimatedSprite2D")
 
 func _ready() -> void:
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
-	if not sprite and has_node("Sprite2D"):
-		sprite = $Sprite2D
+	if not sprite and has_node("AnimatedSprite2D"):
+		sprite = $AnimatedSprite2D
 	_apply_archetype()
 	current_health = max_health
 
@@ -132,36 +152,32 @@ func _apply_archetype() -> void:
 		knockback_scale = 1.0
 	_apply_archetype_visuals()
 
-## ALL per-archetype placeholder visuals live here. The sprite-swap agent should replace the
-## texture/tint/scale logic in this one function (keep the single `sprite` node, and keep
-## setting `body_radius` / `bar_color`, which drive the collider, shadow and health bar).
+## ALL per-archetype visuals live here: SpriteFrames, scale, feet placement, collider radius and
+## health-bar colour. Art is 16-px (32-px for the brute) pixel art drawn at an integer x2.
 func _apply_archetype_visuals() -> void:
-	var tex: Texture2D = tex_crawler
 	base_modulate = Color.WHITE
-	visual_scale = 1.0
+	visual_scale = 2.0
 	body_radius = 16.0
 	bar_color = Color(0.95, 0.2, 0.25, 0.95)
 	match archetype:
 		Archetype.RANGED_PYROMANCER:
-			tex = tex_pyromancer
 			bar_color = Color(1.0, 0.5, 0.1, 0.95)
 		Archetype.HEAVY_BRUTE:
-			base_modulate = Color(0.75, 0.3, 0.3)
-			visual_scale = 1.4
 			body_radius = 22.0
 			bar_color = Color(0.7, 0.08, 0.1, 0.95)
 		Archetype.AGILE_SKIRMISHER:
-			base_modulate = Color(0.45, 1.0, 0.95)
 			bar_color = Color(0.2, 0.85, 0.8, 0.95)
 		Archetype.SWARMER:
-			base_modulate = Color(0.6, 1.0, 0.45)
-			visual_scale = 0.7
 			body_radius = 10.0
 			bar_color = Color(0.5, 0.9, 0.25, 0.95)
+	var feet: Array = ARCHETYPE_FEET[archetype]
+	sprite_base_y = body_radius * 0.75 - (float(feet[0]) - float(feet[1]) * 0.5) * visual_scale
 	if sprite:
-		sprite.texture = tex
+		sprite.sprite_frames = ARCHETYPE_FRAMES[archetype]
 		sprite.modulate = base_modulate
 		sprite.scale = Vector2.ONE * visual_scale
+		sprite.position = Vector2(0.0, sprite_base_y)
+		sprite.play(&"idle")
 	var col := get_node_or_null("CollisionShape2D") as CollisionShape2D
 	if col and col.shape is CircleShape2D:
 		# The scene's shape sub-resource is shared between instances: give each enemy its own.
@@ -240,29 +256,30 @@ func _physics_process(delta: float) -> void:
 	# Apply Combined Velocity
 	velocity = move_velocity + knockback_velocity
 	
-	# Sprite visual juice
+	# Sprite visual juice (the animation itself is chosen in _update_animation)
 	if sprite:
 		if abs(velocity.x) > 5.0:
 			sprite.flip_h = (velocity.x < 0.0)
-			
+		var hover := 0.0
 		if archetype == Archetype.MELEE_CRAWLER:
-			if current_state == State.CHASE:
-				var scuttle = sin(Time.get_ticks_msec() / 65.0) * 0.1
-				sprite.scale = Vector2(1.0 + scuttle, 1.0 - scuttle)
+			if current_state == State.CHASE and not is_flashing:
+				var scuttle = sin(Time.get_ticks_msec() / 65.0) * 0.06
+				sprite.scale = Vector2(visual_scale * (1.0 + scuttle), visual_scale * (1.0 - scuttle))
 			else:
-				sprite.scale = Vector2(1.0, 1.0)
+				sprite.scale = Vector2.ONE * visual_scale
 		elif archetype != Archetype.RANGED_PYROMANCER:
 			_update_new_archetype_visuals()
 		else:
 			# Pyromancer floating levitation bob
-			var hover = sin(Time.get_ticks_msec() / 110.0) * 2.0
-			sprite.position.y = -2.0 + hover
+			hover = sin(Time.get_ticks_msec() / 110.0) * 2.0
 			if is_charging:
 				# Pulsing yellow charging glow
 				var glow = sin(Time.get_ticks_msec() / 40.0) * 0.4
 				sprite.modulate = Color(1.8 + glow, 1.6 + glow, 0.4)
 			elif not is_flashing:
 				sprite.modulate = base_modulate
+		sprite.position = Vector2(0.0, sprite_base_y + hover)
+		_update_animation(delta)
 		
 	move_and_slide()
 	queue_redraw()
@@ -463,6 +480,7 @@ func _process_swarmer_ai(dist_to_player: float, dir_to_player: Vector2, delta: f
 
 func _swarm_bite(dir_to_player: Vector2) -> void:
 	attack_cooldown_timer = SWARM_BITE_RATE
+	_strike_pose()
 	if player_ref and player_ref.has_method("take_damage"):
 		player_ref.take_damage(attack_damage, dir_to_player)
 		apply_knockback(-dir_to_player * 140.0)
@@ -499,6 +517,60 @@ func _update_new_archetype_visuals() -> void:
 			sprite.modulate = base_modulate
 			sprite.scale = Vector2.ONE * s
 
+## True while the sprite should show its attack/telegraph pose.
+func _is_attack_pose() -> bool:
+	if attack_anim_timer > 0.0 or is_winding_up() or current_state == State.LUNGE:
+		return true
+	# Brute slam recovery (planted after the impact)
+	return archetype == Archetype.HEAVY_BRUTE and current_state == State.ATTACK and phase_timer > 0.0
+
+## Chooses the animation from game state (hurt > attack > move > idle) and lunges the sprite
+## toward the target during one-shot strikes. Safe to call without a player.
+func _update_animation(delta: float) -> void:
+	if not sprite or is_dying:
+		return
+	if attack_anim_timer > 0.0:
+		attack_anim_timer = maxf(0.0, attack_anim_timer - delta)
+		var p := 1.0 - attack_anim_timer / ATTACK_ANIM_TIME
+		sprite.position += aim_direction * 5.0 * sin(PI * p)
+	var want: StringName = &"idle"
+	if is_flashing:
+		want = &"hurt"
+	elif _is_attack_pose():
+		want = &"attack"
+	elif velocity.length() > 12.0:
+		want = &"move"
+	if sprite.animation != want:
+		sprite.play(want)
+	elif not sprite.is_playing() and sprite.sprite_frames.get_animation_loop(want):
+		sprite.play(want)
+
+func _strike_pose() -> void:
+	attack_anim_timer = ATTACK_ANIM_TIME
+	if sprite and sprite.sprite_frames and not is_dying:
+		sprite.play(&"attack")
+
+func _begin_death() -> void:
+	is_dying = true
+	is_charging = false
+	remove_from_group("enemies")
+	collision_layer = 0
+	collision_mask = 0
+	var col := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if col:
+		col.set_deferred("disabled", true)
+	velocity = Vector2.ZERO
+	if sprite:
+		sprite.play(&"death")
+		sprite.modulate = Color(2.5, 2.2, 2.2)
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(self, "modulate:a", 0.0, DEATH_ANIM_TIME).set_ease(Tween.EASE_IN)
+	if sprite:
+		tw.tween_property(sprite, "scale", Vector2(visual_scale * 1.25, visual_scale * 0.15), DEATH_ANIM_TIME).set_ease(Tween.EASE_IN)
+		tw.tween_property(sprite, "position:y", sprite_base_y + 8.0 * visual_scale, DEATH_ANIM_TIME).set_ease(Tween.EASE_IN)
+	tw.chain().tween_callback(queue_free)
+	queue_redraw()
+
 func start_charging() -> void:
 	is_charging = true
 	charge_timer = 0.0
@@ -506,6 +578,7 @@ func start_charging() -> void:
 
 func shoot_fireball(target_dir: Vector2) -> void:
 	attack_cooldown_timer = attack_rate
+	attack_anim_timer = 0.2
 	if projectile_scene:
 		var p = projectile_scene.instantiate()
 		var spawn_pos = global_position + target_dir * 28.0
@@ -518,13 +591,14 @@ func apply_knockback(impulse: Vector2) -> void:
 
 func perform_attack() -> void:
 	attack_cooldown_timer = attack_rate
+	_strike_pose()
 	if player_ref and player_ref.has_method("take_damage"):
 		var attack_dir = (player_ref.global_position - global_position).normalized()
 		player_ref.take_damage(attack_damage, attack_dir)
 		apply_knockback(-attack_dir * 180.0)
 
 func take_damage(amount: float, from_dir: Vector2 = Vector2.ZERO) -> void:
-	if current_health <= 0:
+	if current_health <= 0 or is_dying:
 		return
 		
 	current_health -= amount
@@ -532,6 +606,8 @@ func take_damage(amount: float, from_dir: Vector2 = Vector2.ZERO) -> void:
 	flash_timer = 0.14
 	if sprite:
 		sprite.modulate = Color(2.5, 2.2, 2.2) # Crisp hurt flash
+		if current_health > 0:
+			sprite.play(&"hurt")
 		
 	emit_signal("enemy_damaged", amount, global_position)
 	
@@ -545,8 +621,10 @@ func take_damage(amount: float, from_dir: Vector2 = Vector2.ZERO) -> void:
 		apply_knockback(from_dir * 420.0)
 		
 	if current_health <= 0:
+		# Signal immediately (room-clear logic unchanged); the corpse then plays its death
+		# animation inertly (no collision, no damage, out of the "enemies" group) and frees itself.
 		emit_signal("enemy_defeated", self)
-		queue_free()
+		_begin_death()
 
 ## Instantly defeats this enemy (used by the Defense Panel's testing toggle).
 func kill() -> void:
@@ -554,7 +632,11 @@ func kill() -> void:
 
 func _draw() -> void:
 	# Grounded contact shadow
-	draw_circle(Vector2(0, body_radius * 0.75), body_radius, Color(0, 0, 0, 0.42))
+	draw_set_transform(Vector2(0, body_radius * 0.75), 0.0, Vector2(1.0, 0.42))
+	draw_circle(Vector2.ZERO, body_radius * 0.95, Color(0, 0, 0, 0.45))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if is_dying:
+		return
 	
 	# Ground telegraphs for the new archetypes (drawn in world scale even if the node is scaled).
 	var inv: float = 1.0 / maxf(absf(scale.x), 0.01)

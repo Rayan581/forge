@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cf14yxgcyc8ub"
-path="res://.godot/imported/enemy_pyromancer.png-20e6abfb66791a1f15d3698e4492c64c.ctex"
+uid="uid://dhetlqm8ckmpu"
+path="res://.godot/imported/potion_health.png-b68670d533d62be418c5053a1fceeb93.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/enemy_pyromancer.png"
-dest_files=["res://.godot/imported/enemy_pyromancer.png-20e6abfb66791a1f15d3698e4492c64c.ctex"]
+source_file="res://assets/sprites/items/potion_health.png"
+dest_files=["res://.godot/imported/potion_health.png-b68670d533d62be418c5053a1fceeb93.ctex"]
 
 [params]
 

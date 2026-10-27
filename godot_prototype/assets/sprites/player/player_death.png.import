@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c05purgyrbol3"
-path="res://.godot/imported/pickup_potion.png-b2b5ab60da3307b0c7deac8c5aaf3afd.ctex"
+uid="uid://dlis5x2nvv3e5"
+path="res://.godot/imported/player_death.png-dc15b8b842d6fa2455369f998413fbdd.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/pickup_potion.png"
-dest_files=["res://.godot/imported/pickup_potion.png-b2b5ab60da3307b0c7deac8c5aaf3afd.ctex"]
+source_file="res://assets/sprites/player/player_death.png"
+dest_files=["res://.godot/imported/player_death.png-dc15b8b842d6fa2455369f998413fbdd.ctex"]
 
 [params]
 

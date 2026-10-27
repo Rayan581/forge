@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://hazard_forge_001"]
 
 [ext_resource type="Script" path="res://scripts/Hazard.gd" id="1_hazard"]
-[ext_resource type="Texture2D" path="res://assets/sprites/hazard_spikes.png" id="2_tex"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/hazards/spikes_frames.tres" id="2_frames"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(30, 30)
@@ -13,8 +13,11 @@ collision_layer = 0
 collision_mask = 1
 script = ExtResource("1_hazard")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
-texture = ExtResource("2_tex")
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(2, 2)
+sprite_frames = ExtResource("2_frames")
+animation = &"idle"
+autoplay = "idle"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_1")

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c04ad4gj8b3ox"
-path="res://.godot/imported/enemy_crawler.png-d43cc8c09a4c825da023d803543fb7a5.ctex"
+uid="uid://dhtx6o7aom5y2"
+path="res://.godot/imported/spikes.png-0ac19366882224b7bf80e582a9f4fbed.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/enemy_crawler.png"
-dest_files=["res://.godot/imported/enemy_crawler.png-d43cc8c09a4c825da023d803543fb7a5.ctex"]
+source_file="res://assets/sprites/hazards/spikes.png"
+dest_files=["res://.godot/imported/spikes.png-0ac19366882224b7bf80e582a9f4fbed.ctex"]
 
 [params]
 

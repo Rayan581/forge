@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://knpgvh7ya814"
-path="res://.godot/imported/hazard_spikes.png-91477c3f3e5de4df58c6fd1f57a836fe.ctex"
+uid="uid://bfcso7epy6y46"
+path="res://.godot/imported/crawler_idle.png-7c62202be05800d0d2201095b2f8c0db.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/hazard_spikes.png"
-dest_files=["res://.godot/imported/hazard_spikes.png-91477c3f3e5de4df58c6fd1f57a836fe.ctex"]
+source_file="res://assets/sprites/crawler/crawler_idle.png"
+dest_files=["res://.godot/imported/crawler_idle.png-7c62202be05800d0d2201095b2f8c0db.ctex"]
 
 [params]
 

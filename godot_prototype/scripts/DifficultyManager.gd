@@ -21,6 +21,53 @@ var room_count_target: int = 6        # Range: 5 to 9 (rooms in next generated d
 var enemy_count_scale: float = 1.0    # Range: 0.6 to 1.6 (multiplies per-room enemy counts)
 var ranged_enemy_ratio: float = 0.35  # Range: 0.0 to 1.0 (proportion of spawned enemies that are Pyromancers)
 
+# --- Archetype mix (CONTRACT.md section 3; must match the Python implementation) ---
+# Order follows Enemy.Archetype: crawler, pyromancer, brute, skirmisher, swarmer.
+const ARCHETYPE_LEVELS := [0.00, 0.50, 0.90, 0.70, 0.25]
+const STATIC_BASELINE_A7: float = -0.1
+var archetype_complexity: float = 0.45  # c in [0, 1]
+var archetype_mix: PackedFloat32Array = PackedFloat32Array([0.0834, 0.4245, 0.1097, 0.2073, 0.1751])
+
+## Softmax-based archetype mix for a given 8th action value a7 in [-1, 1].
+## p = 0.85 * softmax(-|LEVEL_i - c| / 0.25) + 0.15 / 5, c = (a7 + 1) / 2.
+static func compute_archetype_mix(a7: float) -> PackedFloat32Array:
+	var c: float = (clampf(a7, -1.0, 1.0) + 1.0) / 2.0
+	var n: int = ARCHETYPE_LEVELS.size()
+	var e: Array = []
+	var total: float = 0.0
+	for i in range(n):
+		var v: float = exp(-absf(ARCHETYPE_LEVELS[i] - c) / 0.25)
+		e.append(v)
+		total += v
+	var out := PackedFloat32Array()
+	for i in range(n):
+		out.append(0.85 * (e[i] / total) + 0.15 / float(n))
+	return out
+
+## Sets archetype_mix / archetype_complexity / ranged_enemy_ratio from a7.
+func set_archetype_from_a7(a7: float) -> void:
+	archetype_complexity = (clampf(a7, -1.0, 1.0) + 1.0) / 2.0
+	archetype_mix = compute_archetype_mix(a7)
+	ranged_enemy_ratio = archetype_mix[Enemy.Archetype.RANGED_PYROMANCER]
+
+## Sets an explicit mix (calibration floors). Complexity is the mix-weighted mean level.
+func set_archetype_mix(mix: Array) -> void:
+	archetype_mix = PackedFloat32Array(mix)
+	var c: float = 0.0
+	for i in range(ARCHETYPE_LEVELS.size()):
+		c += archetype_mix[i] * ARCHETYPE_LEVELS[i]
+	archetype_complexity = c
+	ranged_enemy_ratio = archetype_mix[Enemy.Archetype.RANGED_PYROMANCER]
+
+## Samples an archetype index from archetype_mix using u in [0, 1).
+func sample_archetype(u: float) -> int:
+	var acc: float = 0.0
+	for i in range(archetype_mix.size()):
+		acc += archetype_mix[i]
+		if u < acc:
+			return i
+	return archetype_mix.size() - 1
+
 # Real-value ranges used to map PPO's normalized [-1, 1] actions onto game parameters.
 const PARAM_RANGES = {
 	"enemy_health":      {"min": 20.0,  "max": 120.0},
@@ -84,6 +131,7 @@ const CALIBRATION_LEVELS = {
 		"hazard": 0.05,
 		"scarcity": 0.15,
 		"count_scale": 0.7,
+		"archetype_mix": [0.70, 0.0, 0.0, 0.0, 0.30],
 		"ranged_ratio": 0.35,
 		"description": "Introductory floor with slow, low-damage adversaries and minimal environmental hazards."
 	},
@@ -98,6 +146,7 @@ const CALIBRATION_LEVELS = {
 		"hazard": 0.15,
 		"scarcity": 0.25,
 		"count_scale": 0.9,
+		"archetype_mix": [0.50, 0.0, 0.0, 0.0, 0.50],
 		"ranged_ratio": 0.35,
 		"description": "Standard combat encounter testing basic swordplay, evasion, and crowd engagement."
 	},
@@ -112,6 +161,7 @@ const CALIBRATION_LEVELS = {
 		"hazard": 0.38,
 		"scarcity": 0.35,
 		"count_scale": 1.0,
+		"archetype_mix": [0.0, 0.75, 0.0, 0.25, 0.0],
 		"ranged_ratio": 1.0,
 		"description": "Robed pyromancer casters testing projectile dodge roll evasion and spatial navigation."
 	},
@@ -126,6 +176,7 @@ const CALIBRATION_LEVELS = {
 		"hazard": 0.50,
 		"scarcity": 0.55,
 		"count_scale": 1.15,
+		"archetype_mix": [0.25, 0.25, 0.0, 0.30, 0.20],
 		"ranged_ratio": 0.35,
 		"description": "Extended dungeon layout with mixed melee crawlers and ranged pyromancers."
 	},
@@ -140,6 +191,7 @@ const CALIBRATION_LEVELS = {
 		"hazard": 0.65,
 		"scarcity": 0.70,
 		"count_scale": 1.3,
+		"archetype_mix": [0.15, 0.25, 0.30, 0.20, 0.10],
 		"ranged_ratio": 0.60,
 		"description": "High-intensity gauntlet with buffed adversaries and multi-caster projectile salvos."
 	}
@@ -171,7 +223,7 @@ func apply_static_baseline(level_num: int) -> void:
 	enemy_aggro = p.aggro
 	hazard_density = p.hazard
 	resource_scarcity = p.scarcity
-	ranged_enemy_ratio = p.get("ranged_ratio", 0.35)
+	set_archetype_from_a7(STATIC_BASELINE_A7)  # fixed c = 0.45 on every floor
 	room_count_target = 6
 	enemy_count_scale = 1.0
 
@@ -187,7 +239,8 @@ func apply_calibration_level(level_num: int) -> Dictionary:
 		resource_scarcity = cal.scarcity
 		room_count_target = cal.rooms
 		enemy_count_scale = cal.count_scale
-		ranged_enemy_ratio = cal.get("ranged_ratio", 0.35)
+		set_archetype_mix(cal.archetype_mix)  # also derives ranged_enemy_ratio = p[pyromancer]
+		archetype_complexity = clampf(archetype_complexity, 0.0, 1.0)
 		return cal
 	return {}
 
@@ -201,7 +254,8 @@ func apply_preset(tier: ProfileTier) -> void:
 		enemy_aggro = p.aggro
 		hazard_density = p.hazard
 		resource_scarcity = p.scarcity
-		ranged_enemy_ratio = p.get("ranged_ratio", 0.35)
+		# Presets have no explicit mix: derive complexity from their predicted difficulty score.
+		set_archetype_from_a7(2.0 * float(calculate_difficulty_score().score) / 100.0 - 1.0)
 
 # --- PPO integration ---
 
@@ -252,9 +306,10 @@ func build_observation_from_cr0(cr0_profile: Dictionary, level_num: int = 6) -> 
 		norm_hp, norm_dmg, norm_haz, norm_rooms, norm_level
 	])
 
-## Applies the 7-dim continuous action vector output by the PPO policy.
+## Applies the continuous action vector output by the PPO policy.
 ## action = [enemy_health, enemy_damage, enemy_speed, enemy_aggro,
-##           hazard_density, resource_scarcity, room_count]  (each in [-1, 1])
+##           hazard_density, resource_scarcity, room_count, archetype_complexity]  (each in [-1, 1])
+## A legacy 7-dim vector (old weights) is accepted: a7 = 2 * difficulty_score / 100 - 1.
 func apply_ppo_action(action: PackedFloat32Array) -> void:
 	if action.size() < 7:
 		push_warning("[DifficultyManager] PPO action vector too short, ignoring.")
@@ -271,9 +326,14 @@ func apply_ppo_action(action: PackedFloat32Array) -> void:
 	# calibration-only count multiplier (up to 1.3 on Floor 5) must not carry over.
 	enemy_count_scale = 1.0
 	
-	# In adaptive mode (Floor 6+), the RL model's difficulty challenge directly dictates archetype ratio
-	var ppo_challenge = calculate_difficulty_score().score / 100.0
-	ranged_enemy_ratio = clampf(0.15 + ppo_challenge * 0.45, 0.15, 0.60)
+	var a7: float
+	if action.size() >= 8:
+		a7 = action[7]
+	else:
+		# Legacy 7-output policy: derive complexity from the predicted difficulty score.
+		var ppo_challenge: float = calculate_difficulty_score().score / 100.0
+		a7 = 2.0 * ppo_challenge - 1.0
+	set_archetype_from_a7(a7)
 
 # Calculates a 0-100 predicted difficulty score
 func calculate_difficulty_score() -> Dictionary:
@@ -292,6 +352,9 @@ func calculate_difficulty_score() -> Dictionary:
 	var w_aggro = 0.14
 	var w_haz = 0.10
 	var w_scarcity = 0.08
+	# Archetype complexity is NOT part of the score: test_static_baseline/test_cold_start and the
+	# calibration difficulty labels depend on it, and the legacy-7 fallback derives a7 FROM this
+	# score (using it here would be circular). It is shown separately (DefenseOverlay).
 	
 	var raw_score = (
 		norm_dmg * w_dmg +

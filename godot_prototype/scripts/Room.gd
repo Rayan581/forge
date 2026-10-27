@@ -166,33 +166,54 @@ func spawn_entities(p_diff: DifficultyManager) -> void:
 		pk.pickup_collected.connect(func(type): emit_signal("player_collected_pickup", type))
 		entities_container.add_child(pk)
 		
-	# Spawn Enemies with vector E parameters and archetype distribution
+	# Spawn Enemies with vector E parameters. Each *slot* samples an archetype from the
+	# difficulty manager's archetype_mix; a SWARMER slot spawns a pack of 3 bodies (contract 1).
 	for i in range(room_data.enemies_count):
-		var e = enemy_scene.instantiate()
-		var rand_x = randf_range(-room_width/2 + 90, room_width/2 - 90)
-		var rand_y = randf_range(-room_height/2 + 80, room_height/2 - 80)
-		e.position = Vector2(rand_x, rand_y)
-		
-		# Archetype assignment based on calibrated/adaptive ranged ratio
-		var is_ranged = (randf() < p_diff.ranged_enemy_ratio)
-		if is_ranged:
-			e.set_archetype(Enemy.Archetype.RANGED_PYROMANCER)
-		else:
-			e.set_archetype(Enemy.Archetype.MELEE_CRAWLER)
+		var arch: int = p_diff.sample_archetype(randf())
+		var is_apex: bool = (room_data.room_type == DungeonGenerator.RoomType.EXIT and i == 0 \
+				and p_diff.enemy_health >= 85.0)
+		if is_apex:
+			arch = Enemy.Archetype.HEAVY_BRUTE # Floor 5 exit-room champion
+		var bodies: int = 3 if arch == Enemy.Archetype.SWARMER else 1
+		var centre := Vector2(
+			randf_range(-room_width / 2 + 90, room_width / 2 - 90),
+			randf_range(-room_height / 2 + 80, room_height / 2 - 80))
+		var offsets := [-40.0, 0.0, 40.0]
+		for k in range(bodies):
+			var e = enemy_scene.instantiate()
+			var pos := centre
+			if bodies > 1:
+				# Loose triangle around the slot centre, kept >= 80 px from the walls
+				pos += Vector2.from_angle(TAU * float(k) / 3.0 + randf() * 0.4) * 28.0
+				pos.x = clampf(pos.x, -room_width / 2 + 80, room_width / 2 - 80)
+				pos.y = clampf(pos.y, -room_height / 2 + 80, room_height / 2 - 80)
+			e.position = pos
+			e.set_archetype(arch)
+			if arch == Enemy.Archetype.SWARMER:
+				e.set_swarm_offset_deg(offsets[k])
+			e.configure_parameters(p_diff.enemy_health, p_diff.enemy_damage, p_diff.enemy_speed, p_diff.enemy_aggro)
 			
-		e.configure_parameters(p_diff.enemy_health, p_diff.enemy_damage, p_diff.enemy_speed, p_diff.enemy_aggro)
-		
-		# Floor 5 Apex Mini-boss buff for lead melee champion in Exit room
-		if room_data.room_type == DungeonGenerator.RoomType.EXIT and not is_ranged and i == 0 and p_diff.enemy_health >= 85.0:
-			e.max_health *= 1.7
-			e.current_health = e.max_health
-			e.scale = Vector2(1.28, 1.28)
-			e.attack_damage *= 1.25
+			# Floor 5 Apex Mini-boss buff for the lead champion in the Exit room
+			if is_apex:
+				e.max_health *= 1.7
+				e.current_health = e.max_health
+				e.scale = Vector2(1.28, 1.28)
+				e.attack_damage *= 1.25
 			
-		e.enemy_damaged.connect(func(dmg, pos): emit_signal("enemy_damaged_in_room", dmg, pos))
-		e.enemy_defeated.connect(_on_enemy_defeated)
-		entities_container.add_child(e)
-		enemies_alive += 1
+			e.enemy_damaged.connect(func(dmg, pos2): emit_signal("enemy_damaged_in_room", dmg, pos2))
+			e.enemy_defeated.connect(_on_enemy_defeated)
+			e.enemy_defeated.connect(_record_archetype_defeat)
+			entities_container.add_child(e)
+			enemies_alive += 1
+
+## Optional per-archetype telemetry: forwards to Main's telemetry logger when it supports it.
+func _record_archetype_defeat(enemy_node: Enemy) -> void:
+	var tree := get_tree()
+	if tree == null or tree.current_scene == null:
+		return
+	var logger = tree.current_scene.get("telemetry_logger")
+	if logger != null and logger.has_method("record_enemy_defeated_by_archetype"):
+		logger.record_enemy_defeated_by_archetype(int(enemy_node.archetype))
 
 func _on_enemy_defeated(_enemy_node: Enemy) -> void:
 	enemies_alive -= 1
@@ -207,7 +228,7 @@ func kill_all_enemies() -> void:
 	for child in entities_container.get_children():
 		if child is Enemy:
 			child.kill()
-		elif child is ProjectileFireball:
+		elif child is ProjectileFireball or child is SlamShockwave:
 			child.queue_free()
 
 func _on_player_entered_room(body: Node2D) -> void:

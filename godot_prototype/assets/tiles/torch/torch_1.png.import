@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bocdsdi0plyqy"
-path="res://.godot/imported/tile_floor_start.png-fa11ec48126e7299112114086d7e4135.ctex"
+uid="uid://c2ktowppafokw"
+path="res://.godot/imported/torch_1.png-6cfa6bfa2c9a0398f2e7d8a5d7a50e56.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/tile_floor_start.png"
-dest_files=["res://.godot/imported/tile_floor_start.png-fa11ec48126e7299112114086d7e4135.ctex"]
+source_file="res://assets/tiles/torch/torch_1.png"
+dest_files=["res://.godot/imported/torch_1.png-6cfa6bfa2c9a0398f2e7d8a5d7a50e56.ctex"]
 
 [params]
 

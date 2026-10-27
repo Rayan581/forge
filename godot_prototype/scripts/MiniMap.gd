@@ -22,49 +22,43 @@ func update_player_pos(p_pos: Vector2i) -> void:
 		rooms_data[p_pos].is_visited = true
 	queue_redraw()
 
+## Maps world space (room world_pos / size) into the panel, so rooms keep their relative sizes.
 func _draw() -> void:
 	if rooms_data.is_empty():
 		return
-		
-	# Find grid bounds
-	var min_x = 999
-	var max_x = -999
-	var min_y = 999
-	var max_y = -999
-	
+	var pad = 8.0
+	var lo = Vector2(INF, INF)
+	var hi = Vector2(-INF, -INF)
 	for pos in rooms_data.keys():
-		min_x = mini(min_x, pos.x)
-		max_x = maxi(max_x, pos.x)
-		min_y = mini(min_y, pos.y)
-		max_y = maxi(max_y, pos.y)
-		
-	var grid_w = (max_x - min_x + 1) * (cell_size + cell_spacing)
-	var grid_h = (max_y - min_y + 1) * (cell_size + cell_spacing)
-	
-	var offset_x = (size.x - grid_w) / 2.0 - min_x * (cell_size + cell_spacing)
-	var offset_y = (size.y - grid_h) / 2.0 - min_y * (cell_size + cell_spacing)
+		var r0 = rooms_data[pos]
+		lo = lo.min(r0.world_pos - r0.size / 2.0)
+		hi = hi.max(r0.world_pos + r0.size / 2.0)
+	var extent = hi - lo
+	var scl = minf((size.x - 2.0 * pad) / extent.x, (size.y - 2.0 * pad) / extent.y)
+	var origin = (size - extent * scl) / 2.0 - lo * scl
 	
 	# Draw Background Panel
 	draw_rect(Rect2(0, 0, size.x, size.y), Color(0.08, 0.09, 0.13, 0.85))
 	draw_rect(Rect2(0, 0, size.x, size.y), Color(0.25, 0.35, 0.5, 0.7), false, 1.5)
 	
-	# Draw Corridors between connected rooms
+	# Draw Corridors between connected rooms (door to door, centre lines)
 	for pos in rooms_data.keys():
-		var r = rooms_data[pos]
-		var px = offset_x + float(pos.x) * (cell_size + cell_spacing) + cell_size/2.0
-		var py = offset_y + float(pos.y) * (cell_size + cell_spacing) + cell_size/2.0
-		
-		if r.doors["E"] and rooms_data.has(pos + Vector2i(1, 0)):
-			draw_line(Vector2(px, py), Vector2(px + cell_size + cell_spacing, py), Color(0.4, 0.45, 0.55), 2.0)
-		if r.doors["S"] and rooms_data.has(pos + Vector2i(0, 1)):
-			draw_line(Vector2(px, py), Vector2(px, py + cell_size + cell_spacing), Color(0.4, 0.45, 0.55), 2.0)
+		var rc = rooms_data[pos]
+		var c0 = origin + rc.world_pos * scl
+		if rc.doors["E"] and rooms_data.has(pos + Vector2i(1, 0)):
+			draw_line(c0, origin + rooms_data[pos + Vector2i(1, 0)].world_pos * scl, Color(0.4, 0.45, 0.55), 2.0)
+		if rc.doors["S"] and rooms_data.has(pos + Vector2i(0, 1)):
+			draw_line(c0, origin + rooms_data[pos + Vector2i(0, 1)].world_pos * scl, Color(0.4, 0.45, 0.55), 2.0)
 			
 	# Draw Rooms
 	for pos in rooms_data.keys():
 		var r = rooms_data[pos]
-		var rx = offset_x + float(pos.x) * (cell_size + cell_spacing)
-		var ry = offset_y + float(pos.y) * (cell_size + cell_spacing)
-		var r_rect = Rect2(rx, ry, cell_size, cell_size)
+		var rsz = Vector2(maxf(r.size.x * scl, 4.0), maxf(r.size.y * scl, 4.0))
+		var rc0 = origin + r.world_pos * scl
+		var rx = rc0.x - rsz.x / 2.0
+		var ry = rc0.y - rsz.y / 2.0
+		var r_rect = Rect2(rx, ry, rsz.x, rsz.y)
+		var min_dim = minf(rsz.x, rsz.y)
 		
 		# When Auto-Kill testing mode is on, reveal the exit room (the one with
 		# the door/portal) even before the player has ever set foot in it.
@@ -91,9 +85,9 @@ func _draw() -> void:
 		# Ring marker so a revealed-but-unvisited exit room reads clearly as
 		# "the room with the door", distinct from one you've already explored.
 		if is_exit_revealed and not r.is_visited:
-			draw_arc(Vector2(rx + cell_size/2.0, ry + cell_size/2.0), cell_size * 0.32, 0, TAU, 12, Color(1, 1, 1, 0.9), 1.5)
+			draw_arc(rc0, min_dim * 0.32, 0, TAU, 12, Color(1, 1, 1, 0.9), 1.5)
 		
 		# Current player marker
 		if pos == current_player_grid_pos:
 			draw_rect(r_rect.grow(2.0), Color(1, 1, 1), false, 2.0)
-			draw_circle(Vector2(rx + cell_size/2.0, ry + cell_size/2.0), 3.5, Color(1, 1, 1))
+			draw_circle(rc0, 3.5, Color(1, 1, 1))

@@ -18,6 +18,12 @@ extends RefCounted
 var layers: Array = []
 var loaded: bool = false
 
+## Observation width the game produces (DifficultyManager.build_observation).
+const OBS_SIZE := 8
+## Action width: 8 (7 legacy + archetype_complexity). A legacy 7-output file still works; the
+## DifficultyManager derives a7 from the difficulty score in that case.
+const ACTION_SIZE := 8
+
 func load_weights(path: String) -> bool:
 	if not FileAccess.file_exists(path):
 		push_warning("[PPOPolicy] No trained weights found at %s — using rule-based fallback until you train and drop in a real policy." % path)
@@ -36,14 +42,23 @@ func load_weights(path: String) -> bool:
 
 	layers = json.data["layers"]
 	loaded = layers.size() > 0
+	# Shape check: the first layer's input width must equal the observation size.
+	if loaded:
+		var first: Dictionary = layers[0]
+		var rows: Array = first.get("w", [])
+		var in_dim: int = (rows[0] as Array).size() if rows.size() > 0 and rows[0] is Array else -1
+		if in_dim != OBS_SIZE:
+			push_warning("[PPOPolicy] Policy at %s expects %d inputs but observation has %d -- using rule-based fallback." % [path, in_dim, OBS_SIZE])
+			loaded = false
+			return false
 	if loaded:
 		print("[PPOPolicy] Loaded trained policy with ", layers.size(), " layers from ", path)
 	return loaded
 
 ## obs: PackedFloat32Array, values expected roughly in [0, 1] (see DifficultyManager.build_observation)
-## returns: PackedFloat32Array of length 7, values in [-1, 1]
+## returns: PackedFloat32Array of length 8 (or 7 for a legacy weights file), values in [-1, 1]
 func predict(obs: PackedFloat32Array) -> PackedFloat32Array:
-	if not loaded:
+	if not loaded or obs.size() != OBS_SIZE:
 		return _fallback_heuristic(obs)
 
 	var x: Array = []
@@ -106,4 +121,8 @@ func _fallback_heuristic(obs: PackedFloat32Array) -> PackedFloat32Array:
 	out.append(clampf(cur_haz * 2.0 - 1.0 + performance_signal * step, -1.0, 1.0))   # hazard_density
 	out.append(clampf(performance_signal * 0.3, -1.0, 1.0))                           # resource_scarcity
 	out.append(clampf(cur_rooms * 2.0 - 1.0 + performance_signal * step, -1.0, 1.0)) # room_count
+	# archetype_complexity (a7): skill-based rule. Strong play (signal > 0) unlocks harder archetypes
+	# (brute/skirmisher); struggling play favours crawlers/swarmers. Centred slightly below 0
+	# (c ~= 0.45, the static-baseline mix) so a neutral player sees a balanced mix.
+	out.append(clampf(-0.1 + performance_signal * 0.9, -1.0, 1.0))                  # archetype_complexity
 	return out

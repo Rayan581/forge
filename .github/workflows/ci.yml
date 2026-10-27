@@ -25,6 +25,10 @@ env:
   # SHA-256 of Godot_v4.7.2-stable_linux.x86_64.zip (matches the official SHA512-SUMS.txt entry).
   GODOT_SHA256: "cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4"
   PYTHON_VERSION: "3.12"
+  # godot-sqlite (2shady4u) release used for the SQLite telemetry backend. v4.9 targets Godot 4.7.x
+  # (gdextension compatibility_minimum = 4.7). Asset: addons.zip (contains addons/godot-sqlite/).
+  GODOT_SQLITE_VERSION: "v4.9"
+  GODOT_SQLITE_URL: "https://github.com/2shady4u/godot-sqlite/releases/download/v4.9/addons.zip"
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────
@@ -195,6 +199,26 @@ jobs:
       - name: Remove nested project (safety cleanup)
         run: rm -rf godot_prototype/new-game-project
 
+      # The compiled GDExtension is not committed to the repo; CI fetches the official release so the
+      # real SQLite telemetry backend is exercised (tests/test_telemetry_sqlite.gd).
+      - name: Install godot-sqlite addon (official release)
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/godot-sqlite"
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/godot-sqlite/addons.zip" "$GODOT_SQLITE_URL"
+          # TODO: pin the SHA-256 of addons.zip here once it is published by a trustworthy source
+          #       (the GitHub release page shows no digest); until then integrity relies on HTTPS + the tag.
+          sha256sum "$RUNNER_TEMP/godot-sqlite/addons.zip"
+          unzip -q "$RUNNER_TEMP/godot-sqlite/addons.zip" -d "$RUNNER_TEMP/godot-sqlite/x"
+          src="$(find "$RUNNER_TEMP/godot-sqlite/x" -type d -path '*addons/godot-sqlite' | head -n1)"
+          if [ -z "$src" ] || [ ! -f "$src/gdsqlite.gdextension" ]; then
+            echo "::error::addons.zip does not contain addons/godot-sqlite/gdsqlite.gdextension"
+            exit 1
+          fi
+          mkdir -p godot_prototype/addons
+          cp -r "$src" godot_prototype/addons/godot-sqlite
+          ls godot_prototype/addons/godot-sqlite godot_prototype/addons/godot-sqlite/bin | head -30
+
       - name: Import project resources
         run: |
           # --import waits for the import to finish and returns a proper exit code
@@ -235,10 +259,10 @@ jobs:
             2>&1 | tee godot_solvability_output.txt
           echo "Solvability harness passed."
 
-      - name: GDScript unit/integration tests (TC-01, TC-02, TC-10)
+      - name: GDScript unit/integration tests (TC-01, TC-02, TC-10, telemetry)
         run: |
           set -o pipefail
-          for t in test_damage_telemetry test_cold_start test_static_baseline; do
+          for t in test_damage_telemetry test_cold_start test_static_baseline test_telemetry_fallback; do
             echo "::group::$t"
             timeout 120 "$GODOT" --headless \
               --path godot_prototype \
@@ -247,6 +271,20 @@ jobs:
             echo "::endgroup::"
           done
           echo "GDScript tests passed."
+
+      - name: SQLite telemetry backend test (real godot-sqlite extension)
+        run: |
+          set -o pipefail
+          timeout 120 "$GODOT" --headless \
+            --path godot_prototype \
+            --script tests/test_telemetry_sqlite.gd \
+            2>&1 | tee godot_sqlite_test_output.txt
+          # In CI the addon is installed, so a SKIP means the extension failed to load: fail loudly.
+          if grep -q "SKIP (godot-sqlite not installed)" godot_sqlite_test_output.txt; then
+            echo "::error::godot-sqlite extension did not load in CI"
+            exit 1
+          fi
+          grep -q "telemetry SQLite: PASS" godot_sqlite_test_output.txt
 
       - name: GDScript parse check (headless startup – belt & braces)
         run: |
@@ -309,6 +347,7 @@ jobs:
             godot_parse_output.txt
             godot_solvability_output.txt
             godot_unit_tests_output.txt
+            godot_sqlite_test_output.txt
           retention-days: 7
 
   # ─────────────────────────────────────────────────────────────────────

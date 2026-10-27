@@ -169,12 +169,15 @@ func _on_slider_changed(_val: float) -> void:
 func sync_ui_with_manager() -> void:
 	if not difficulty_manager:
 		return
-	slider_hp.value = difficulty_manager.enemy_health
-	slider_dmg.value = difficulty_manager.enemy_damage
-	slider_spd.value = difficulty_manager.enemy_speed
-	slider_aggro.value = difficulty_manager.enemy_aggro
-	slider_haz.value = difficulty_manager.hazard_density * 100.0
-	slider_scarce.value = difficulty_manager.resource_scarcity * 100.0
+	# set_value_no_signal: setting .value fires value_changed, whose handler writes ALL
+	# sliders back into the manager -- including ones not yet synced -- which used to
+	# overwrite every calibration/PPO parameter except enemy_health with stale values.
+	slider_hp.set_value_no_signal(difficulty_manager.enemy_health)
+	slider_dmg.set_value_no_signal(difficulty_manager.enemy_damage)
+	slider_spd.set_value_no_signal(difficulty_manager.enemy_speed)
+	slider_aggro.set_value_no_signal(difficulty_manager.enemy_aggro)
+	slider_haz.set_value_no_signal(difficulty_manager.hazard_density * 100.0)
+	slider_scarce.set_value_no_signal(difficulty_manager.resource_scarcity * 100.0)
 	
 	update_labels()
 	update_report_ui()

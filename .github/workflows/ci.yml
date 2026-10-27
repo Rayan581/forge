@@ -262,7 +262,7 @@ jobs:
       - name: GDScript unit/integration tests (TC-01, TC-02, TC-10, telemetry)
         run: |
           set -o pipefail
-          for t in test_damage_telemetry test_cold_start test_static_baseline test_telemetry_fallback; do
+          for t in test_damage_telemetry test_cold_start test_static_baseline test_telemetry_fallback test_archetype_mix test_enemy_archetypes test_swarm_room test_animations test_overlay_sync; do
             echo "::group::$t"
             timeout 120 "$GODOT" --headless \
               --path godot_prototype \

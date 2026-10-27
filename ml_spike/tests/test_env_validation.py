@@ -74,9 +74,9 @@ class TestObservationSpace:
     def test_obs_within_declared_space(self, env):
         for seed in range(5):
             obs, _ = env.reset(seed=seed)
-            assert env.observation_space.contains(obs), (
-                f"Obs {obs} not in observation_space for seed={seed}"
-            )
+            assert env.observation_space.contains(
+                obs
+            ), f"Obs {obs} not in observation_space for seed={seed}"
 
 
 class TestActionSpace:

@@ -78,6 +78,7 @@ func _on_start_run_requested() -> void:
 
 func _process(delta: float) -> void:
 	telemetry_logger.update_time(delta)
+	telemetry_logger.record_frame(delta) # [telemetry] frame-time stats per floor
 	defense_overlay.update_telemetry_ui()
 	
 	# Camera follows player smoothly with trauma shake
@@ -170,6 +171,8 @@ func build_new_dungeon(level_num: int) -> void:
 	level_start_time_msec = Time.get_ticks_msec()
 	level_start_deaths = telemetry_logger.total_deaths
 	level_start_damage_taken = telemetry_logger.damage_taken
+	telemetry_logger.begin_floor(level_num, generated_data.size()) # [telemetry] reset per-floor counters, rooms_total
+	telemetry_logger.record_room_visited(start_pos) # [telemetry] the start room counts as visited
 
 	# 6. Display Level Splash banner
 	var diff_report = difficulty_manager.calculate_difficulty_score()
@@ -186,6 +189,7 @@ func build_new_dungeon(level_num: int) -> void:
 func _on_room_entered(room_node: Room) -> void:
 	if room_node and room_node.room_data:
 		current_player_room_pos = room_node.room_data.grid_pos
+		telemetry_logger.record_room_visited(current_player_room_pos) # [telemetry] exploration %
 		defense_overlay.update_minimap_player(current_player_room_pos)
 		var is_calibrating = difficulty_manager.is_in_calibration(current_dungeon_level)
 		defense_overlay.update_room_info(current_dungeon_level, current_player_room_pos, is_calibrating)
@@ -224,6 +228,16 @@ func _on_dungeon_escaped() -> void:
 	var deaths_this_level = telemetry_logger.total_deaths - level_start_deaths
 	var damage_taken_this_level = telemetry_logger.damage_taken - level_start_damage_taken
 	var diff_report = difficulty_manager.calculate_difficulty_score()
+
+	# [telemetry] one row per finished floor: params this floor was played with + outcome
+	telemetry_logger.record_floor(difficulty_manager, {
+		"floor_num": current_dungeon_level,
+		"completion_time": completion_time_sec,
+		"deaths": deaths_this_level,
+		"damage_taken": damage_taken_this_level,
+		"player_max_hp": player.max_health,
+		"difficulty_score": diff_report.score,
+	})
 
 	var next_level = current_dungeon_level + 1
 
@@ -271,6 +285,7 @@ func _on_dungeon_escaped() -> void:
 		# Seed Floor 6 difficulty from the 5-level weighted CR0 profile
 		var obs_s0 = difficulty_manager.build_observation_from_cr0(cr0_profile, 6)
 		var initial_action = ppo_policy.predict(obs_s0)
+		telemetry_logger.note_policy_step(obs_s0, initial_action) # [telemetry] obs/action behind floor 6
 		difficulty_manager.apply_ppo_action(initial_action)
 		defense_overlay.sync_ui_with_manager()
 
@@ -287,6 +302,7 @@ func _on_dungeon_escaped() -> void:
 			player.max_health, current_dungeon_level
 		)
 		var action = ppo_policy.predict(obs)
+		telemetry_logger.note_policy_step(obs, action) # [telemetry] obs/action behind the next floor
 		difficulty_manager.apply_ppo_action(action)
 		defense_overlay.sync_ui_with_manager()
 

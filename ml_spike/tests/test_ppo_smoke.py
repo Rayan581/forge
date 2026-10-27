@@ -85,7 +85,7 @@ class TestPPOSmoke:
         model.learn(total_timesteps=self.SMOKE_STEPS)
         obs, _ = env.reset(seed=10)
         action, _ = model.predict(obs, deterministic=True)
-        assert action.shape == (7,)
+        assert action.shape == (8,)
         assert np.all(action >= -1.0)
         assert np.all(action <= 1.0)
         assert np.all(np.isfinite(action))

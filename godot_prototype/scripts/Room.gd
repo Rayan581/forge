@@ -9,7 +9,7 @@ signal player_hit_hazard
 signal player_collected_pickup(type: String)
 signal dungeon_escaped
 
-@export var room_width: float = 880.0
+@export var room_width: float = 880.0 # overwritten from room_data.size in initialize_room()
 @export var room_height: float = 520.0
 var door_width: float = 96.0
 
@@ -17,13 +17,22 @@ var enemy_scene = preload("res://scenes/Enemy.tscn")
 var hazard_scene = preload("res://scenes/Hazard.tscn")
 var pickup_scene = preload("res://scenes/Pickup.tscn")
 
-# Preloaded Dungeon Textures
-var tex_floor_stone: Texture2D = preload("res://assets/sprites/tile_floor_stone.png")
-var tex_floor_start: Texture2D = preload("res://assets/sprites/tile_floor_start.png")
-var tex_floor_hazard: Texture2D = preload("res://assets/sprites/tile_floor_hazard.png")
-var tex_floor_treasure: Texture2D = preload("res://assets/sprites/tile_floor_treasure.png")
-var tex_floor_exit: Texture2D = preload("res://assets/sprites/tile_floor_exit.png")
-var tex_wall_top: Texture2D = preload("res://assets/sprites/tile_wall_top.png")
+# Dungeon tileset (16 px tiles drawn at 2x = 32 px world tiles). Sheet coordinates (col,row):
+#   floors  : plain (8,1) (3,2) (9,7); cracked/variant (6..9,0..2) (0..3,6..7)
+#   shadowed: TL (1,1) T (2,1)(3,1) TR (4,1) L (1,2) R (4,2) BL (1,3) B (2,3)(3,3) BR (4,3)
+#   walls   : top face (1..4,0), bottom (1..4,4), left (0,1..3), right (5,1..3),
+#             corners TL (0,0) TR (5,0) BL (0,4) BR (5,4)
+var tex_tiles: Texture2D = preload("res://assets/tiles/Dungeon_Tileset.png")
+const TILE: float = 32.0
+const SRC: float = 16.0
+const PLAIN_FLOORS: Array = [Vector2i(8, 1), Vector2i(3, 2), Vector2i(9, 7)]
+const VARIANT_FLOORS: Array = [
+	Vector2i(6, 0), Vector2i(7, 0), Vector2i(8, 0), Vector2i(9, 0), Vector2i(6, 1), Vector2i(7, 1),
+	Vector2i(9, 1), Vector2i(6, 2), Vector2i(7, 2), Vector2i(8, 2), Vector2i(9, 2),
+	Vector2i(0, 6), Vector2i(1, 6), Vector2i(2, 6), Vector2i(3, 6), Vector2i(0, 7), Vector2i(1, 7), Vector2i(2, 7), Vector2i(3, 7)
+]
+const TORCH_PATH: String = "res://assets/tiles/torch/torch_%d.png"
+static var _torch_frames: SpriteFrames = null
 
 var room_data: DungeonGenerator.RoomData = null
 var enemies_alive: int = 0
@@ -56,6 +65,12 @@ func _process(delta: float) -> void:
 func initialize_room(data: DungeonGenerator.RoomData, p_diff: DifficultyManager) -> void:
 	room_data = data
 	global_position = data.world_pos
+	# Per-room size first: walls, entities and the trigger all depend on it (CONTRACT section 4).
+	room_width = data.size.x
+	room_height = data.size.y
+	var trig_shape = RectangleShape2D.new() # new resource: the scene's sub-resource is shared
+	trig_shape.size = Vector2(room_width - 60.0, room_height - 60.0)
+	room_trigger.get_node("CollisionShape2D").shape = trig_shape
 	
 	# Clear old entities and walls
 	for child in entities_container.get_children():
@@ -69,6 +84,8 @@ func initialize_room(data: DungeonGenerator.RoomData, p_diff: DifficultyManager)
 	# Spawn entities based on room data and difficulty parameters
 	spawn_entities(p_diff)
 	
+	_build_decor()
+
 	# Configure Exit Portal if Exit Room
 	if exit_portal:
 		var is_exit = (room_data.room_type == DungeonGenerator.RoomType.EXIT)
@@ -78,56 +95,47 @@ func initialize_room(data: DungeonGenerator.RoomData, p_diff: DifficultyManager)
 		
 	queue_redraw()
 
+## Wall rings sit OUTSIDE the interior rectangle (one 32 px tile thick); doors are 96 px gaps
+## centred on each side. Corridors are owned by the north/west room of each pair (doors S / E):
+## that room builds the corridor side walls for the full per-door length.
 func build_walls() -> void:
 	var w = room_width
 	var h = room_height
 	var dw = door_width
-	var wall_thick = 32.0
-	var half_spacing = 60.0 # spacing / 2.0 (corridor length per room side)
+	var t = DungeonGenerator.WALL_THICK
+	var hd = dw / 2.0
 	
-	# Top Wall
-	if room_data.doors["N"]:
-		var seg_w = (w - dw) / 2.0
-		_create_wall_segment(Vector2(-w/2 + seg_w/2 - wall_thick/2, -h/2), Vector2(seg_w + wall_thick, wall_thick))
-		_create_wall_segment(Vector2(w/2 - seg_w/2 + wall_thick/2, -h/2), Vector2(seg_w + wall_thick, wall_thick))
-		# North Corridor Walls
-		_create_wall_segment(Vector2(-dw/2 - wall_thick/2, -h/2 - half_spacing/2), Vector2(wall_thick, half_spacing + wall_thick))
-		_create_wall_segment(Vector2(dw/2 + wall_thick/2, -h/2 - half_spacing/2), Vector2(wall_thick, half_spacing + wall_thick))
-	else:
-		_create_wall_segment(Vector2(0, -h/2), Vector2(w + wall_thick * 2, wall_thick))
-		
-	# Bottom Wall
+	# Top / bottom rings (include the corner tiles, so they span the full width + 2 walls)
+	for side in ["N", "S"]:
+		var sy = -h/2 - t/2 if side == "N" else h/2 + t/2
+		if room_data.doors[side]:
+			var seg_w = (w + 2.0 * t) / 2.0 - hd
+			_create_wall_segment(Vector2(-hd - seg_w/2, sy), Vector2(seg_w, t))
+			_create_wall_segment(Vector2(hd + seg_w/2, sy), Vector2(seg_w, t))
+		else:
+			_create_wall_segment(Vector2(0, sy), Vector2(w + 2.0 * t, t))
+	# Left / right rings
+	for side in ["W", "E"]:
+		var sx = -w/2 - t/2 if side == "W" else w/2 + t/2
+		if room_data.doors[side]:
+			var seg_h = h / 2.0 - hd
+			_create_wall_segment(Vector2(sx, -hd - seg_h/2), Vector2(t, seg_h))
+			_create_wall_segment(Vector2(sx, hd + seg_h/2), Vector2(t, seg_h))
+		else:
+			_create_wall_segment(Vector2(sx, 0), Vector2(t, h))
+	
+	# Corridor side walls (owned by the S / E room of each connection)
 	if room_data.doors["S"]:
-		var seg_w = (w - dw) / 2.0
-		_create_wall_segment(Vector2(-w/2 + seg_w/2 - wall_thick/2, h/2), Vector2(seg_w + wall_thick, wall_thick))
-		_create_wall_segment(Vector2(w/2 - seg_w/2 + wall_thick/2, h/2), Vector2(seg_w + wall_thick, wall_thick))
-		# South Corridor Walls
-		_create_wall_segment(Vector2(-dw/2 - wall_thick/2, h/2 + half_spacing/2), Vector2(wall_thick, half_spacing + wall_thick))
-		_create_wall_segment(Vector2(dw/2 + wall_thick/2, h/2 + half_spacing/2), Vector2(wall_thick, half_spacing + wall_thick))
-	else:
-		_create_wall_segment(Vector2(0, h/2), Vector2(w + wall_thick * 2, wall_thick))
-		
-	# Left Wall
-	if room_data.doors["W"]:
-		var seg_h = (h - dw) / 2.0
-		_create_wall_segment(Vector2(-w/2, -h/2 + seg_h/2 - wall_thick/2), Vector2(wall_thick, seg_h + wall_thick))
-		_create_wall_segment(Vector2(-w/2, h/2 - seg_h/2 + wall_thick/2), Vector2(wall_thick, seg_h + wall_thick))
-		# West Corridor Walls
-		_create_wall_segment(Vector2(-w/2 - half_spacing/2, -dw/2 - wall_thick/2), Vector2(half_spacing + wall_thick, wall_thick))
-		_create_wall_segment(Vector2(-w/2 - half_spacing/2, dw/2 + wall_thick/2), Vector2(half_spacing + wall_thick, wall_thick))
-	else:
-		_create_wall_segment(Vector2(-w/2, 0), Vector2(wall_thick, h + wall_thick * 2))
-		
-	# Right Wall
+		var l = _corridor_len("S")
+		for sgn in [-1.0, 1.0]:
+			_create_wall_segment(Vector2(sgn * (hd + t/2), h/2 + l/2), Vector2(t, l))
 	if room_data.doors["E"]:
-		var seg_h = (h - dw) / 2.0
-		_create_wall_segment(Vector2(w/2, -h/2 + seg_h/2 - wall_thick/2), Vector2(wall_thick, seg_h + wall_thick))
-		_create_wall_segment(Vector2(w/2, h/2 - seg_h/2 + wall_thick/2), Vector2(wall_thick, seg_h + wall_thick))
-		# East Corridor Walls
-		_create_wall_segment(Vector2(w/2 + half_spacing/2, -dw/2 - wall_thick/2), Vector2(half_spacing + wall_thick, wall_thick))
-		_create_wall_segment(Vector2(w/2 + half_spacing/2, dw/2 + wall_thick/2), Vector2(half_spacing + wall_thick, wall_thick))
-	else:
-		_create_wall_segment(Vector2(w/2, 0), Vector2(wall_thick, h + wall_thick * 2))
+		var l = _corridor_len("E")
+		for sgn in [-1.0, 1.0]:
+			_create_wall_segment(Vector2(w/2 + l/2, sgn * (hd + t/2)), Vector2(l, t))
+
+func _corridor_len(side: String) -> float:
+	return room_data.corridors.get(side, 160.0)
 
 func _create_wall_segment(pos: Vector2, size: Vector2) -> void:
 	var col = CollisionShape2D.new()
@@ -212,111 +220,132 @@ func _on_exit_portal_entered(body: Node2D) -> void:
 		if room_data.is_cleared or enemies_alive <= 0:
 			emit_signal("dungeon_escaped")
 
+func _tile(col: int, row: int, pos: Vector2) -> void:
+	draw_texture_rect_region(tex_tiles, Rect2(pos, Vector2(TILE, TILE)), Rect2(col * SRC, row * SRC, SRC, SRC))
+
+func _tile_v(c: Vector2i, pos: Vector2) -> void:
+	_tile(c.x, c.y, pos)
+
+func _pick_floor(rng: RandomNumberGenerator) -> Vector2i:
+	# Mostly plain stone with an occasional cracked/variant tile (seeded, so stable across redraws).
+	if rng.randf() < 0.62:
+		return PLAIN_FLOORS[rng.randi() % PLAIN_FLOORS.size()]
+	return VARIANT_FLOORS[rng.randi() % VARIANT_FLOORS.size()]
+
+func _in_gap(center: float, door_open: bool) -> bool:
+	return door_open and absf(center) < door_width / 2.0
+
 func _draw() -> void:
 	if room_data == null:
 		return
-		
+	var rng = RandomNumberGenerator.new()
+	rng.seed = room_data.visual_seed
 	var w = room_width
 	var h = room_height
-	var rect = Rect2(-w/2, -h/2, w, h)
-	var dw = door_width
-	var wall_thick = 32.0
-	var half_spacing = 60.0
+	var t = DungeonGenerator.WALL_THICK
+	var hd = door_width / 2.0
+	var nx = int(round(w / TILE))
+	var ny = int(round(h / TILE))
+	var d = room_data.doors
 	
-	# 1. Select appropriate themed floor tile
-	var floor_tex = tex_floor_stone
-	if room_data.room_type == DungeonGenerator.RoomType.START:
-		floor_tex = tex_floor_start
-	elif room_data.room_type == DungeonGenerator.RoomType.HAZARD:
-		floor_tex = tex_floor_hazard
-	elif room_data.room_type == DungeonGenerator.RoomType.TREASURE:
-		floor_tex = tex_floor_treasure
-	elif room_data.room_type == DungeonGenerator.RoomType.EXIT:
-		floor_tex = tex_floor_exit
-		
-	# Draw tiled stone flagstone floor
-	draw_texture_rect(floor_tex, rect, true)
+	# 1. Room floor. Cells next to a wall use the shadowed edge tiles (except in door gaps).
+	for j in range(ny):
+		for i in range(nx):
+			var p = Vector2(-w/2 + i * TILE, -h/2 + j * TILE)
+			var cx = p.x + TILE/2.0
+			var cy = p.y + TILE/2.0
+			var top = j == 0 and not _in_gap(cx, d["N"])
+			var bottom = j == ny - 1 and not _in_gap(cx, d["S"])
+			var left = i == 0 and not _in_gap(cy, d["W"])
+			var right = i == nx - 1 and not _in_gap(cy, d["E"])
+			var tc: Vector2i
+			if top and left: tc = Vector2i(1, 1)
+			elif top and right: tc = Vector2i(4, 1)
+			elif bottom and left: tc = Vector2i(1, 3)
+			elif bottom and right: tc = Vector2i(4, 3)
+			elif top: tc = Vector2i(2 + rng.randi() % 2, 1)
+			elif bottom: tc = Vector2i(2 + rng.randi() % 2, 3)
+			elif left: tc = Vector2i(1, 2)
+			elif right: tc = Vector2i(4, 2)
+			else: tc = _pick_floor(rng)
+			_tile_v(tc, p)
 	
-	# Layered dungeon atmosphere shadows:
-	# 1. Outer deep border shadow (inner wall drop shadow)
-	draw_rect(rect, Color(0, 0, 0, 0.45), false, 18.0)
-	# 2. Soft perimeter vignette
-	draw_rect(Rect2(-w/2 + 18, -h/2 + 18, w - 36, h - 36), Color(0, 0, 0, 0.2), false, 24.0)
-	# 3. Corner architectural stone reinforcement brackets
-	var bracket_c = Color(0.2, 0.25, 0.35, 0.6)
-	var b_sz = 36.0
-	draw_rect(Rect2(-w/2, -h/2, b_sz, 6.0), bracket_c)
-	draw_rect(Rect2(-w/2, -h/2, 6.0, b_sz), bracket_c)
-	draw_rect(Rect2(w/2 - b_sz, -h/2, b_sz, 6.0), bracket_c)
-	draw_rect(Rect2(w/2 - 6.0, -h/2, 6.0, b_sz), bracket_c)
-	draw_rect(Rect2(-w/2, h/2 - 6.0, b_sz, 6.0), bracket_c)
-	draw_rect(Rect2(-w/2, h/2 - b_sz, 6.0, b_sz), bracket_c)
-	draw_rect(Rect2(w/2 - b_sz, h/2 - 6.0, b_sz, 6.0), bracket_c)
-	draw_rect(Rect2(w/2 - 6.0, h/2 - b_sz, 6.0, b_sz), bracket_c)
+	# 2. Corridor floors (S / E rooms own the corridor to their neighbour)
+	if d["S"]:
+		var l = _corridor_len("S")
+		for k in range(int(round(l / TILE))):
+			var y = h/2 + k * TILE
+			_tile(1, 2, Vector2(-hd, y))
+			_tile_v(_pick_floor(rng) if k % 2 == 0 else PLAIN_FLOORS[0], Vector2(-hd + TILE, y))
+			_tile(4, 2, Vector2(hd - TILE, y))
+	if d["E"]:
+		var l = _corridor_len("E")
+		for k in range(int(round(l / TILE))):
+			var x = w/2 + k * TILE
+			_tile(2 + rng.randi() % 2, 1, Vector2(x, -hd))
+			_tile_v(_pick_floor(rng) if k % 2 == 0 else PLAIN_FLOORS[0], Vector2(x, -hd + TILE))
+			_tile(2 + rng.randi() % 2, 3, Vector2(x, hd - TILE))
 	
-	# 2. Draw Corridor Floors with stone tiling
-	if room_data.doors["N"]:
-		draw_texture_rect(tex_floor_stone, Rect2(-dw/2, -h/2 - half_spacing, dw, half_spacing), true)
-		draw_rect(Rect2(-dw/2, -h/2 - half_spacing, dw, half_spacing), Color(0, 0, 0, 0.25), false, 6.0)
-	if room_data.doors["S"]:
-		draw_texture_rect(tex_floor_stone, Rect2(-dw/2, h/2, dw, half_spacing), true)
-		draw_rect(Rect2(-dw/2, h/2, dw, half_spacing), Color(0, 0, 0, 0.25), false, 6.0)
-	if room_data.doors["E"]:
-		draw_texture_rect(tex_floor_stone, Rect2(w/2, -dw/2, half_spacing, dw), true)
-		draw_rect(Rect2(w/2, -dw/2, half_spacing, dw), Color(0, 0, 0, 0.25), false, 6.0)
-	if room_data.doors["W"]:
-		draw_texture_rect(tex_floor_stone, Rect2(-w/2 - half_spacing, -dw/2, half_spacing, dw), true)
-		draw_rect(Rect2(-w/2 - half_spacing, -dw/2, half_spacing, dw), Color(0, 0, 0, 0.25), false, 6.0)
-		
-	# 3. Draw Solid Walls with masonry brick texture & beveled coping
-	var seg_w = (w - dw) / 2.0
-	var seg_h = (h - dw) / 2.0
+	# 3. Wall rings: top face row, bottom row, side bands, corner tiles; door gaps stay open.
+	for i in range(-1, nx + 1):
+		var x = -w/2 + i * TILE
+		var cx = x + TILE/2.0
+		if not _in_gap(cx, d["N"]):
+			_tile(0 if i == -1 else (5 if i == nx else 1 + rng.randi() % 4), 0, Vector2(x, -h/2 - t))
+		if not _in_gap(cx, d["S"]):
+			_tile(0 if i == -1 else (5 if i == nx else 1 + rng.randi() % 4), 4, Vector2(x, h/2))
+	for j in range(ny):
+		var y = -h/2 + j * TILE
+		var cy = y + TILE/2.0
+		if not _in_gap(cy, d["W"]):
+			_tile(0, 1 + rng.randi() % 3, Vector2(-w/2 - t, y))
+		if not _in_gap(cy, d["E"]):
+			_tile(5, 1 + rng.randi() % 3, Vector2(w/2, y))
 	
-	var draw_wall_box = func(pos: Vector2, size: Vector2):
-		var r = Rect2(pos.x - size.x/2.0, pos.y - size.y/2.0, size.x, size.y)
-		# Tiled masonry texture
-		draw_texture_rect(tex_wall_top, r, true)
-		# Subtle stone border highlight & drop shadow line
-		draw_rect(r, Color(0.38, 0.44, 0.56, 0.8), false, 1.5)
-		# Drop shadow on bottom edge
-		draw_line(Vector2(r.position.x, r.end.y), Vector2(r.end.x, r.end.y), Color(0.05, 0.06, 0.09, 0.95), 2.5)
-	
-	# Top Wall
-	if room_data.doors["N"]:
-		draw_wall_box.call(Vector2(-w/2 + seg_w/2 - wall_thick/2, -h/2), Vector2(seg_w + wall_thick, wall_thick))
-		draw_wall_box.call(Vector2(w/2 - seg_w/2 + wall_thick/2, -h/2), Vector2(seg_w + wall_thick, wall_thick))
-		# North Corridor Walls
-		draw_wall_box.call(Vector2(-dw/2 - wall_thick/2, -h/2 - half_spacing/2), Vector2(wall_thick, half_spacing + wall_thick))
-		draw_wall_box.call(Vector2(dw/2 + wall_thick/2, -h/2 - half_spacing/2), Vector2(wall_thick, half_spacing + wall_thick))
-	else:
-		draw_wall_box.call(Vector2(0, -h/2), Vector2(w + wall_thick * 2, wall_thick))
-		
-	# Bottom Wall
-	if room_data.doors["S"]:
-		draw_wall_box.call(Vector2(-w/2 + seg_w/2 - wall_thick/2, h/2), Vector2(seg_w + wall_thick, wall_thick))
-		draw_wall_box.call(Vector2(w/2 - seg_w/2 + wall_thick/2, h/2), Vector2(seg_w + wall_thick, wall_thick))
-		# South Corridor Walls
-		draw_wall_box.call(Vector2(-dw/2 - wall_thick/2, h/2 + half_spacing/2), Vector2(wall_thick, half_spacing + wall_thick))
-		draw_wall_box.call(Vector2(dw/2 + wall_thick/2, h/2 + half_spacing/2), Vector2(wall_thick, half_spacing + wall_thick))
-	else:
-		draw_wall_box.call(Vector2(0, h/2), Vector2(w + wall_thick * 2, wall_thick))
-		
-	# Left Wall
-	if room_data.doors["W"]:
-		draw_wall_box.call(Vector2(-w/2, -h/2 + seg_h/2 - wall_thick/2), Vector2(wall_thick, seg_h + wall_thick))
-		draw_wall_box.call(Vector2(-w/2, h/2 - seg_h/2 + wall_thick/2), Vector2(wall_thick, seg_h + wall_thick))
-		# West Corridor Walls
-		draw_wall_box.call(Vector2(-w/2 - half_spacing/2, -dw/2 - wall_thick/2), Vector2(half_spacing + wall_thick, wall_thick))
-		draw_wall_box.call(Vector2(-w/2 - half_spacing/2, dw/2 + wall_thick/2), Vector2(half_spacing + wall_thick, wall_thick))
-	else:
-		draw_wall_box.call(Vector2(-w/2, 0), Vector2(wall_thick, h + wall_thick * 2))
-		
-	# Right Wall
-	if room_data.doors["E"]:
-		draw_wall_box.call(Vector2(w/2, -h/2 + seg_h/2 - wall_thick/2), Vector2(wall_thick, seg_h + wall_thick))
-		draw_wall_box.call(Vector2(w/2, h/2 - seg_h/2 + wall_thick/2), Vector2(wall_thick, seg_h + wall_thick))
-		# East Corridor Walls
-		draw_wall_box.call(Vector2(w/2 + half_spacing/2, -dw/2 - wall_thick/2), Vector2(half_spacing + wall_thick, wall_thick))
-		draw_wall_box.call(Vector2(w/2 + half_spacing/2, dw/2 + wall_thick/2), Vector2(half_spacing + wall_thick, wall_thick))
-	else:
-		draw_wall_box.call(Vector2(w/2, 0), Vector2(wall_thick, h + wall_thick * 2))
+	# 4. Corridor side walls (between the two rooms' rings)
+	if d["S"]:
+		var n = int(round((_corridor_len("S") - 2.0 * t) / TILE))
+		for k in range(n):
+			var y = h/2 + t + k * TILE
+			_tile(0, 1 + rng.randi() % 3, Vector2(-hd - t, y))
+			_tile(5, 1 + rng.randi() % 3, Vector2(hd, y))
+	if d["E"]:
+		var n = int(round((_corridor_len("E") - 2.0 * t) / TILE))
+		for k in range(n):
+			var x = w/2 + t + k * TILE
+			_tile(1 + rng.randi() % 4, 0, Vector2(x, -hd - t))
+			_tile(1 + rng.randi() % 4, 4, Vector2(x, hd))
+
+## Animated wall torches on the north wall (never next to a door gap). Purely cosmetic.
+func _build_decor() -> void:
+	var old = get_node_or_null("Decor")
+	if old:
+		old.queue_free()
+	var decor = Node2D.new()
+	decor.name = "Decor"
+	add_child(decor)
+	if _torch_frames == null:
+		_torch_frames = SpriteFrames.new()
+		_torch_frames.add_animation("burn")
+		_torch_frames.set_animation_speed("burn", 8.0)
+		_torch_frames.set_animation_loop("burn", true)
+		for i in range(1, 5):
+			_torch_frames.add_frame("burn", load(TORCH_PATH % i))
+	var rng = RandomNumberGenerator.new()
+	rng.seed = room_data.visual_seed + 17
+	var n = clampi(int(room_width / 256.0), 2, 4)
+	var span = room_width / float(n)
+	for k in range(n):
+		var x = round((-room_width/2 + span * (k + 0.5) + rng.randf_range(-24.0, 24.0)) / TILE) * TILE
+		if room_data.doors["N"] and absf(x) < door_width / 2.0 + TILE * 1.5:
+			continue
+		var sp = AnimatedSprite2D.new()
+		sp.sprite_frames = _torch_frames
+		sp.animation = "burn"
+		sp.scale = Vector2(2, 2)
+		sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		sp.position = Vector2(x, -room_height/2 - DungeonGenerator.WALL_THICK/2.0 - 2.0)
+		sp.frame = rng.randi() % 4
+		sp.speed_scale = rng.randf_range(0.85, 1.15)
+		decor.add_child(sp)
+		sp.play("burn")

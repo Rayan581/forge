@@ -6,11 +6,62 @@
 # The generator attaches every new room to an existing one, so the layout is a
 # spanning tree and connected by construction; this harness is a regression
 # test that guards that property (and the requested room count), not a proof.
+#
+# Map-gen additions (per layout): no overlapping room / corridor rectangles in world space
+# (rooms include their 32 px wall ring), exit BFS depth == max BFS depth and >= 2 when there are
+# >= 3 rooms, every room size inside the contract bounds; and across the whole run at least
+# 6 distinct room sizes per 100 rooms.
 
 extends SceneTree
 
 const TOTAL_SEEDS: int = 500
 const ROOM_COUNTS: Array[int] = [3, 4, 5, 6, 7, 8, 9]
+const WALL: float = 32.0
+const DOOR_W: float = 96.0
+const MIN_SIZE := Vector2(560, 400)
+const MAX_SIZE := Vector2(1120, 720)
+
+## World-space rectangles (outer, wall ring included) of the rooms and corridors of a layout.
+func _geometry_ok(rooms: Dictionary) -> String:
+	var rects: Array = [] # {r: Rect2, tag: String, a: Vector2i, b: Vector2i}
+	for pos in rooms.keys():
+		var rd = rooms[pos]
+		rects.append({"r": Rect2(rd.world_pos - rd.size / 2.0 - Vector2(WALL, WALL), rd.size + Vector2(WALL, WALL) * 2.0), "tag": "room", "a": pos, "b": pos})
+		for dn in ["S", "E"]:
+			if not rd.doors[dn]:
+				continue
+			var l: float = rd.corridors.get(dn, -1.0)
+			if l < 96.0:
+				return "corridor too short/missing"
+			var half = DOOR_W / 2.0 + WALL
+			var rect: Rect2
+			var nb: Vector2i
+			if dn == "S":
+				rect = Rect2(rd.world_pos.x - half, rd.world_pos.y + rd.size.y / 2.0, half * 2.0, l)
+				nb = pos + Vector2i(0, 1)
+			else:
+				rect = Rect2(rd.world_pos.x + rd.size.x / 2.0, rd.world_pos.y - half, l, half * 2.0)
+				nb = pos + Vector2i(1, 0)
+			# the corridor must end exactly at the neighbour's interior edge (straight door-to-door)
+			var n = rooms[nb]
+			if dn == "S" and absf(rect.end.y - (n.world_pos.y - n.size.y / 2.0)) > 0.01: return "corridor misses neighbour"
+			if dn == "E" and absf(rect.end.x - (n.world_pos.x - n.size.x / 2.0)) > 0.01: return "corridor misses neighbour"
+			if dn == "S" and absf(n.world_pos.x - rd.world_pos.x) > 0.01: return "corridor not straight"
+			if dn == "E" and absf(n.world_pos.y - rd.world_pos.y) > 0.01: return "corridor not straight"
+			rects.append({"r": rect, "tag": "corr", "a": pos, "b": nb})
+	for i in range(rects.size()):
+		for j in range(i + 1, rects.size()):
+			var x = rects[i]
+			var y = rects[j]
+			if x.tag == "room" and y.tag == "room":
+				if x.r.intersects(y.r): return "room/room overlap"
+			elif x.tag == "corr" and y.tag == "corr":
+				if x.r.intersects(y.r): return "corridor/corridor overlap"
+			else:
+				var rm = x if x.tag == "room" else y
+				var co = y if x.tag == "room" else x
+				if rm.a != co.a and rm.a != co.b and rm.r.intersects(co.r): return "corridor/room overlap"
+	return ""
 
 func _init() -> void:
 	print("==================================================")
@@ -23,6 +74,17 @@ func _init() -> void:
 	var total: int = 0
 	var passed_count: int = 0
 	var failures: Array[String] = []
+	var geom_fail: int = 0
+	var exit_fail: int = 0
+	var size_fail: int = 0
+	var total_rooms: int = 0
+	var size_set: Dictionary = {}
+	var block_set: Dictionary = {}   # distinct sizes in the current block of 100 rooms
+	var block_count: int = 0
+	var min_block_distinct: int = 999
+	var blocks_checked: int = 0
+	var min_exit_depth: int = 999
+	var exit_depth_sum: int = 0
 
 	var dir_map = {
 		"N": Vector2i(0, -1),
@@ -43,6 +105,36 @@ func _init() -> void:
 			if rooms.size() != n_rooms or not rooms.has(start_pos) or not rooms.has(exit_pos) or start_pos == exit_pos:
 				failures.append("rooms=%d seed=%d (layout)" % [n_rooms, s])
 				continue
+
+			# --- map-gen checks -------------------------------------------------------------
+			var depths: Dictionary = DungeonGenerator.bfs_depths(rooms, start_pos)
+			var max_depth: int = 0
+			for dv in depths.values():
+				max_depth = maxi(max_depth, dv)
+			var exit_depth: int = depths.get(exit_pos, -1)
+			min_exit_depth = mini(min_exit_depth, exit_depth)
+			exit_depth_sum += exit_depth
+			if exit_depth != max_depth or (n_rooms >= 3 and exit_depth < 2):
+				exit_fail += 1
+				failures.append("rooms=%d seed=%d (exit depth %d, max %d)" % [n_rooms, s, exit_depth, max_depth])
+			var geom_err: String = _geometry_ok(rooms)
+			if geom_err != "":
+				geom_fail += 1
+				failures.append("rooms=%d seed=%d (%s)" % [n_rooms, s, geom_err])
+			for rp in rooms.keys():
+				var sz: Vector2 = rooms[rp].size
+				total_rooms += 1
+				size_set[sz] = true
+				block_set[sz] = true
+				block_count += 1
+				if block_count == 100:
+					min_block_distinct = mini(min_block_distinct, block_set.size())
+					blocks_checked += 1
+					block_set.clear()
+					block_count = 0
+				if sz.x < MIN_SIZE.x or sz.x > MAX_SIZE.x or sz.y < MIN_SIZE.y or sz.y > MAX_SIZE.y or int(sz.x) % 32 != 0 or int(sz.y) % 32 != 0:
+					size_fail += 1
+					failures.append("rooms=%d seed=%d (size %s out of bounds)" % [n_rooms, s, str(sz)])
 
 			# BFS over the door graph; also checks that every door has its matching
 			# door on the neighbouring room.
@@ -76,7 +168,13 @@ func _init() -> void:
 	print("[FORGE CI] Solvability Results: %d / %d Solvable" % [passed_count, total])
 	print("--------------------------------------------------")
 
-	if passed_count == total:
+	print("[FORGE CI] Map-gen: exit-depth failures=%d, overlap failures=%d, size-bound failures=%d" % [exit_fail, geom_fail, size_fail])
+	print("[FORGE CI] Map-gen: %d rooms, %d distinct sizes overall; per block of 100 rooms (%d blocks) min distinct = %d (need >= 6)" % [total_rooms, size_set.size(), blocks_checked, min_block_distinct])
+	print("[FORGE CI] Map-gen: min exit depth=%d, mean exit depth=%.2f" % [min_exit_depth, float(exit_depth_sum) / float(total)])
+	if min_block_distinct < 6:
+		failures.append("size diversity too low (min %d distinct per 100 rooms)" % min_block_distinct)
+
+	if passed_count == total and failures.is_empty():
 		print("[FORGE CI] PASS: every room reachable in all %d layouts." % total)
 		quit(0)
 	else:

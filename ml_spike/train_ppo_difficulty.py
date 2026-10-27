@@ -24,10 +24,11 @@ Output:
     -> copy this file into your Godot project at res://ai/policy_weights.json
        (i.e. create an "ai" folder next to "scripts" and "scenes")
 
-Later, once you're collecting real session_telemetry.json data from actual
-playtesters, you can swap the simulated _simulate_level() function below for
-replay/fine-tuning against real logs — the env/action/observation contract
-stays identical, so Main.gd and PPOPolicy.gd don't need to change.
+Later, once you're collecting real session telemetry SQLite data from actual
+playtesters (stored in session_telemetry.db), you can swap the simulated
+_simulate_level() function below for replay/fine-tuning against real logs via
+load_training_data_from_sqlite() — the env/action/observation contract stays
+identical, so Main.gd and PPOPolicy.gd don't need to change.
 """
 
 import json
@@ -35,7 +36,11 @@ import json
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
-from stable_baselines3 import PPO
+
+try:
+    from stable_baselines3 import PPO
+except ImportError:
+    PPO = None
 
 # ---------------------------------------------------------------------------
 # Must match DifficultyManager.gd's PARAM_RANGES / build_observation exactly.
@@ -246,6 +251,14 @@ def export_policy_to_json(model: PPO, path="policy_weights.json"):
         json.dump({"layers": layers, "activation": "tanh"}, f)
     print(f"Exported policy to {path} ({len(layers)} layers).")
     print("Copy this file to res://ai/policy_weights.json in your Godot project.")
+
+
+def load_training_data_from_sqlite(db_path: str = None):
+    """Loads empirical playtester session traces from the SQLite database."""
+    from ml_spike.telemetry_data.telemetry_db import TelemetryDatabase
+
+    db = TelemetryDatabase(db_path)
+    return db.get_all_sessions()
 
 
 if __name__ == "__main__":

@@ -16,6 +16,8 @@ var hazard_hits: int = 0
 var calibration_records: Array = []
 
 const TELEMETRY_FILE_PATH = "user://session_telemetry.json"
+const TELEMETRY_DB_PATH = "user://telemetry.db"
+const TELEMETRY_SQL_PATH = "user://telemetry.sql"
 
 func _init() -> void:
 	start_new_session()
@@ -194,3 +196,65 @@ func save_to_file() -> void:
 		file_write.store_string(JSON.stringify(history, "\t"))
 		file_write.close()
 		print("[TelemetryLogger] Successfully logged session to: ", TELEMETRY_FILE_PATH)
+		
+	_save_to_sqlite(current_data)
+	_save_to_sql_log(current_data)
+
+## Logs to embedded SQLite database if godot-sqlite extension is present
+func _save_to_sqlite(data: Dictionary) -> void:
+	if ClassDB.class_exists("SQLite"):
+		var db = ClassDB.instantiate("SQLite")
+		if db:
+			db.set("path", TELEMETRY_DB_PATH)
+			if db.has_method("open_db") and db.open_db():
+				var table_sql = """
+				CREATE TABLE IF NOT EXISTS session_telemetry (
+					id INTEGER PRIMARY KEY AUTOINCREMENT,
+					session_id TEXT NOT NULL,
+					timestamp REAL NOT NULL,
+					elapsed_seconds REAL NOT NULL,
+					rooms_cleared REAL NOT NULL,
+					total_deaths REAL NOT NULL,
+					damage_dealt REAL NOT NULL,
+					damage_taken REAL NOT NULL,
+					enemies_defeated REAL NOT NULL,
+					pickups_collected REAL NOT NULL,
+					hazard_hits REAL NOT NULL,
+					exploration_efficiency REAL NOT NULL,
+					created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+				);
+				"""
+				if db.has_method("query"):
+					db.query(table_sql)
+				if db.has_method("insert_row"):
+					db.insert_row("session_telemetry", data)
+				if db.has_method("close_db"):
+					db.close_db()
+				print("[TelemetryLogger] Successfully logged session to SQLite: ", TELEMETRY_DB_PATH)
+
+## Appends SQLite-compatible INSERT SQL statement to user://telemetry.sql
+func _save_to_sql_log(data: Dictionary) -> void:
+	var sql_statement = "INSERT INTO session_telemetry (session_id, timestamp, elapsed_seconds, rooms_cleared, total_deaths, damage_dealt, damage_taken, enemies_defeated, pickups_collected, hazard_hits, exploration_efficiency) VALUES ('%s', %f, %.2f, %d, %d, %.2f, %.2f, %d, %d, %d, %.4f);\n" % [
+		data.get("session_id", ""),
+		float(data.get("timestamp", 0.0)),
+		float(data.get("elapsed_seconds", 0.0)),
+		int(data.get("rooms_cleared", 0)),
+		int(data.get("total_deaths", 0)),
+		float(data.get("damage_dealt", 0.0)),
+		float(data.get("damage_taken", 0.0)),
+		int(data.get("enemies_defeated", 0)),
+		int(data.get("pickups_collected", 0)),
+		int(data.get("hazard_hits", 0)),
+		float(data.get("exploration_efficiency", 0.0))
+	]
+	
+	var flags = FileAccess.WRITE if not FileAccess.file_exists(TELEMETRY_SQL_PATH) else FileAccess.READ_WRITE
+	var file = FileAccess.open(TELEMETRY_SQL_PATH, flags)
+	if file:
+		if flags == FileAccess.READ_WRITE:
+			file.seek_end()
+		else:
+			file.store_string("CREATE TABLE IF NOT EXISTS session_telemetry (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT NOT NULL, timestamp REAL NOT NULL, elapsed_seconds REAL NOT NULL, rooms_cleared REAL NOT NULL, total_deaths REAL NOT NULL, damage_dealt REAL NOT NULL, damage_taken REAL NOT NULL, enemies_defeated REAL NOT NULL, pickups_collected REAL NOT NULL, hazard_hits REAL NOT NULL, exploration_efficiency REAL NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);\n")
+		file.store_string(sql_statement)
+		file.close()
+

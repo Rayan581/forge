@@ -17,7 +17,6 @@ var calibration_records: Array = []
 
 const TELEMETRY_FILE_PATH = "user://session_telemetry.json"
 const TELEMETRY_DB_PATH = "user://telemetry.db"
-const TELEMETRY_SQL_PATH = "user://telemetry.sql"
 
 func _init() -> void:
 	start_new_session()
@@ -169,6 +168,7 @@ func get_summary() -> Dictionary:
 		"enemies_defeated": enemies_defeated,
 		"pickups_collected": pickups_collected,
 		"hazard_hits": hazard_hits,
+		# Clearance pace in rooms cleared per minute (frequently referred to as exploration efficiency)
 		"exploration_efficiency": snappedf(float(rooms_cleared) / maxf(1.0, elapsed_seconds / 60.0), 0.01)
 	}
 
@@ -185,9 +185,18 @@ func save_to_file() -> void:
 				history = json.data
 			file_read.close()
 			
-	history.append(current_data)
+	# Update existing entry for this session_id or append if new (prevents duplicate session rows)
+	var found_index: int = -1
+	for i in range(history.size()):
+		if history[i] is Dictionary and history[i].get("session_id", "") == session_id:
+			found_index = i
+			break
+	if found_index != -1:
+		history[found_index] = current_data
+	else:
+		history.append(current_data)
 	
-	# Limit history to 50 entries
+	# Limit history to 50 distinct sessions
 	if history.size() > 50:
 		history = history.slice(history.size() - 50)
 		
@@ -198,7 +207,93 @@ func save_to_file() -> void:
 		print("[TelemetryLogger] Successfully logged session to: ", TELEMETRY_FILE_PATH)
 		
 	_save_to_sqlite(current_data)
-	_save_to_sql_log(current_data)
+
+## Records comprehensive per-floor telemetry for the supervised Judge regressor (Settings -> Outcome)
+func record_floor_telemetry(
+	floor_num: int,
+	time_sec: float,
+	deaths: int,
+	dmg_dealt: float,
+	dmg_taken: float,
+	rooms_done: int,
+	enemies_killed: int,
+	traps_hit: int,
+	items_collected: int,
+	diff_params: Dictionary = {},
+	crawler_pct: float = 0.5,
+	pyro_pct: float = 0.5,
+	obs_vec: Array = [],
+	act_vec: Array = []
+) -> Dictionary:
+	var floor_record = {
+		"session_id": session_id,
+		"floor_number": floor_num,
+		"timestamp": int(Time.get_unix_time_from_system()),
+		"completion_time": snappedf(time_sec, 0.1),
+		"deaths": deaths,
+		"damage_dealt": snappedf(dmg_dealt, 0.1),
+		"damage_taken": snappedf(dmg_taken, 0.1),
+		"damage_exchange_ratio": snappedf(dmg_dealt / maxf(1.0, dmg_taken), 0.01),
+		"rooms_cleared": rooms_done,
+		"enemies_defeated": enemies_killed,
+		"hazard_hits": traps_hit,
+		"pickups_collected": items_collected,
+		"enemy_health": diff_params.get("enemy_health", 50.0),
+		"enemy_damage": diff_params.get("enemy_damage", 15.0),
+		"enemy_speed": diff_params.get("enemy_speed", 100.0),
+		"enemy_aggro": diff_params.get("enemy_aggro", 200.0),
+		"hazard_density": diff_params.get("hazard_density", 0.3),
+		"resource_scarcity": diff_params.get("resource_scarcity", 0.5),
+		"room_count": diff_params.get("room_count", 6.0),
+		"enemy_count_scale": diff_params.get("enemy_count_scale", 1.0),
+		"crawler_ratio": crawler_pct,
+		"pyromancer_ratio": pyro_pct,
+		"observation_vector": JSON.stringify(obs_vec),
+		"action_vector": JSON.stringify(act_vec)
+	}
+	
+	if ClassDB.class_exists("SQLite"):
+		var db = ClassDB.instantiate("SQLite")
+		if db:
+			db.set("path", TELEMETRY_DB_PATH)
+			if db.has_method("open_db") and db.open_db():
+				var create_floor_table_sql = """
+				CREATE TABLE IF NOT EXISTS floor_telemetry (
+					id INTEGER PRIMARY KEY AUTOINCREMENT,
+					session_id TEXT NOT NULL,
+					floor_number INTEGER NOT NULL,
+					timestamp REAL NOT NULL,
+					completion_time REAL NOT NULL,
+					deaths INTEGER NOT NULL,
+					damage_dealt REAL NOT NULL,
+					damage_taken REAL NOT NULL,
+					damage_exchange_ratio REAL DEFAULT 0.0,
+					rooms_cleared INTEGER NOT NULL,
+					enemies_defeated INTEGER NOT NULL,
+					hazard_hits INTEGER NOT NULL,
+					pickups_collected INTEGER NOT NULL,
+					enemy_health REAL NOT NULL,
+					enemy_damage REAL NOT NULL,
+					enemy_speed REAL NOT NULL,
+					enemy_aggro REAL NOT NULL,
+					hazard_density REAL NOT NULL,
+					resource_scarcity REAL NOT NULL,
+					room_count REAL NOT NULL,
+					enemy_count_scale REAL DEFAULT 1.0,
+					crawler_ratio REAL DEFAULT 0.5,
+					pyromancer_ratio REAL DEFAULT 0.5,
+					observation_vector TEXT DEFAULT '',
+					action_vector TEXT DEFAULT '',
+					UNIQUE(session_id, floor_number)
+				);
+				"""
+				if db.has_method("query"):
+					db.query(create_floor_table_sql)
+				if db.has_method("insert_row"):
+					db.insert_row("floor_telemetry", floor_record)
+				if db.has_method("close_db"):
+					db.close_db()
+	return floor_record
 
 ## Logs to embedded SQLite database if godot-sqlite extension is present
 func _save_to_sqlite(data: Dictionary) -> void:
@@ -209,8 +304,7 @@ func _save_to_sqlite(data: Dictionary) -> void:
 			if db.has_method("open_db") and db.open_db():
 				var table_sql = """
 				CREATE TABLE IF NOT EXISTS session_telemetry (
-					id INTEGER PRIMARY KEY AUTOINCREMENT,
-					session_id TEXT NOT NULL,
+					session_id TEXT PRIMARY KEY,
 					timestamp REAL NOT NULL,
 					elapsed_seconds REAL NOT NULL,
 					rooms_cleared REAL NOT NULL,
@@ -221,40 +315,31 @@ func _save_to_sqlite(data: Dictionary) -> void:
 					pickups_collected REAL NOT NULL,
 					hazard_hits REAL NOT NULL,
 					exploration_efficiency REAL NOT NULL,
-					created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+					updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 				);
 				"""
 				if db.has_method("query"):
 					db.query(table_sql)
 				if db.has_method("insert_row"):
-					db.insert_row("session_telemetry", data)
+					# Use insert_row or replace query
+					db.query_with_bindings(
+						"INSERT INTO session_telemetry (session_id, timestamp, elapsed_seconds, rooms_cleared, total_deaths, damage_dealt, damage_taken, enemies_defeated, pickups_collected, hazard_hits, exploration_efficiency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(session_id) DO UPDATE SET timestamp=excluded.timestamp, elapsed_seconds=excluded.elapsed_seconds, rooms_cleared=excluded.rooms_cleared, total_deaths=excluded.total_deaths, damage_dealt=excluded.damage_dealt, damage_taken=excluded.damage_taken, enemies_defeated=excluded.enemies_defeated, pickups_collected=excluded.pickups_collected, hazard_hits=excluded.hazard_hits, exploration_efficiency=excluded.exploration_efficiency, updated_at=CURRENT_TIMESTAMP;",
+						[
+							data.get("session_id", ""),
+							float(data.get("timestamp", 0.0)),
+							float(data.get("elapsed_seconds", 0.0)),
+							float(data.get("rooms_cleared", 0.0)),
+							float(data.get("total_deaths", 0.0)),
+							float(data.get("damage_dealt", 0.0)),
+							float(data.get("damage_taken", 0.0)),
+							float(data.get("enemies_defeated", 0.0)),
+							float(data.get("pickups_collected", 0.0)),
+							float(data.get("hazard_hits", 0.0)),
+							float(data.get("exploration_efficiency", 0.0))
+						]
+					)
 				if db.has_method("close_db"):
 					db.close_db()
 				print("[TelemetryLogger] Successfully logged session to SQLite: ", TELEMETRY_DB_PATH)
 
-## Appends SQLite-compatible INSERT SQL statement to user://telemetry.sql
-func _save_to_sql_log(data: Dictionary) -> void:
-	var sql_statement = "INSERT INTO session_telemetry (session_id, timestamp, elapsed_seconds, rooms_cleared, total_deaths, damage_dealt, damage_taken, enemies_defeated, pickups_collected, hazard_hits, exploration_efficiency) VALUES ('%s', %f, %.2f, %d, %d, %.2f, %.2f, %d, %d, %d, %.4f);\n" % [
-		data.get("session_id", ""),
-		float(data.get("timestamp", 0.0)),
-		float(data.get("elapsed_seconds", 0.0)),
-		int(data.get("rooms_cleared", 0)),
-		int(data.get("total_deaths", 0)),
-		float(data.get("damage_dealt", 0.0)),
-		float(data.get("damage_taken", 0.0)),
-		int(data.get("enemies_defeated", 0)),
-		int(data.get("pickups_collected", 0)),
-		int(data.get("hazard_hits", 0)),
-		float(data.get("exploration_efficiency", 0.0))
-	]
-	
-	var flags = FileAccess.WRITE if not FileAccess.file_exists(TELEMETRY_SQL_PATH) else FileAccess.READ_WRITE
-	var file = FileAccess.open(TELEMETRY_SQL_PATH, flags)
-	if file:
-		if flags == FileAccess.READ_WRITE:
-			file.seek_end()
-		else:
-			file.store_string("CREATE TABLE IF NOT EXISTS session_telemetry (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT NOT NULL, timestamp REAL NOT NULL, elapsed_seconds REAL NOT NULL, rooms_cleared REAL NOT NULL, total_deaths REAL NOT NULL, damage_dealt REAL NOT NULL, damage_taken REAL NOT NULL, enemies_defeated REAL NOT NULL, pickups_collected REAL NOT NULL, hazard_hits REAL NOT NULL, exploration_efficiency REAL NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);\n")
-		file.store_string(sql_statement)
-		file.close()
 

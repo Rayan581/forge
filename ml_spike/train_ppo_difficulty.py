@@ -255,7 +255,10 @@ def export_policy_to_json(model: PPO, path="policy_weights.json"):
 
 def load_training_data_from_sqlite(db_path: str = None):
     """Loads empirical playtester session traces from the SQLite database."""
-    from ml_spike.telemetry_data.telemetry_db import TelemetryDatabase
+    try:
+        from ml_spike.telemetry_data.telemetry_db import TelemetryDatabase
+    except ImportError:
+        from telemetry_data.telemetry_db import TelemetryDatabase
 
     db = TelemetryDatabase(db_path)
     return db.get_all_sessions()

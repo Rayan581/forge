@@ -238,7 +238,7 @@ jobs:
       - name: GDScript unit/integration tests (TC-01, TC-02, TC-10)
         run: |
           set -o pipefail
-          for t in test_damage_telemetry test_cold_start test_static_baseline; do
+          for t in test_damage_telemetry test_cold_start test_static_baseline test_telemetry_logger; do
             echo "::group::$t"
             timeout 120 "$GODOT" --headless \
               --path godot_prototype \

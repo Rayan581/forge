@@ -1,4 +1,4 @@
-"""Trains the sim-v2 FORGE PPO policy for one seed with CSV logging.
+"""Trains the sim-v3 FORGE PPO policy for one seed with CSV logging.
 
     python ml_spike/analysis/train_with_logging.py <seed> <out_dir> [timesteps]
 

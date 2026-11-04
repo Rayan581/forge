@@ -1,5 +1,5 @@
 """
-Tests for simulator v2: archetype-mix reference vectors (contract section 3), the
+Tests for simulator v2/v3: archetype-mix reference vectors (contract section 3), the
 direction of every action dimension, the player population, baselines and the training wrapper.
 """
 
@@ -291,7 +291,7 @@ class TestBaselinesAndWrapper:
         p = tmp_path / "w.json"
         tpd.export_policy_to_json(model, str(p))
         d = json.load(open(p))
-        assert d["meta"] == {"obs_dim": 8, "act_dim": 8, "version": "sim-v2"}
+        assert d["meta"] == {"obs_dim": 8, "act_dim": 8, "version": "sim-v3"}
         assert len(d["layers"][-1]["b"]) == 8
 
     def test_shipped_weights_meta(self):

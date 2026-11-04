@@ -1,8 +1,8 @@
-"""Figures for the sim-v2 evaluation.
+"""Figures for the sim-v3 evaluation.
 
     python ml_spike/analysis/make_figures.py <runs_dir>
 
-Reads <runs_dir>/seed*/progress.csv and ml_spike/analysis/eval_results_sim_v2.json (written by
+Reads <runs_dir>/seed*/progress.csv and ml_spike/analysis/eval_results_sim_v3.json (written by
 evaluate_policies.py) and writes PNGs into ml_spike/analysis/figures/.
 """
 
@@ -62,7 +62,7 @@ def training_curves(runs):
             matplotlib.ticker.FuncFormatter(lambda x, _: f"{int(x / 1000)}k")
         )
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG, "fig_training_curves_v2.png"), dpi=200)
+    fig.savefig(os.path.join(FIG, "fig_training_curves_v3.png"), dpi=200)
     plt.close(fig)
 
 
@@ -100,7 +100,7 @@ def policy_eval(res):
     handles, labels = ax[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="lower center", ncol=4, frameon=False)
     fig.tight_layout(rect=(0, 0.07, 1, 1))
-    fig.savefig(os.path.join(FIG, "fig_policy_eval_v2.png"), dpi=200)
+    fig.savefig(os.path.join(FIG, "fig_policy_eval_v3.png"), dpi=200)
     plt.close(fig)
 
 
@@ -142,7 +142,42 @@ def params_by_profile(res):
     ax[1].set_title("Mean archetype mix")
     ax[1].legend(fontsize=7, frameon=False, bbox_to_anchor=(1.0, 1.0))
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG, "fig_params_by_profile.png"), dpi=200)
+    fig.savefig(os.path.join(FIG, "fig_params_by_profile_v3.png"), dpi=200)
+    plt.close(fig)
+
+
+def personalization(res):
+    """Mean position in range of damage / scarcity / hazard vs initial skill, sim-v3 vs sim-v2."""
+    P = res["profiles"]
+    M = res["metrics"]
+    skills = [float(p.split("(")[1].strip(")")) for p in P]
+    fig, ax = plt.subplots(1, 3, figsize=(11, 3.1), sharey=True)
+    for a, (j, lab) in zip(
+        ax, [(1, "enemy_damage"), (5, "resource_scarcity"), (4, "hazard_density")]
+    ):
+        for n, col, ls in [
+            ("trained (exported)", "#0072B2", "-"),
+            ("sim-v2 policy", "#999999", "--"),
+        ]:
+            if n not in M[P[0]]:
+                continue
+            y = [(M[p][n]["acts"][j] + 1) / 2 for p in P]
+            a.plot(
+                skills,
+                y,
+                color=col,
+                ls=ls,
+                marker="o",
+                lw=1.6,
+                label=n.replace("trained (exported)", "sim-v3 (shipped)"),
+            )
+        a.set_title(lab)
+        a.set_xlabel("initial skill")
+        a.set_ylim(0, 1)
+    ax[0].set_ylabel("mean position in range")
+    ax[0].legend(frameon=False, fontsize=8)
+    fig.tight_layout()
+    fig.savefig(os.path.join(FIG, "fig_personalization_v3.png"), dpi=200)
     plt.close(fig)
 
 
@@ -169,15 +204,16 @@ def abrupt(res):
     ax[1, 0].set_ylabel("mean deaths / floor")
     ax[0, 0].legend(frameon=False, fontsize=7)
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG, "fig_abrupt_shift.png"), dpi=200)
+    fig.savefig(os.path.join(FIG, "fig_abrupt_shift_v3.png"), dpi=200)
     plt.close(fig)
 
 
 if __name__ == "__main__":
     runs = sys.argv[1]
     training_curves(runs)
-    res = json.load(open(os.path.join(HERE, "eval_results_sim_v2.json")))
+    res = json.load(open(os.path.join(HERE, "eval_results_sim_v3.json")))
     policy_eval(res)
     params_by_profile(res)
+    personalization(res)
     abrupt(res)
     print("figures written to", FIG)

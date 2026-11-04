@@ -1,4 +1,4 @@
-"""Evaluate the sim-v2 PPO policy against three baselines on simulated player profiles.
+"""Evaluate the sim-v3 PPO policy against three baselines on simulated player profiles.
 
 Baselines
   (i)   10 random-initialised policies (same architecture, deterministic output)
@@ -48,6 +48,12 @@ N_EP = 100  # paired episodes per profile
 N_LEVELS = tpd.MAX_LEVELS
 SEED0 = 10_000
 PACE_OK = 0.15
+# sim-v2 shipped policy, pacing error per profile (results_sim_v2.md), acceptance criterion 3
+V2_PACE = [0.128, 0.127, 0.115, 0.112, 0.116, 0.120]
+PACE_TOL = 0.03
+MIN_SPREAD = (
+    0.15  # min |position(0.10) - position(0.90)| for damage and scarcity (fraction of range)
+)
 
 
 # ----------------------------------------------------------------- policies
@@ -192,7 +198,7 @@ def main():
     best = int(sys.argv[2])
     out_md = sys.argv[3] if len(sys.argv) > 3 and not sys.argv[3].startswith("--") else None
     skip_checks = "--skip-checks" in sys.argv
-    out_md = out_md or os.path.join(HERE, "results_sim_v2.md")
+    out_md = out_md or os.path.join(HERE, "results_sim_v3.md")
     fig_dir = os.path.join(HERE, "figures")
     os.makedirs(fig_dir, exist_ok=True)
     shipped = os.path.join(REPO, "godot_prototype", "ai", "policy_weights.json")
@@ -212,6 +218,9 @@ def main():
     pol = {"trained (exported)": json_policy_fn(shipped)}
     for k, m in models.items():
         pol[f"seed {k}"] = model_fn(m)
+    v2_path = os.path.join(REPO, "godot_prototype", "ai", "policy_weights_v2.json")
+    if os.path.exists(v2_path):  # reference: the shipped sim-v2 policy, run on the v3 simulator
+        pol["sim-v2 policy"] = json_policy_fn(v2_path)
 
     R = {}  # R[profile][name] = summary
     for pname, skill in PROFILES.items():
@@ -225,15 +234,19 @@ def main():
         print(pname, "done", flush=True)
 
     base_names = ["random-init (10)", "heuristic", "static +8%"]
-    md = ["# Simulator v2 — evaluation of the retrained PPO policy\n"]
+    md = ["# Simulator v3 — evaluation of the personalised PPO policy\n"]
     md.append(
         f"Protocol: {N_EP} paired episodes x {N_LEVELS} levels per profile (episode i uses seed "
         f"{SEED0}+i for every policy, so all policies face the same player trajectory: skill "
         "drift + random abrupt shifts of the default population, and the same noise stream "
         "family).  `trained (exported)` is `godot_prototype/ai/policy_weights.json` run through "
         f"the NumPy mirror of PPOPolicy.gd (seed {best}); `seed k` rows are the SB3 checkpoints "
-        "of the three training runs.  Pacing error = |t_room - 7.5 s| / 7.5 s.\n"
+        "of the three training runs; `sim-v2 policy` is the previously shipped `policy_weights_v2.json` run on the v3 simulator (reference only).  Pacing error = |t_room - 7.5 s| / 7.5 s.\n"
     )
+
+    notes = os.path.join(HERE, "sim_v3_notes.md")
+    if os.path.exists(notes):
+        md.append(open(notes).read() + "\n")
 
     # ---- main metrics table
     for metric, label, nd in [
@@ -242,7 +255,7 @@ def main():
         ("deaths", "Deaths / level (lower is better)", 3),
         ("dact", "Mean per-floor |delta action| (mean over the 8 dims, floors 2-30)", 3),
     ]:
-        names = ["trained (exported)", "seed 0", "seed 1", "seed 2"] + base_names
+        names = ["trained (exported)", "seed 0", "seed 1", "seed 2", "sim-v2 policy"] + base_names
         names = [n for n in names if n in R[next(iter(PROFILES))]]
         rows = []
         for pname in PROFILES:
@@ -426,6 +439,15 @@ def main():
         ("(d) beats random-init, heuristic, static on reward AND pacing on >= 5/6 profiles", all(wins[b]["both"] >= 5 for b in base_names), ", ".join(f"{b}: {wins[b]['both']}/6" for b in base_names)),
         ("(e) mean per-floor |delta action| <= 0.35", dact_mean <= 0.35, f"mean over profiles = {dact_mean:.3f}, worst profile = {dact_max:.3f}"),
     ]  # fmt: skip
+    spread = {
+        tpd.ACTION_NAMES[j]: float(norm_means[-1, j] - norm_means[0, j]) for j in range(8)
+    }  # 0.90 profile minus 0.10 profile, fraction of range
+    pace_t = [float(t_all[p]["pace"].mean()) for p in PROFILES]
+    pace_d = [a - b for a, b in zip(pace_t, V2_PACE)]
+    crit += [
+        ("1. enemy_damage and resource_scarcity: |pos(0.90) - pos(0.10)| >= 0.15", abs(spread["enemy_damage"]) >= MIN_SPREAD and abs(spread["resource_scarcity"]) >= MIN_SPREAD, f"damage {spread['enemy_damage']:+.3f}, scarcity {spread['resource_scarcity']:+.3f} (hazard {spread['hazard_density']:+.3f}, reported only)"),
+        ("3. pacing error not worse than sim-v2 by more than 0.03 on every profile", max(pace_d) <= PACE_TOL, "diff per profile: " + ", ".join(f"{d:+.3f}" for d in pace_d) + f" (worst {max(pace_d):+.3f})"),
+    ]  # fmt: skip
     md.append(
         table(
             ["criterion", "result", "number"],
@@ -434,7 +456,8 @@ def main():
         + "\n"
     )
     md.append(
-        "(f) pytest and ruff results, and the weights file size, are reported in the commit / PR description.\n"
+        "(f) pytest and ruff results, and the weights file size, are reported in the commit / PR description.  "
+        "Criteria (a)-(e) are the sim-v2 criteria; 1 and 3 are the sim-v3 additions.\n"
     )
 
     with open(out_md, "w") as f:
@@ -454,7 +477,7 @@ def main():
         },
         "sigma": {str(k): v.tolist() for k, v in sig.items()},
     }
-    json.dump(dump, open(os.path.join(HERE, "eval_results_sim_v2.json"), "w"))
+    json.dump(dump, open(os.path.join(HERE, "eval_results_sim_v3.json"), "w"))
 
 
 if __name__ == "__main__":

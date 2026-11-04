@@ -1,5 +1,5 @@
 """
-FORGE — Adaptive Difficulty PPO Trainer (simulator v2, "sim-v2")
+FORGE — Adaptive Difficulty PPO Trainer (simulator v3, "sim-v3")
 -----------------------------------------------------------------
 Trains a PPO agent whose job is: given how the player just performed
 (completion time, deaths, damage taken) and the current difficulty
@@ -8,12 +8,18 @@ player is clearing levels quickly and cleanly, easing off when they are
 slow or dying a lot.
 
 We cannot have a real human play thousands of floors, so we train against a
-*simulated player*. Simulator v2 (this file) fixes the artefacts of v1
-(damage pinned at its minimum, speed at its maximum, aggro / scarcity having
-no effect, no enemy-count or archetype model, a narrow player population and
-no abrupt performance changes). Everything below the "SIMULATOR CONSTANTS"
-banner is documented where it is defined; the evaluation report
-(ml_spike/analysis/results_sim_v2.md) lists the constants in one table.
+*simulated player*. Simulator v2 fixed the artefacts of v1 (damage pinned at its
+minimum, speed at its maximum, aggro / scarcity having no effect, no enemy-count or
+archetype model, a narrow player population and no abrupt performance changes).
+Simulator v3 (this file) additionally makes enemy_damage and resource_scarcity
+*player-dependent*: v2 left both flat across skills because (see
+ml_spike/analysis/results_sim_v3.md, "Diagnosis") the reward only observed three
+scalars (time/room, damage ratio, deaths) that other levers already control, so damage
+and scarcity sat on a flat ridge and the balance prior parked them mid-range.  v3 gives
+them distinct, skill-dependent effects (reflex-scaled caution, tactics-scaled healing)
+and two stated experience priors (hit-severity band, recoverability).  Everything below
+the "SIMULATOR CONSTANTS" banner is documented where it is defined; the evaluation
+report (ml_spike/analysis/results_sim_v3.md) lists the constants in one table.
 
 Interface (shared contract, unchanged by this file's internals):
     observation (8) : [norm_time, norm_deaths, norm_dmg_ratio, norm_enemy_hp,
@@ -130,7 +136,7 @@ def difficulty_score(params):
 
 
 # ===========================================================================
-# SIMULATOR CONSTANTS (sim-v2).  All "per-archetype" arrays follow the
+# SIMULATOR CONSTANTS (sim-v3; the lines marked "v3" are new or changed vs sim-v2).  All "per-archetype" arrays follow the
 # Enemy.Archetype enum order: crawler, pyromancer, brute, skirmisher, swarmer.
 # ===========================================================================
 # -- physical stat multipliers (contract section 1) --------------------------
@@ -175,7 +181,13 @@ T_KILL = 0.92  # seconds to kill one 60-hp crawler slot at tactics 0.5
 T_EVADE = 0.50  # seconds of dodging per slot at reference speed 130
 T_STAGGER = 0.70  # seconds lost per slot x hit-probability (knock-back, re-engaging)
 T_HAZARD = 0.45  # seconds per hazard tile in a room
-CAUTION_DMG, CAUTION_SCAR = 0.30, 0.18  # players slow down when hits hurt / healing is rare
+CAUTION_DMG, CAUTION_SCAR = 0.30, 0.30  # players slow down when hits hurt / healing is rare
+# v3: caution is skill dependent.  Hard hits make LOW-reflex players play defensively (they cannot
+# dodge, so every hit hurts) and barely slow down high-reflex players; scarce healing slows
+# LOW-tactics players (poor resource management) more than high-tactics ones.  Both factors
+# equal 1 at skill 0.5, so the mean pace calibration of v2 is preserved.
+CAUTION_REFLEX_SLOPE = 1.2  # f_dmg = 1 + slope * (0.5 - reflex)
+CAUTION_TACTICS_SLOPE = 1.6  # f_scar = 1 + slope * (0.5 - tactics)
 RESPAWN_S = 6.0  # seconds added per death (counted in completion_time)
 TIME_NOISE_ROOM = 0.14  # lognormal sigma per room
 TIME_NOISE_LEVEL = 0.05  # lognormal sigma per level
@@ -183,7 +195,10 @@ TIME_NOISE_LEVEL = 0.05  # lognormal sigma per level
 DMG_K = 0.0105  # enemy damage per slot-exposure at reference damage 27.5 / hp 60
 HAZ_DMG = 0.009  # per hazard tile at reflex 0
 HEAL_PER_PICKUP = 0.18
-HEAL_USE = 0.85  # fraction of available healing that is actually usable
+# v3: fraction of the available healing that is actually usable depends on resource management
+# (tactics: routing to pickups, saving them for when they are needed): 0.60 + 0.40 * tactics.
+HEAL_USE_BASE, HEAL_USE_GAIN = 0.60, 0.40
+PLAYER_HP = 100.0  # Player.max_health; per-hit severity = damage / PLAYER_HP
 DMG_NOISE_LEVEL = 0.22  # lognormal sigma of the whole level's damage
 # -- player population -------------------------------------------------------
 SKILL_INIT = (0.05, 0.95)
@@ -201,6 +216,20 @@ BALANCE_W = 0.15  # "balanced difficulty": penalty on mean(a^2) so that challeng
 # hazards); keeps every dimension inside its range unless pushing it clearly pays off.
 COMPLEX_W = 0.20  # archetype complexity should track proficiency: target c = skill
 ROOM_W = 0.30  # floors should be longer for stronger players: target rooms = 5 + 4 * skill
+# -- v3 experience priors (design priors in the same family as ROOM_W / COMPLEX_W) ----------------
+# Hit-severity band (damage, reflex-conditioned).  One hit removes sev = damage * mix_dmg_mult /
+# PLAYER_HP of the player's health.  A low-reflex player cannot avoid hits, so each one must be
+# small enough to be survivable and recoverable (many hits to go down, forgiving); a high-reflex
+# player is rarely hit, so a hit has to carry real weight for the threat to register.  The
+# tolerated severity therefore rises with REFLEX (not tactics): SEV_LO at reflex 0 -> SEV_HI at 1.
+SEV_LO, SEV_HI = 0.10, 0.35
+SEV_W = 0.40  # reward -= SEV_W * |sev - sev*(reflex)| / 0.30
+# Recoverability (scarcity, tactics-conditioned).  cover = usable healing supply per floor /
+# damage the player is expected to take.  Players who manage resources well (high tactics) keep
+# themselves topped up from a lean supply and find a generous one dull; players who do not need
+# a generous supply to recover from mistakes.  Target cover falls with TACTICS.
+COVER_LO, COVER_HI = 1.4, 3.6  # target cover at tactics 1 / tactics 0
+COVER_W = 0.80  # reward -= COVER_W * |ln(cover / cover*(tactics))|
 OOB_LAMBDA = (
     1.5  # training only: quadratic penalty on sampled actions outside [-1, 1] (TrainWrapper)
 )
@@ -438,7 +467,15 @@ class DungeonDifficultyEnv(gym.Env):
         dps = (0.30 + 1.2 * tau) / 0.9  # tactics speeds up killing
         mu = np.clip(mu0 * (1.0 + FATIGUE * np.arange(R)), MU_MIN, MU_MAX)
         sim = 1.0 + SIM_AGGRO * st["agr"] * np.clip(counts * st["bodies"] - 1.0, 0, 6) / 6.0
-        caution = 1.0 + CAUTION_DMG * norm_raw(dmg_abs, "enemy_damage") + CAUTION_SCAR * scar_n
+        # v3: caution scales with how much a hit hurts THIS player (reflex) / how badly they cope
+        # with scarce healing (tactics); both factors are 1 at skill 0.5.
+        f_dmg = max(0.0, 1.0 + CAUTION_REFLEX_SLOPE * (0.5 - rho))
+        f_scar = max(0.0, 1.0 + CAUTION_TACTICS_SLOPE * (0.5 - tau))
+        caution = (
+            1.0
+            + CAUTION_DMG * norm_raw(dmg_abs, "enemy_damage") * f_dmg
+            + CAUTION_SCAR * scar_n * f_scar
+        )
         kill = counts * T_KILL * st["hslot"] * (p["enemy_health"] / 60.0) / dps
         evade = counts * T_EVADE * st["spd_rel"] * (1.0 - 0.7 * rho)
         stagger = counts * T_STAGGER * mu
@@ -457,6 +494,25 @@ class DungeonDifficultyEnv(gym.Env):
         d_haz = HAZ_DMG * hz * (1.15 - 0.7 * rho)
         return t_room, d_enemy + d_haz, mu0
 
+    @staticmethod
+    def expected_pickups(p, count_scale=1.0):
+        """Expected number of healing pickups on a floor (mirror of DungeonGenerator.gd, same
+        branches as _room_layout but in expectation: treasure rooms give 3, combat rooms
+        1 - scarcity).  Note the generator's treasure-room count is a step function of scarcity
+        (2 rooms for scarcity <= 0.2, otherwise 1), so most of scarcity's range changes supply
+        by well under one pickup."""
+        R = int(round(p["room_count"]))
+        haz, scar = p["hazard_density"], p["resource_scarcity"]
+        avail = max(R - 2, 1)
+        n_haz = int(np.clip(int(haz * avail), 1, avail))
+        n_tre = int(np.clip(int((1.0 - scar) * 2.5), 1, 3))
+        pk = 0.0
+        for j in range(max(R - 2, 0)):  # key rooms between the start and the exit room
+            if j < n_haz:
+                continue
+            pk += 3.0 if j < n_haz + n_tre else (1.0 - scar)
+        return pk
+
     def _simulate(self, p, mix, count_scale=1.0):
         """Turns difficulty params + archetype mix + player skill into
         (completion_time, deaths, damage_ratio) with noise."""
@@ -467,7 +523,8 @@ class DungeonDifficultyEnv(gym.Env):
         t_room, d_room, _ = self._physics(p, mix, counts, hz, rho, tau)
         t_room = t_room * np.exp(rng.normal(0.0, TIME_NOISE_ROOM, R))
         gross = float(d_room.sum()) * float(np.exp(rng.normal(0.0, DMG_NOISE_LEVEL)))
-        net = gross - HEAL_USE * min(heal, gross)
+        heal_use = HEAL_USE_BASE + HEAL_USE_GAIN * tau
+        net = gross - heal_use * min(heal, gross)
         deaths = int(min(6, np.floor(net)))
         total = float(t_room.sum()) * float(np.exp(rng.normal(0.0, TIME_NOISE_LEVEL)))
         total += deaths * RESPAWN_S
@@ -477,6 +534,11 @@ class DungeonDifficultyEnv(gym.Env):
         challenge = (
             0.5 * float(t_ref.mean()) / TARGET_TPR + 0.5 * float(d_ref.sum()) / FLOW_DMG_TARGET
         )
+        # v3 experience measures (deterministic in the settings and the player's skill axes):
+        #   sev   = health fraction removed by one hit; cover = usable healing supply / expected damage.
+        sev = float(p["enemy_damage"] * (mix @ DMG_MULT) / PLAYER_HP)
+        supply = self.expected_pickups(p) * HEAL_PER_PICKUP * heal_use
+        cover = float(supply / max(float(d_room.sum()), 0.20))
         return dict(
             time=max(5.0, total),
             deaths=deaths,
@@ -485,6 +547,10 @@ class DungeonDifficultyEnv(gym.Env):
             rooms=R,
             challenge=challenge,
             skill=self.skill,
+            reflex=rho,
+            tactics=tau,
+            sev=sev,
+            cover=cover,
         )
 
     # ---------------------------------------------------------------- step
@@ -522,6 +588,13 @@ class DungeonDifficultyEnv(gym.Env):
         # Archetype variety is judged against proficiency too: novices should meet mostly simple
         # enemies (crawlers, swarms), experts the brutes / skirmishers.
         reward -= COMPLEX_W * abs(res.get("c", 0.5) - res["skill"])
+        # v3 priors (skipped when the result dict carries no reflex / tactics measures)
+        if "sev" in res:
+            sev_target = SEV_LO + (SEV_HI - SEV_LO) * res["reflex"]
+            reward -= SEV_W * abs(res["sev"] - sev_target) / 0.30
+        if "cover" in res:
+            cover_target = COVER_LO + (COVER_HI - COVER_LO) * (1.0 - res["tactics"])
+            reward -= COVER_W * abs(np.log(max(res["cover"], 1e-3) / cover_target))
         reward -= BALANCE_W * float(np.mean(np.square(action_vec)))
         smooth = 0.0
         if prev_action is not None:
@@ -674,7 +747,7 @@ def export_policy_to_json(model: PPO, path="policy_weights.json", meta=True):
 
     out = {"layers": layers, "activation": "tanh"}
     if meta:
-        out["meta"] = {"obs_dim": OBS_DIM, "act_dim": len(layers[-1]["b"]), "version": "sim-v2"}
+        out["meta"] = {"obs_dim": OBS_DIM, "act_dim": len(layers[-1]["b"]), "version": "sim-v3"}
     with open(path, "w") as f:
         json.dump(out, f)
     print(f"Exported policy to {path} ({len(layers)} layers).")

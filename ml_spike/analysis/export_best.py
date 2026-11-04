@@ -6,7 +6,7 @@ Selection ("auto") uses a held-out validation set that is disjoint from the eval
 protocol: 200 episodes whose initial skill is drawn from the training population
 U(0.05, 0.95) with seeds 50000+ (the evaluation uses fixed profiles and seeds 10000+).
 Writes
-  godot_prototype/ai/policy_weights.json   (8 outputs, meta.version = sim-v2)
+  godot_prototype/ai/policy_weights.json   (8 outputs, meta.version = sim-v3)
   ml_spike/ppo_difficulty_model.zip        (SB3 checkpoint, action space [-1, 1])
 """
 

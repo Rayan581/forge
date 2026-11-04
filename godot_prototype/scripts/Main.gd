@@ -144,6 +144,7 @@ func build_new_dungeon(level_num: int) -> void:
 		var r_data = generated_data[pos]
 		var r_inst = room_scene.instantiate()
 		dungeon_container.add_child(r_inst)
+		r_inst.telemetry_logger = telemetry_logger
 		r_inst.initialize_room(r_data, difficulty_manager)
 		
 		# Connect room signals

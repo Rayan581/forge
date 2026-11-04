@@ -89,7 +89,6 @@ const PRESETS = {
 		"aggro": 160.0,
 		"hazard": 0.15,
 		"scarcity": 0.15,
-		"ranged_ratio": 0.20,
 		"description": "Slow, low-damage adversaries with abundant health drops and minimal traps."
 	},
 	ProfileTier.INTERMEDIATE: {
@@ -100,7 +99,6 @@ const PRESETS = {
 		"aggro": 250.0,
 		"hazard": 0.35,
 		"scarcity": 0.40,
-		"ranged_ratio": 0.35,
 		"description": "Balanced combat pace with moderate traps and standard resource drops."
 	},
 	ProfileTier.EXPERT: {
@@ -111,7 +109,6 @@ const PRESETS = {
 		"aggro": 380.0,
 		"hazard": 0.65,
 		"scarcity": 0.75,
-		"ranged_ratio": 0.50,
 		"description": "High-velocity aggressive enemies, hazardous traps, and scarce survival drops."
 	}
 }
@@ -132,7 +129,6 @@ const CALIBRATION_LEVELS = {
 		"scarcity": 0.15,
 		"count_scale": 0.7,
 		"archetype_mix": [0.70, 0.0, 0.0, 0.0, 0.30],
-		"ranged_ratio": 0.35,
 		"description": "Introductory floor with slow, low-damage adversaries and minimal environmental hazards."
 	},
 	2: {
@@ -147,7 +143,6 @@ const CALIBRATION_LEVELS = {
 		"scarcity": 0.25,
 		"count_scale": 0.9,
 		"archetype_mix": [0.50, 0.0, 0.0, 0.0, 0.50],
-		"ranged_ratio": 0.35,
 		"description": "Standard combat encounter testing basic swordplay, evasion, and crowd engagement."
 	},
 	3: {
@@ -162,7 +157,6 @@ const CALIBRATION_LEVELS = {
 		"scarcity": 0.35,
 		"count_scale": 1.0,
 		"archetype_mix": [0.0, 0.75, 0.0, 0.25, 0.0],
-		"ranged_ratio": 1.0,
 		"description": "Robed pyromancer casters testing projectile dodge roll evasion and spatial navigation."
 	},
 	4: {
@@ -177,7 +171,6 @@ const CALIBRATION_LEVELS = {
 		"scarcity": 0.55,
 		"count_scale": 1.15,
 		"archetype_mix": [0.25, 0.25, 0.0, 0.30, 0.20],
-		"ranged_ratio": 0.35,
 		"description": "Extended dungeon layout with mixed melee crawlers and ranged pyromancers."
 	},
 	5: {
@@ -192,7 +185,6 @@ const CALIBRATION_LEVELS = {
 		"scarcity": 0.70,
 		"count_scale": 1.3,
 		"archetype_mix": [0.15, 0.25, 0.30, 0.20, 0.10],
-		"ranged_ratio": 0.60,
 		"description": "High-intensity gauntlet with buffed adversaries and multi-caster projectile salvos."
 	}
 }

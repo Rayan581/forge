@@ -44,8 +44,8 @@
 * **SQLite Database Migration:** Gate 3 (Final-1). Flat JSON active.
 * **4–5 Enemy Archetypes:** Gate 3 Exit. Mid-1 delivers 2 archetypes. ✔
 * **Rule-Based BSP Generator Baseline:** Final-1 (Week 14).
-* **In-Run Equipment Shop Economy:** Final-1 (Week 14).
-* **Empirical ML Judge Regressor & TreeSHAP:** Mid-2 (Week 26).
+* **In-Run Equipment Shop Economy:** FYP-2 Mid (Week 26) — moved after committee feedback.
+* **Empirical ML Judge Regressor & TreeSHAP:** Final-1 (Week 14) — moved forward after committee feedback.
 * **10-Participant Human UAT Study:** Final-2 (Week 32 / Gate 5).
 
 ---
@@ -193,6 +193,6 @@ Compiled as full LaTeX report (`F26_FYP1_Mid_Report_LaTeX_Complete/`, 23 source 
 | :--- | :--- | :--- |
 | Archetypes 3–5 (Brute, Skirmisher, Swarmer) | Gate 3 / Final-1 (Week 14) | 2 of 5 done |
 | SQLite Telemetry Migration | Gate 3 / Final-1 (Week 14) | Flat JSON active |
-| In-Run Equipment Shop / Forge Embers | Gate 3 / Final-1 (Week 14) | — |
-| ML Judge Regressor + TreeSHAP | Gate 4 / Mid-2 (Week 26) | Linear proxy active |
+| In-Run Equipment Shop / Forge Embers | Gate 4 / Mid-2 (Week 26) | — |
+| ML Judge Regressor + TreeSHAP | Gate 3 / Final-1 (Week 14) | Linear proxy active |
 | 10-Participant UAT Study (GEQ + PENS) | Gate 5 / Final-2 (Week 32) | — |

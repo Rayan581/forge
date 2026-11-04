@@ -1,7 +1,7 @@
 [gd_scene load_steps=6 format=3 uid="uid://main_menu_forge_001"]
 
 [ext_resource type="Script" path="res://scripts/MainMenu.gd" id="1_menu"]
-[ext_resource type="Texture2D" uid="uid://menu_bg_tex_01" path="res://assets/ui/menu_backdrop.png" id="2_bg"]
+[ext_resource type="Texture2D" path="res://assets/ui/menu_backdrop.png" id="2_bg"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_briefing"]
 bg_color = Color(0.06, 0.08, 0.13, 0.96)

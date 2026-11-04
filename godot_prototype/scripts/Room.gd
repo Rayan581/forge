@@ -37,6 +37,8 @@ static var _torch_frames: SpriteFrames = null
 var room_data: DungeonGenerator.RoomData = null
 var enemies_alive: int = 0
 var is_active_room: bool = false
+## Set by Main when the room is built; per-archetype kill counts go here.
+var telemetry_logger: Object = null
 
 @onready var entities_container: Node2D = $EntitiesContainer
 @onready var static_walls: StaticBody2D = $StaticWalls
@@ -208,10 +210,12 @@ func spawn_entities(p_diff: DifficultyManager) -> void:
 
 ## Optional per-archetype telemetry: forwards to Main's telemetry logger when it supports it.
 func _record_archetype_defeat(enemy_node: Enemy) -> void:
-	var tree := get_tree()
-	if tree == null or tree.current_scene == null:
-		return
-	var logger = tree.current_scene.get("telemetry_logger")
+	var logger = telemetry_logger
+	if logger == null:
+		# Fallback for rooms built outside Main (tests/tools): look it up on the running scene.
+		var tree := get_tree()
+		if tree != null and tree.current_scene != null:
+			logger = tree.current_scene.get("telemetry_logger")
 	if logger != null and logger.has_method("record_enemy_defeated_by_archetype"):
 		logger.record_enemy_defeated_by_archetype(int(enemy_node.archetype))
 

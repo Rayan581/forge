@@ -1,4 +1,4 @@
-"""Sanity checks of the sim-v2 simulator: monotonicity of every action dimension and an
+"""Sanity checks of the sim-v3 simulator: monotonicity of every action dimension and an
 explicit "is any parameter dominated?" test.  Imported by evaluate_policies.py."""
 
 import importlib.util

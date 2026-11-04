@@ -37,4 +37,6 @@ func _init() -> void:
 	tl3.close()
 	var ok: bool = sc.report("telemetry SQLite")
 	sc.cleanup(tag)
-	quit(0 if ok else 1)
+	# Deferred: quitting from inside _init() can leave the process hanging once the native
+	# godot-sqlite extension is loaded; let the engine finish starting up first.
+	call_deferred("quit", 0 if ok else 1)

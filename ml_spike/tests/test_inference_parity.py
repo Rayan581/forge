@@ -48,7 +48,7 @@ def py_forward(layers_data: list, obs: np.ndarray) -> np.ndarray:
 
 
 # ─── Deterministic fixture policy (tiny, known-weight network) ───────────────
-# Architecture: 8 -> 2 -> 2 -> 7  (we shrink hidden for tractability)
+# Architecture: 8 -> 2 -> 2 -> 8  (we shrink hidden for tractability)
 # Weights are all 0.1 so we can hand-compute the expected output.
 
 
@@ -57,12 +57,12 @@ def build_fixture_policy():
     Build a tiny 3-layer policy with known weights.
     Layer 0: w shape [2][8], b shape [2]  — all 0.1
     Layer 1: w shape [2][2], b shape [2]  — all 0.1
-    Layer 2: w shape [7][2], b shape [7]  — all 0.1
+    Layer 2: w shape [8][2], b shape [8]  — all 0.1
     """
     layers = [
         {"w": [[0.1] * 8 for _ in range(2)], "b": [0.1] * 2},
         {"w": [[0.1] * 2 for _ in range(2)], "b": [0.1] * 2},
-        {"w": [[0.1] * 2 for _ in range(7)], "b": [0.1] * 7},
+        {"w": [[0.1] * 2 for _ in range(8)], "b": [0.1] * 8},
     ]
     return {"layers": layers, "activation": "tanh"}
 
@@ -75,7 +75,7 @@ class TestParityFixturePolicy:
     def test_output_shape(self):
         obs = np.zeros(8, dtype=np.float32)
         out = py_forward(self.policy["layers"], obs)
-        assert out.shape == (7,)
+        assert out.shape == (8,)
 
     def test_output_in_range(self):
         obs = np.full(8, 0.5, dtype=np.float32)
@@ -131,7 +131,7 @@ class TestParityProdPolicy:
     def test_prod_policy_forward_shape(self):
         obs = np.full(8, 0.5, dtype=np.float32)
         out = py_forward(self.policy["layers"], obs)
-        assert out.shape == (7,)
+        assert out.shape == (8,)
 
     def test_prod_policy_forward_finite(self):
         for seed in range(10):

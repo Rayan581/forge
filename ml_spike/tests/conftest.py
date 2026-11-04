@@ -31,17 +31,17 @@ def env():
 
 @pytest.fixture
 def zero_action():
-    """All-zero 7-dim action (maps to midpoints of each parameter range)."""
-    return np.zeros(7, dtype=np.float32)
+    """All-zero 8-dim action (maps to midpoints of each parameter range)."""
+    return np.zeros(8, dtype=np.float32)
 
 
 @pytest.fixture
 def max_action():
-    """All-ones 7-dim action (maps to max of each parameter range)."""
-    return np.ones(7, dtype=np.float32)
+    """All-ones 8-dim action (maps to max of each parameter range)."""
+    return np.ones(8, dtype=np.float32)
 
 
 @pytest.fixture
 def min_action():
-    """All minus-one 7-dim action (maps to min of each parameter range)."""
-    return np.full(7, -1.0, dtype=np.float32)
+    """All minus-one 8-dim action (maps to min of each parameter range)."""
+    return np.full(8, -1.0, dtype=np.float32)

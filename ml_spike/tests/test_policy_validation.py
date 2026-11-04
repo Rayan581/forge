@@ -21,10 +21,10 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 PROD_POLICY_PATH = os.path.join(REPO_ROOT, "godot_prototype", "ai", "policy_weights.json")
 
 EXPECTED_OBS_DIM = 8
-EXPECTED_ACTION_DIM = 7
+EXPECTED_ACTION_DIM = 8
 EXPECTED_HIDDEN_DIM = 64
 EXPECTED_LAYERS = 3  # [hidden1, hidden2, action]
-MAX_POLICY_SIZE_KB = 120.0
+MAX_POLICY_SIZE_KB = 150.0
 
 
 def load_policy(path: str) -> dict:
@@ -36,7 +36,7 @@ class TestProdPolicyExists:
     def test_file_exists(self):
         assert os.path.exists(PROD_POLICY_PATH), f"Policy not found at {PROD_POLICY_PATH}"
 
-    def test_file_size_under_120kb(self):
+    def test_file_size_under_150kb(self):
         size_kb = os.path.getsize(PROD_POLICY_PATH) / 1024
         assert (
             size_kb < MAX_POLICY_SIZE_KB

@@ -1,0 +1,89 @@
+{
+  "_note": "Frames are horizontal strips, no padding. feet_offset = [x,y] pixel of the feet/ground contact point inside a frame (x = horizontal centre of opaque pixels, y = lowest opaque row + 1, averaged over frames). Source animations: idle and run only; attack/hit/death must be done by code effects.",
+  "archetypes": {
+    "brute": {
+      "idle": {
+        "file": "brute/brute_idle.png",
+        "frame_width": 32,
+        "frame_height": 32,
+        "frame_count": 4,
+        "fps": 6,
+        "loop": true,
+        "feet_offset": [
+          16.0,
+          32.0
+        ],
+        "source": "ogre"
+      },
+      "run": {
+        "file": "brute/brute_run.png",
+        "frame_width": 32,
+        "frame_height": 32,
+        "frame_count": 4,
+        "fps": 10,
+        "loop": true,
+        "feet_offset": [
+          16.0,
+          32.0
+        ],
+        "source": "ogre"
+      }
+    },
+    "skirmisher": {
+      "idle": {
+        "file": "skirmisher/skirmisher_idle.png",
+        "frame_width": 16,
+        "frame_height": 20,
+        "frame_count": 4,
+        "fps": 6,
+        "loop": true,
+        "feet_offset": [
+          9.0,
+          20.0
+        ],
+        "source": "masked_orc"
+      },
+      "run": {
+        "file": "skirmisher/skirmisher_run.png",
+        "frame_width": 16,
+        "frame_height": 20,
+        "frame_count": 4,
+        "fps": 10,
+        "loop": true,
+        "feet_offset": [
+          8.9,
+          19.2
+        ],
+        "source": "masked_orc"
+      }
+    },
+    "swarmer": {
+      "idle": {
+        "file": "swarmer/swarmer_idle.png",
+        "frame_width": 16,
+        "frame_height": 16,
+        "frame_count": 4,
+        "fps": 6,
+        "loop": true,
+        "feet_offset": [
+          9.0,
+          16.0
+        ],
+        "source": "imp"
+      },
+      "run": {
+        "file": "swarmer/swarmer_run.png",
+        "frame_width": 16,
+        "frame_height": 16,
+        "frame_count": 4,
+        "fps": 10,
+        "loop": true,
+        "feet_offset": [
+          8.9,
+          15.2
+        ],
+        "source": "imp"
+      }
+    }
+  }
+}

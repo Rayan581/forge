@@ -169,12 +169,15 @@ func _on_slider_changed(_val: float) -> void:
 func sync_ui_with_manager() -> void:
 	if not difficulty_manager:
 		return
-	slider_hp.value = difficulty_manager.enemy_health
-	slider_dmg.value = difficulty_manager.enemy_damage
-	slider_spd.value = difficulty_manager.enemy_speed
-	slider_aggro.value = difficulty_manager.enemy_aggro
-	slider_haz.value = difficulty_manager.hazard_density * 100.0
-	slider_scarce.value = difficulty_manager.resource_scarcity * 100.0
+	# set_value_no_signal: setting .value fires value_changed, whose handler writes ALL
+	# sliders back into the manager -- including ones not yet synced -- which used to
+	# overwrite every calibration/PPO parameter except enemy_health with stale values.
+	slider_hp.set_value_no_signal(difficulty_manager.enemy_health)
+	slider_dmg.set_value_no_signal(difficulty_manager.enemy_damage)
+	slider_spd.set_value_no_signal(difficulty_manager.enemy_speed)
+	slider_aggro.set_value_no_signal(difficulty_manager.enemy_aggro)
+	slider_haz.set_value_no_signal(difficulty_manager.hazard_density * 100.0)
+	slider_scarce.set_value_no_signal(difficulty_manager.resource_scarcity * 100.0)
 	
 	update_labels()
 	update_report_ui()
@@ -223,8 +226,13 @@ func update_room_info(dungeon_level: int, grid_pos: Vector2i, is_calibrating: bo
 	var mode_tag = "[CALIBRATION %d/5]" % dungeon_level if is_calibrating else "[ADAPTIVE PPO]"
 	if difficulty_manager and difficulty_manager.static_baseline_mode:
 		mode_tag = "[STATIC +8%/floor]"
-	var ranged_pct = int(round(difficulty_manager.ranged_enemy_ratio * 100.0)) if difficulty_manager else 35
-	room_label.text = "Floor %d %s | Room: (%d,%d) | Ranged: %d%%" % [dungeon_level, mode_tag, grid_pos.x, grid_pos.y, ranged_pct]
+	var mix_txt := ""
+	if difficulty_manager:
+		var m: PackedFloat32Array = difficulty_manager.archetype_mix
+		mix_txt = " | Mix C/P/B/S/W: %d/%d/%d/%d/%d%%" % [
+			int(round(m[0] * 100.0)), int(round(m[1] * 100.0)), int(round(m[2] * 100.0)),
+			int(round(m[3] * 100.0)), int(round(m[4] * 100.0))]
+	room_label.text = "Floor %d %s | Room: (%d,%d)%s" % [dungeon_level, mode_tag, grid_pos.x, grid_pos.y, mix_txt]
 
 func setup_minimap(rooms_data: Dictionary, start_pos: Vector2i) -> void:
 	if minimap:

@@ -16,13 +16,60 @@ var hazard_hits: int = 0
 var calibration_records: Array = []
 
 const TELEMETRY_FILE_PATH = "user://session_telemetry.json"
-const TELEMETRY_DB_PATH = "user://telemetry.db"
+
+# ---------------------------------------------------------------------------------------------
+# Storage backends: SQLite (godot-sqlite addon, class "SQLite") when installed, else JSON fallback.
+# All SQL lives in res://telemetry/schema.sql + queries.sql (shared with the Python tests/export).
+# ---------------------------------------------------------------------------------------------
+const TelemetrySQL = preload("res://telemetry/TelemetrySQL.gd")
+const SqliteBackend = preload("res://telemetry/SqliteBackend.gd")
+const JsonBackend = preload("res://telemetry/JsonBackend.gd")
+
+const DB_FILE_PATH := "user://forge_telemetry.db"
+const INSTALL_ID_PATH := "user://forge_install_id.txt"
+const POLICY_PATH := "res://ai/policy_weights.json"
+const FRAME_SAMPLE_CAP := 72000 # ~20 min at 60 FPS per floor; later samples are dropped
+
+## "auto" (SQLite if the addon exists, else JSON), "sqlite" or "json" (force; used by tests).
+var backend_preference: String = "auto"
+var db_path: String = DB_FILE_PATH
+var json_path: String = TELEMETRY_FILE_PATH
+var install_id_path: String = INSTALL_ID_PATH
+## Playtester consent to contribute data to the Judge corpus. Defaults to false (zero PII either way).
+var consent_given: bool = false
+var game_version: String = ""
+var mode: String = "adaptive"       # "adaptive" | "static"
+var policy_version: String = ""
+
+var started_at: int = 0
+var install_id: String = ""
+var _backend: RefCounted = null
+var _backend_tried: bool = false
+
+# Per-floor accumulators (reset by begin_floor / after record_floor)
+var floor_num: int = 1
+var floor_rooms_total: int = 0
+var floor_time: float = 0.0
+var floor_deaths: int = 0
+var floor_damage_taken: float = 0.0
+var floor_damage_dealt: float = 0.0
+var floor_enemies_defeated: int = 0
+var floor_hazard_hits: int = 0
+var floor_pickups: int = 0
+var floor_rooms_cleared: int = 0
+var floor_kills: Dictionary = {}          # archetype_idx -> count
+var _floor_rooms_visited: Dictionary = {} # room key -> true
+var _frame_ms: PackedFloat32Array = PackedFloat32Array()
+var _pending_obs: PackedFloat32Array = PackedFloat32Array()
+var _pending_action: PackedFloat32Array = PackedFloat32Array()
+var floor_history: Array = []
 
 func _init() -> void:
 	start_new_session()
 
 func start_new_session() -> void:
-	session_id = "sess_" + str(Time.get_unix_time_from_system())
+	started_at = int(Time.get_unix_time_from_system())
+	session_id = "sess_%d_%04x" % [started_at, randi() & 0xFFFF]
 	start_timestamp = int(Time.get_unix_time_from_system())
 	elapsed_seconds = 0.0
 	rooms_cleared = 0
@@ -32,30 +79,40 @@ func start_new_session() -> void:
 	enemies_defeated = 0
 	pickups_collected = 0
 	hazard_hits = 0
+	floor_history = []
+	_reset_floor_state(1, 0)
 
 func update_time(delta: float) -> void:
 	elapsed_seconds += delta
+	floor_time += delta
 
 func record_death() -> void:
 	total_deaths += 1
+	floor_deaths += 1
 
 func record_room_cleared() -> void:
 	rooms_cleared += 1
+	floor_rooms_cleared += 1
 
 func record_damage_dealt(amount: float) -> void:
 	damage_dealt += amount
+	floor_damage_dealt += amount
 
 func record_damage_taken(amount: float) -> void:
 	damage_taken += amount
+	floor_damage_taken += amount
 
 func record_enemy_defeated() -> void:
 	enemies_defeated += 1
+	floor_enemies_defeated += 1
 
 func record_pickup_collected() -> void:
 	pickups_collected += 1
+	floor_pickups += 1
 
 func record_hazard_hit() -> void:
 	hazard_hits += 1
+	floor_hazard_hits += 1
 
 ## Records a completed calibration floor's performance slice along with its difficulty challenge rating
 func record_calibration_floor(floor_num: int, completion_time_sec: float, deaths: int, damage_taken: float, expected_rooms: int, diff_score: int) -> void:
@@ -168,178 +225,261 @@ func get_summary() -> Dictionary:
 		"enemies_defeated": enemies_defeated,
 		"pickups_collected": pickups_collected,
 		"hazard_hits": hazard_hits,
-		# Clearance pace in rooms cleared per minute (frequently referred to as exploration efficiency)
 		"exploration_efficiency": snappedf(float(rooms_cleared) / maxf(1.0, elapsed_seconds / 60.0), 0.01)
 	}
 
+## Persists the session summary. SQLite: upserts the `sessions` row. JSON fallback: replaces this
+## session's entry in the history file (legacy behaviour appended a duplicate snapshot per call).
 func save_to_file() -> void:
-	var current_data = get_summary()
-	var history: Array = []
-	
-	if FileAccess.file_exists(TELEMETRY_FILE_PATH):
-		var file_read = FileAccess.open(TELEMETRY_FILE_PATH, FileAccess.READ)
-		if file_read:
-			var content = file_read.get_as_text()
-			var json = JSON.new()
-			if json.parse(content) == OK and json.data is Array:
-				history = json.data
-			file_read.close()
-			
-	# Update existing entry for this session_id or append if new (prevents duplicate session rows)
-	var found_index: int = -1
-	for i in range(history.size()):
-		if history[i] is Dictionary and history[i].get("session_id", "") == session_id:
-			found_index = i
-			break
-	if found_index != -1:
-		history[found_index] = current_data
+	var b := _ensure_backend()
+	if b == null:
+		return
+	if b.save_session(_session_row()):
+		print("[TelemetryLogger] Logged session via %s backend" % b.backend_name())
 	else:
-		history.append(current_data)
-	
-	# Limit history to 50 distinct sessions
-	if history.size() > 50:
-		history = history.slice(history.size() - 50)
-		
-	var file_write = FileAccess.open(TELEMETRY_FILE_PATH, FileAccess.WRITE)
-	if file_write:
-		file_write.store_string(JSON.stringify(history, "\t"))
-		file_write.close()
-		print("[TelemetryLogger] Successfully logged session to: ", TELEMETRY_FILE_PATH)
-		
-	_save_to_sqlite(current_data)
+		print("[TelemetryLogger] WARNING: failed to log session (%s)" % b.last_error)
 
-## Records comprehensive per-floor telemetry for the supervised Judge regressor (Settings -> Outcome)
-func record_floor_telemetry(
-	floor_num: int,
-	time_sec: float,
-	deaths: int,
-	dmg_dealt: float,
-	dmg_taken: float,
-	rooms_done: int,
-	enemies_killed: int,
-	traps_hit: int,
-	items_collected: int,
-	diff_params: Dictionary = {},
-	crawler_pct: float = 0.5,
-	pyro_pct: float = 0.5,
-	obs_vec: Array = [],
-	act_vec: Array = []
-) -> Dictionary:
-	var floor_record = {
+# ---------------------------------------------------------------------------------------------
+# Per-floor recording (Judge-model corpus)
+# ---------------------------------------------------------------------------------------------
+
+func _reset_floor_state(p_floor_num: int, p_rooms_total: int) -> void:
+	floor_num = p_floor_num
+	floor_rooms_total = p_rooms_total
+	floor_time = 0.0
+	floor_deaths = 0
+	floor_damage_taken = 0.0
+	floor_damage_dealt = 0.0
+	floor_enemies_defeated = 0
+	floor_hazard_hits = 0
+	floor_pickups = 0
+	floor_rooms_cleared = 0
+	floor_kills = {}
+	_floor_rooms_visited = {}
+	_frame_ms = PackedFloat32Array()
+
+## Call when a new floor is built: resets the per-floor accumulators.
+func begin_floor(p_floor_num: int, p_rooms_total: int) -> void:
+	_reset_floor_state(p_floor_num, p_rooms_total)
+
+## Marks a room as visited on the current floor (key can be a Vector2i grid position, an id, ...).
+func record_room_visited(room_key: Variant) -> void:
+	_floor_rooms_visited[room_key] = true
+
+## Adds one defeated enemy body of the given archetype (Enemy.Archetype index) to the current floor.
+## Does NOT touch `enemies_defeated`; keep calling record_enemy_defeated() for the total.
+func record_enemy_defeated_by_archetype(archetype_idx: int) -> void:
+	floor_kills[archetype_idx] = int(floor_kills.get(archetype_idx, 0)) + 1
+
+## Samples one frame (call from _process with the frame delta in seconds). Feeds avg/p95/max ms.
+## NOTE: this only records frame-time statistics; the 60 FPS non-functional requirement (NFR-05)
+## is not asserted or measured against a target anywhere yet.
+func record_frame(delta: float) -> void:
+	if delta > 0.0 and _frame_ms.size() < FRAME_SAMPLE_CAP:
+		_frame_ms.append(delta * 1000.0)
+
+## Remembers the PPO observation/action that produced the NEXT floor's parameters; attached to that
+## floor's row by record_floor(). Floors without a policy step (calibration, static) store NULLs.
+func note_policy_step(obs: PackedFloat32Array, action: PackedFloat32Array) -> void:
+	_pending_obs = obs.duplicate()
+	_pending_action = action.duplicate()
+
+func get_frame_stats() -> Dictionary:
+	var n := _frame_ms.size()
+	if n == 0:
+		return {"avg_ms": null, "p95_ms": null, "max_ms": null}
+	var sorted := _frame_ms.duplicate()
+	sorted.sort()
+	var total := 0.0
+	for v in sorted:
+		total += v
+	var idx := clampi(int(ceil(0.95 * n)) - 1, 0, n - 1)
+	return {"avg_ms": total / n, "p95_ms": sorted[idx], "max_ms": sorted[n - 1]}
+
+static func _obj_get(obj: Object, prop: String) -> Variant:
+	if obj == null:
+		return null
+	return obj.get(prop) # null when the property does not exist (older / newer DifficultyManager)
+
+## Records a finished floor: builds one `floors` row (+ kills_by_archetype) and stores it in a single
+## transaction. `p_diff` is the DifficultyManager holding the params the floor was played with;
+## `extras` may override/add: floor_num, completion_time, deaths, damage_taken, damage_dealt,
+## player_max_hp, rooms_total, rooms_visited, phase, difficulty_score, obs, action, perceived_difficulty.
+## Missing DifficultyManager fields (e.g. archetype_*) are stored as NULL. Returns true if persisted.
+func record_floor(p_diff: Object, extras: Dictionary = {}) -> bool:
+	var fnum: int = int(extras.get("floor_num", floor_num))
+	var rooms_total: int = int(extras.get("rooms_total", floor_rooms_total))
+	var rooms_visited: int = int(extras.get("rooms_visited", _floor_rooms_visited.size()))
+	var phase: String = str(extras.get("phase", ""))
+	if phase.is_empty():
+		if _obj_get(p_diff, "static_baseline_mode") == true:
+			phase = "static"
+		elif p_diff != null and p_diff.has_method("is_in_calibration") and p_diff.is_in_calibration(fnum):
+			phase = "calibration"
+		else:
+			phase = "adaptive"
+	mode = "static" if phase == "static" or _obj_get(p_diff, "static_baseline_mode") == true else "adaptive"
+
+	var score: Variant = extras.get("difficulty_score", null)
+	if score == null and p_diff != null and p_diff.has_method("calculate_difficulty_score"):
+		var rep: Dictionary = p_diff.calculate_difficulty_score()
+		score = float(rep.get("score", 0.0))
+
+	var row: Dictionary = {
 		"session_id": session_id,
-		"floor_number": floor_num,
-		"timestamp": int(Time.get_unix_time_from_system()),
-		"completion_time": snappedf(time_sec, 0.1),
-		"deaths": deaths,
-		"damage_dealt": snappedf(dmg_dealt, 0.1),
-		"damage_taken": snappedf(dmg_taken, 0.1),
-		"damage_exchange_ratio": snappedf(dmg_dealt / maxf(1.0, dmg_taken), 0.01),
-		"rooms_cleared": rooms_done,
-		"enemies_defeated": enemies_killed,
-		"hazard_hits": traps_hit,
-		"pickups_collected": items_collected,
-		"enemy_health": diff_params.get("enemy_health", 50.0),
-		"enemy_damage": diff_params.get("enemy_damage", 15.0),
-		"enemy_speed": diff_params.get("enemy_speed", 100.0),
-		"enemy_aggro": diff_params.get("enemy_aggro", 200.0),
-		"hazard_density": diff_params.get("hazard_density", 0.3),
-		"resource_scarcity": diff_params.get("resource_scarcity", 0.5),
-		"room_count": diff_params.get("room_count", 6.0),
-		"enemy_count_scale": diff_params.get("enemy_count_scale", 1.0),
-		"crawler_ratio": crawler_pct,
-		"pyromancer_ratio": pyro_pct,
-		"observation_vector": JSON.stringify(obs_vec),
-		"action_vector": JSON.stringify(act_vec)
+		"floor_num": fnum,
+		"phase": phase,
+		"completion_time": float(extras.get("completion_time", floor_time)),
+		"deaths": int(extras.get("deaths", floor_deaths)),
+		"damage_taken": float(extras.get("damage_taken", floor_damage_taken)),
+		"damage_dealt": float(extras.get("damage_dealt", floor_damage_dealt)),
+		"player_max_hp": extras.get("player_max_hp", null),
+		"rooms_total": rooms_total,
+		"rooms_visited": rooms_visited,
+		"exploration_pct": 100.0 * float(rooms_visited) / maxf(1.0, float(rooms_total)) if rooms_total > 0 else 0.0,
+		"rooms_cleared": int(extras.get("rooms_cleared", floor_rooms_cleared)),
+		"enemies_defeated": int(extras.get("enemies_defeated", floor_enemies_defeated)),
+		"hazards_hit": int(extras.get("hazards_hit", floor_hazard_hits)),
+		"pickups_collected": int(extras.get("pickups_collected", floor_pickups)),
+		"enemy_health": _obj_get(p_diff, "enemy_health"),
+		"enemy_damage": _obj_get(p_diff, "enemy_damage"),
+		"enemy_speed": _obj_get(p_diff, "enemy_speed"),
+		"enemy_aggro": _obj_get(p_diff, "enemy_aggro"),
+		"hazard_density": _obj_get(p_diff, "hazard_density"),
+		"resource_scarcity": _obj_get(p_diff, "resource_scarcity"),
+		"room_count": _obj_get(p_diff, "room_count_target"),
+		"archetype_complexity": _obj_get(p_diff, "archetype_complexity"),
+		"enemy_count_scale": _obj_get(p_diff, "enemy_count_scale"),
+		"difficulty_score": score,
+		"perceived_difficulty": extras.get("perceived_difficulty", null),
+		"created_at": int(Time.get_unix_time_from_system()),
 	}
-	
-	if ClassDB.class_exists("SQLite"):
-		var db = ClassDB.instantiate("SQLite")
-		if db:
-			db.set("path", TELEMETRY_DB_PATH)
-			if db.has_method("open_db") and db.open_db():
-				var create_floor_table_sql = """
-				CREATE TABLE IF NOT EXISTS floor_telemetry (
-					id INTEGER PRIMARY KEY AUTOINCREMENT,
-					session_id TEXT NOT NULL,
-					floor_number INTEGER NOT NULL,
-					timestamp REAL NOT NULL,
-					completion_time REAL NOT NULL,
-					deaths INTEGER NOT NULL,
-					damage_dealt REAL NOT NULL,
-					damage_taken REAL NOT NULL,
-					damage_exchange_ratio REAL DEFAULT 0.0,
-					rooms_cleared INTEGER NOT NULL,
-					enemies_defeated INTEGER NOT NULL,
-					hazard_hits INTEGER NOT NULL,
-					pickups_collected INTEGER NOT NULL,
-					enemy_health REAL NOT NULL,
-					enemy_damage REAL NOT NULL,
-					enemy_speed REAL NOT NULL,
-					enemy_aggro REAL NOT NULL,
-					hazard_density REAL NOT NULL,
-					resource_scarcity REAL NOT NULL,
-					room_count REAL NOT NULL,
-					enemy_count_scale REAL DEFAULT 1.0,
-					crawler_ratio REAL DEFAULT 0.5,
-					pyromancer_ratio REAL DEFAULT 0.5,
-					observation_vector TEXT DEFAULT '',
-					action_vector TEXT DEFAULT '',
-					UNIQUE(session_id, floor_number)
-				);
-				"""
-				if db.has_method("query"):
-					db.query(create_floor_table_sql)
-				if db.has_method("insert_row"):
-					db.insert_row("floor_telemetry", floor_record)
-				if db.has_method("close_db"):
-					db.close_db()
-	return floor_record
+	var mix: Variant = _obj_get(p_diff, "archetype_mix")
+	for a in range(5):
+		row["archetype_mix_%d" % a] = float(mix[a]) if (mix is PackedFloat32Array or mix is Array) and mix.size() > a else null
+	var obs: Variant = extras.get("obs", _pending_obs)
+	var act: Variant = extras.get("action", _pending_action)
+	for k in range(8):
+		row["obs_%d" % k] = float(obs[k]) if obs.size() > k else null
+		row["action_%d" % k] = float(act[k]) if act.size() > k else null
+	var fs := get_frame_stats()
+	row["frame_avg_ms"] = fs["avg_ms"]
+	row["frame_p95_ms"] = fs["p95_ms"]
+	row["frame_max_ms"] = fs["max_ms"]
 
-## Logs to embedded SQLite database if godot-sqlite extension is present
-func _save_to_sqlite(data: Dictionary) -> void:
-	if ClassDB.class_exists("SQLite"):
-		var db = ClassDB.instantiate("SQLite")
-		if db:
-			db.set("path", TELEMETRY_DB_PATH)
-			if db.has_method("open_db") and db.open_db():
-				var table_sql = """
-				CREATE TABLE IF NOT EXISTS session_telemetry (
-					session_id TEXT PRIMARY KEY,
-					timestamp REAL NOT NULL,
-					elapsed_seconds REAL NOT NULL,
-					rooms_cleared REAL NOT NULL,
-					total_deaths REAL NOT NULL,
-					damage_dealt REAL NOT NULL,
-					damage_taken REAL NOT NULL,
-					enemies_defeated REAL NOT NULL,
-					pickups_collected REAL NOT NULL,
-					hazard_hits REAL NOT NULL,
-					exploration_efficiency REAL NOT NULL,
-					updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-				);
-				"""
-				if db.has_method("query"):
-					db.query(table_sql)
-				if db.has_method("insert_row"):
-					# Use insert_row or replace query
-					db.query_with_bindings(
-						"INSERT INTO session_telemetry (session_id, timestamp, elapsed_seconds, rooms_cleared, total_deaths, damage_dealt, damage_taken, enemies_defeated, pickups_collected, hazard_hits, exploration_efficiency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(session_id) DO UPDATE SET timestamp=excluded.timestamp, elapsed_seconds=excluded.elapsed_seconds, rooms_cleared=excluded.rooms_cleared, total_deaths=excluded.total_deaths, damage_dealt=excluded.damage_dealt, damage_taken=excluded.damage_taken, enemies_defeated=excluded.enemies_defeated, pickups_collected=excluded.pickups_collected, hazard_hits=excluded.hazard_hits, exploration_efficiency=excluded.exploration_efficiency, updated_at=CURRENT_TIMESTAMP;",
-						[
-							data.get("session_id", ""),
-							float(data.get("timestamp", 0.0)),
-							float(data.get("elapsed_seconds", 0.0)),
-							float(data.get("rooms_cleared", 0.0)),
-							float(data.get("total_deaths", 0.0)),
-							float(data.get("damage_dealt", 0.0)),
-							float(data.get("damage_taken", 0.0)),
-							float(data.get("enemies_defeated", 0.0)),
-							float(data.get("pickups_collected", 0.0)),
-							float(data.get("hazard_hits", 0.0)),
-							float(data.get("exploration_efficiency", 0.0))
-						]
-					)
-				if db.has_method("close_db"):
-					db.close_db()
-				print("[TelemetryLogger] Successfully logged session to SQLite: ", TELEMETRY_DB_PATH)
+	var kills: Dictionary = floor_kills.duplicate()
+	var hist: Dictionary = row.duplicate()
+	hist["kills"] = kills
+	floor_history.append(hist)
+	_pending_obs = PackedFloat32Array()
+	_pending_action = PackedFloat32Array()
 
+	var persisted := false
+	var b := _ensure_backend()
+	if b != null:
+		persisted = b.save_session(_session_row()) and b.save_floor(row, kills)
+		if not persisted:
+			print("[TelemetryLogger] WARNING: failed to log floor %d (%s)" % [fnum, b.last_error])
+	_reset_floor_state(fnum + 1, 0)
+	return persisted
 
+## In-memory floors recorded this session (each row has a "kills" Dictionary).
+func get_floor_history() -> Array:
+	return floor_history.duplicate(true)
+
+## Floors of any session read back from the active backend (SQLite or JSON).
+func load_floors(p_session_id: String) -> Array:
+	var b := _ensure_backend()
+	return b.get_floors(p_session_id) if b != null else []
+
+## Stores the post-floor difficulty rating (future UI) for an already recorded floor.
+func set_perceived_difficulty(p_floor_num: int, value: float) -> bool:
+	var b := _ensure_backend()
+	return b != null and b.set_perceived_difficulty(session_id, p_floor_num, value)
+
+## One CSV row per recorded floor across all sessions in the active backend. Returns the row count or -1.
+func export_corpus_csv(path: String, consented_only: bool = false) -> int:
+	var b := _ensure_backend()
+	return b.export_corpus_csv(path, consented_only) if b != null else -1
+
+func get_backend_name() -> String:
+	var b := _ensure_backend()
+	return b.backend_name() if b != null else "none"
+
+## Closes the database (flushes nothing extra: every write is already committed).
+func close() -> void:
+	if _backend != null:
+		_backend.close()
+		_backend = null
+	_backend_tried = false
+
+# ---------------------------------------------------------------------------------------------
+# Internals
+# ---------------------------------------------------------------------------------------------
+
+func _ensure_backend() -> RefCounted:
+	if _backend != null:
+		return _backend
+	if _backend_tried:
+		return null
+	_backend_tried = true
+	if backend_preference != "json" and SqliteBackend.is_available():
+		var sb = SqliteBackend.new(db_path, json_path)
+		if sb.open():
+			_backend = sb
+			return _backend
+		print("[TelemetryLogger] WARNING: SQLite open failed (%s); using JSON fallback" % sb.last_error)
+	elif backend_preference == "sqlite":
+		print("[TelemetryLogger] WARNING: godot-sqlite not installed; using JSON fallback")
+	elif backend_preference == "auto":
+		print("[TelemetryLogger] WARNING: godot-sqlite not installed - telemetry falls back to JSON (see addons/README_SQLITE.md)")
+	var jb = JsonBackend.new(json_path)
+	var q := TelemetrySQL.load_queries()
+	if q.has("insert_floor"):
+		jb.floor_columns = TelemetrySQL.insert_columns(q["insert_floor"])
+	jb.open()
+	_backend = jb
+	return _backend
+
+func _load_install_id() -> String:
+	if not install_id.is_empty():
+		return install_id
+	if FileAccess.file_exists(install_id_path):
+		var f := FileAccess.open(install_id_path, FileAccess.READ)
+		if f:
+			install_id = f.get_as_text().strip_edges()
+			f.close()
+	if install_id.is_empty():
+		install_id = Crypto.new().generate_random_bytes(16).hex_encode() # random, not derived from the machine
+		var fw := FileAccess.open(install_id_path, FileAccess.WRITE)
+		if fw:
+			fw.store_string(install_id)
+			fw.close()
+	return install_id
+
+func _game_version() -> String:
+	if game_version.is_empty():
+		game_version = str(ProjectSettings.get_setting("application/config/version", "dev"))
+	return game_version
+
+func _policy_version() -> String:
+	if policy_version.is_empty():
+		var md5 := FileAccess.get_md5(POLICY_PATH)
+		policy_version = ("md5:" + md5.substr(0, 12)) if not md5.is_empty() else "heuristic"
+	return policy_version
+
+## Session row keyed by queries.sql column names, plus the legacy summary keys for the JSON file.
+func _session_row() -> Dictionary:
+	var row: Dictionary = get_summary()
+	row["id"] = session_id
+	row["install_id"] = _load_install_id()
+	row["started_at"] = started_at
+	row["ended_at"] = int(Time.get_unix_time_from_system())
+	row["game_version"] = _game_version()
+	row["mode"] = mode
+	row["policy_version"] = _policy_version()
+	row["consent"] = 1 if consent_given else 0
+	row["elapsed_seconds"] = elapsed_seconds
+	row["damage_dealt"] = damage_dealt
+	row["damage_taken"] = damage_taken
+	return row

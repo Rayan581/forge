@@ -1,8 +1,19 @@
-"""FORGE — Telemetry SQLite Database Manager
------------------------------------------
-Provides zero-configuration, local SQLite persistence for player session telemetry,
-per-floor difficulty adaptation traces, and empirical training data for both PPO
-and the supervised Judge model (TreeSHAP).
+"""FORGE — Telemetry SQLite Database Manager (Python side).
+-----------------------------------------------------------
+Python access layer over the SAME database the game writes (``user://forge_telemetry.db``).
+The schema and SQL are not duplicated here: they are loaded from
+``godot_prototype/telemetry/{schema,queries}.sql`` (via ``ml_spike/analysis/export_telemetry.py``),
+which TelemetryLogger.gd also executes, so the two sides cannot drift apart.
+
+Tables (see schema.sql): ``sessions`` (one row per play session), ``floors`` (one row per finished
+floor: outcome + the 8 difficulty parameters, 5-archetype mix, policy obs/action, frame times),
+``kills_by_archetype``, and the flattened ``v_corpus`` view used for the Judge model.
+
+Typical use:
+    db = TelemetryDatabase()                      # ml_spike/telemetry_data/forge_telemetry.db
+    db.sync_from_game_db()                        # pull new rows from the game's user:// DB
+    data = db.get_judge_training_data()           # features/targets, incomplete rows skipped
+    db.export_corpus_csv("corpus.csv")
 """
 
 from __future__ import annotations
@@ -11,78 +22,34 @@ import json
 import os
 import platform
 import sqlite3
+import sys
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-DEFAULT_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "session_telemetry.db")
+_ANALYSIS_DIR = Path(__file__).resolve().parents[1] / "analysis"
+if str(_ANALYSIS_DIR) not in sys.path:
+    sys.path.insert(0, str(_ANALYSIS_DIR))
+
+import export_telemetry as _et  # noqa: E402  (shared schema/query loader)
+
+GAME_DB_FILENAME = "forge_telemetry.db"
+GODOT_APP_NAME = "FORGE - Adaptive Dungeon Prototype"  # project.godot -> application/config/name
+DEFAULT_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), GAME_DB_FILENAME)
+# Legacy flat-JSON snapshots (pre-SQLite). Sample data only; never auto-imported.
 DEFAULT_JSON_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "session_telemetry.json"
 )
 
-CREATE_SESSION_TABLE_SQL = """
-CREATE TABLE IF NOT EXISTS session_telemetry (
-    session_id TEXT PRIMARY KEY,
-    timestamp REAL NOT NULL,
-    elapsed_seconds REAL NOT NULL,
-    rooms_cleared REAL NOT NULL,
-    total_deaths REAL NOT NULL,
-    damage_dealt REAL NOT NULL,
-    damage_taken REAL NOT NULL,
-    enemies_defeated REAL NOT NULL,
-    pickups_collected REAL NOT NULL,
-    hazard_hits REAL NOT NULL,
-    exploration_efficiency REAL NOT NULL,
-    rooms_per_minute REAL NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-"""
-
-CREATE_FLOOR_TABLE_SQL = """
-CREATE TABLE IF NOT EXISTS floor_telemetry (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    session_id TEXT NOT NULL,
-    floor_number INTEGER NOT NULL,
-    timestamp REAL NOT NULL,
-    -- Outcome metrics
-    completion_time REAL NOT NULL,
-    deaths INTEGER NOT NULL,
-    damage_dealt REAL NOT NULL,
-    damage_taken REAL NOT NULL,
-    damage_exchange_ratio REAL DEFAULT 0.0,
-    rooms_cleared INTEGER NOT NULL,
-    enemies_defeated INTEGER NOT NULL,
-    hazard_hits INTEGER NOT NULL,
-    pickups_collected INTEGER NOT NULL,
-    -- 8 Difficulty settings applied to this floor
-    enemy_health REAL NOT NULL,
-    enemy_damage REAL NOT NULL,
-    enemy_speed REAL NOT NULL,
-    enemy_aggro REAL NOT NULL,
-    hazard_density REAL NOT NULL,
-    resource_scarcity REAL NOT NULL,
-    room_count REAL NOT NULL,
-    enemy_count_scale REAL DEFAULT 1.0,
-    -- Enemy archetype mix
-    crawler_ratio REAL DEFAULT 0.5,
-    pyromancer_ratio REAL DEFAULT 0.5,
-    archetype_mix TEXT DEFAULT '',
-    -- Policy observation and action vectors
-    observation_vector TEXT DEFAULT '',
-    action_vector TEXT DEFAULT '',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(session_id, floor_number)
-);
-"""
-
-CREATE_INDICES_SQL = [
-    "CREATE INDEX IF NOT EXISTS idx_telemetry_timestamp ON session_telemetry(timestamp);",
-    "CREATE INDEX IF NOT EXISTS idx_floor_session_num ON floor_telemetry(session_id, floor_number);",
-]
-
-SESSION_FIELDS = [
-    "session_id",
-    "timestamp",
+SESSION_COLUMNS = [
+    "id",
+    "install_id",
+    "started_at",
+    "ended_at",
+    "game_version",
+    "mode",
+    "policy_version",
+    "consent",
     "elapsed_seconds",
     "rooms_cleared",
     "total_deaths",
@@ -91,23 +58,10 @@ SESSION_FIELDS = [
     "enemies_defeated",
     "pickups_collected",
     "hazard_hits",
-    "exploration_efficiency",
-    "rooms_per_minute",
 ]
 
-FLOOR_FIELDS = [
-    "session_id",
-    "floor_number",
-    "timestamp",
-    "completion_time",
-    "deaths",
-    "damage_dealt",
-    "damage_taken",
-    "damage_exchange_ratio",
-    "rooms_cleared",
-    "enemies_defeated",
-    "hazard_hits",
-    "pickups_collected",
+# Judge model: settings the floor was played with -> outcome.
+JUDGE_FEATURES = [
     "enemy_health",
     "enemy_damage",
     "enemy_speed",
@@ -115,29 +69,38 @@ FLOOR_FIELDS = [
     "hazard_density",
     "resource_scarcity",
     "room_count",
+    "archetype_complexity",
+    "archetype_mix_0",
+    "archetype_mix_1",
+    "archetype_mix_2",
+    "archetype_mix_3",
+    "archetype_mix_4",
     "enemy_count_scale",
-    "crawler_ratio",
-    "pyromancer_ratio",
-    "archetype_mix",
-    "observation_vector",
-    "action_vector",
 ]
+JUDGE_TARGETS = ["completion_time", "deaths", "damage_taken", "damage_exchange_ratio"]
+
+# Floor columns that must be supplied (NOT NULL without a default in schema.sql).
+_FLOOR_REQUIRED = ["session_id", "floor_num", "phase", "completion_time"]
 
 
 class TelemetryDatabase:
-    """Manages SQLite storage and retrieval of player sessions and floor-by-floor difficulty outcomes."""
+    """SQLite store of sessions and per-floor outcomes, shared schema with the game."""
 
-    def __init__(self, db_path: Optional[str] = None, auto_populate: bool = True):
-        self.db_path = db_path or DEFAULT_DB_PATH
+    def __init__(self, db_path: Optional[str] = None, auto_populate: bool = False):
+        """auto_populate imports the bundled legacy SAMPLE JSON into an empty DB. It is off by
+        default so sample sessions never mix with real playtest data."""
+        self.db_path = str(db_path or DEFAULT_DB_PATH)
+        self._queries = _et.load_queries()
         self._init_db()
         if auto_populate and self.count_sessions() == 0 and os.path.exists(DEFAULT_JSON_PATH):
             self.import_from_json(DEFAULT_JSON_PATH)
 
     @contextmanager
     def connection(self):
-        """Context manager that yields an active SQLite connection and always closes it cleanly."""
+        """Yields a connection with foreign keys on; always closed."""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON")
         try:
             yield conn
         finally:
@@ -145,389 +108,273 @@ class TelemetryDatabase:
 
     def _init_db(self) -> None:
         os.makedirs(os.path.dirname(os.path.abspath(self.db_path)), exist_ok=True)
-        with self.connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(CREATE_SESSION_TABLE_SQL)
-            cursor.execute(CREATE_FLOOR_TABLE_SQL)
-            for index_sql in CREATE_INDICES_SQL:
-                cursor.execute(index_sql)
-            conn.commit()
+        conn = sqlite3.connect(self.db_path)
+        try:
+            _et.migrate(conn)
+        finally:
+            conn.close()
 
-    # -------------------------------------------------------------------------
-    # Session-Level Telemetry
-    # -------------------------------------------------------------------------
+    # ------------------------------------------------------------------ sessions
+    @staticmethod
+    def _session_values(record: Dict[str, Any]) -> List[Any]:
+        sid = record.get("id", record.get("session_id"))
+        if not sid:
+            raise ValueError("session record needs 'id' (or 'session_id')")
+        defaults = {
+            "install_id": "unknown",
+            "started_at": int(float(record.get("timestamp", 0) or 0)),
+            "ended_at": None,
+            "game_version": "",
+            "mode": "unknown",
+            "policy_version": "",
+            "consent": 0,
+        }
+        out: List[Any] = [sid]
+        for col in SESSION_COLUMNS[1:]:
+            val = record.get(col, defaults.get(col, 0))
+            if col in ("rooms_cleared", "total_deaths", "enemies_defeated"):
+                val = int(val or 0)
+            elif col in ("pickups_collected", "hazard_hits", "consent"):
+                val = int(val or 0)
+            out.append(val)
+        return out
+
     def upsert_session(self, record: Dict[str, Any]) -> None:
-        """Inserts or updates a session record keyed by unique session_id (deduplication)."""
-        # exploration_efficiency represents rooms cleared per minute
-        elapsed_sec = float(record.get("elapsed_seconds", 0.0))
-        rooms = float(record.get("rooms_cleared", 0.0))
-        calculated_rpm = round(rooms / max(1.0, elapsed_sec / 60.0), 2)
-        rpm = float(
-            record.get("rooms_per_minute", record.get("exploration_efficiency", calculated_rpm))
-        )
+        """Insert or update one session (keyed by id). Repeated snapshots never duplicate rows."""
+        with self.connection() as conn, conn:
+            conn.execute(self._queries["upsert_session"], self._session_values(record))
 
-        sql = """
-        INSERT INTO session_telemetry (
-            session_id, timestamp, elapsed_seconds, rooms_cleared, total_deaths,
-            damage_dealt, damage_taken, enemies_defeated, pickups_collected,
-            hazard_hits, exploration_efficiency, rooms_per_minute, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-        ON CONFLICT(session_id) DO UPDATE SET
-            timestamp = excluded.timestamp,
-            elapsed_seconds = excluded.elapsed_seconds,
-            rooms_cleared = excluded.rooms_cleared,
-            total_deaths = excluded.total_deaths,
-            damage_dealt = excluded.damage_dealt,
-            damage_taken = excluded.damage_taken,
-            enemies_defeated = excluded.enemies_defeated,
-            pickups_collected = excluded.pickups_collected,
-            hazard_hits = excluded.hazard_hits,
-            exploration_efficiency = excluded.exploration_efficiency,
-            rooms_per_minute = excluded.rooms_per_minute,
-            updated_at = CURRENT_TIMESTAMP;
-        """
-        values = (
-            str(record.get("session_id", "")),
-            float(record.get("timestamp", 0.0)),
-            elapsed_sec,
-            rooms,
-            float(record.get("total_deaths", 0.0)),
-            float(record.get("damage_dealt", 0.0)),
-            float(record.get("damage_taken", 0.0)),
-            float(record.get("enemies_defeated", 0.0)),
-            float(record.get("pickups_collected", 0.0)),
-            float(record.get("hazard_hits", 0.0)),
-            rpm,
-            rpm,
-        )
-        with self.connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(sql, values)
-            conn.commit()
-
-    def upsert_sessions(self, records: List[Dict[str, Any]]) -> int:
-        """Batch-upserts session records inside a single transaction."""
-        for rec in records:
-            self.upsert_session(rec)
-        return len(records)
+    def upsert_sessions(self, records: Iterable[Dict[str, Any]]) -> int:
+        rows = [self._session_values(r) for r in records]
+        with self.connection() as conn, conn:
+            conn.executemany(self._queries["upsert_session"], rows)
+        return len(rows)
 
     def count_sessions(self) -> int:
-        """Returns the number of unique recorded sessions."""
         with self.connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM session_telemetry;")
-            return cursor.fetchone()[0]
+            return conn.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]
 
     def get_all_sessions(self) -> List[Dict[str, Any]]:
-        """Returns all distinct session records in chronological order."""
         with self.connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM session_telemetry ORDER BY timestamp ASC;")
-            return [self._row_to_dict(row) for row in cursor.fetchall()]
+            rows = conn.execute("SELECT * FROM sessions ORDER BY started_at, id").fetchall()
+        return [self._session_dict(r) for r in rows]
 
     def get_session(self, session_id: str) -> Optional[Dict[str, Any]]:
-        """Fetches a single session by session_id."""
         with self.connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM session_telemetry WHERE session_id = ?;", (session_id,))
-            row = cursor.fetchone()
-            return self._row_to_dict(row) if row else None
+            row = conn.execute(self._queries["select_session"], (session_id,)).fetchone()
+        return self._session_dict(row) if row else None
 
-    # -------------------------------------------------------------------------
-    # Floor-Level Telemetry (For Judge Model: "these settings -> this outcome")
-    # -------------------------------------------------------------------------
-    def upsert_floor_record(self, record: Dict[str, Any]) -> int:
-        """Inserts or updates a per-floor performance slice for Judge model training."""
-        obs = record.get("observation_vector", "")
-        if isinstance(obs, (list, tuple)):
-            obs = json.dumps(obs)
-        act = record.get("action_vector", "")
-        if isinstance(act, (list, tuple)):
-            act = json.dumps(act)
+    @staticmethod
+    def _session_dict(row: sqlite3.Row) -> Dict[str, Any]:
+        d = dict(row)
+        d["session_id"] = d["id"]  # alias kept for older callers
+        return d
 
-        sql = """
-        INSERT INTO floor_telemetry (
-            session_id, floor_number, timestamp, completion_time, deaths,
-            damage_dealt, damage_taken, damage_exchange_ratio, rooms_cleared,
-            enemies_defeated, hazard_hits, pickups_collected, enemy_health,
-            enemy_damage, enemy_speed, enemy_aggro, hazard_density,
-            resource_scarcity, room_count, enemy_count_scale, crawler_ratio,
-            pyromancer_ratio, archetype_mix, observation_vector, action_vector
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(session_id, floor_number) DO UPDATE SET
-            timestamp = excluded.timestamp,
-            completion_time = excluded.completion_time,
-            deaths = excluded.deaths,
-            damage_dealt = excluded.damage_dealt,
-            damage_taken = excluded.damage_taken,
-            damage_exchange_ratio = excluded.damage_exchange_ratio,
-            rooms_cleared = excluded.rooms_cleared,
-            enemies_defeated = excluded.enemies_defeated,
-            hazard_hits = excluded.hazard_hits,
-            pickups_collected = excluded.pickups_collected,
-            enemy_health = excluded.enemy_health,
-            enemy_damage = excluded.enemy_damage,
-            enemy_speed = excluded.enemy_speed,
-            enemy_aggro = excluded.enemy_aggro,
-            hazard_density = excluded.hazard_density,
-            resource_scarcity = excluded.resource_scarcity,
-            room_count = excluded.room_count,
-            enemy_count_scale = excluded.enemy_count_scale,
-            crawler_ratio = excluded.crawler_ratio,
-            pyromancer_ratio = excluded.pyromancer_ratio,
-            archetype_mix = excluded.archetype_mix,
-            observation_vector = excluded.observation_vector,
-            action_vector = excluded.action_vector;
+    # ------------------------------------------------------------------ floors
+    def upsert_floor_record(
+        self, record: Dict[str, Any], kills: Optional[Dict[int, int]] = None
+    ) -> int:
+        """Insert or replace one floor row (unique per session_id + floor_num) and its kill counts.
+
+        Difficulty parameters that are missing are stored as NULL -- never invented -- so
+        incomplete rows can be filtered out of the Judge corpus instead of corrupting it.
+        The session row must exist (call upsert_session first). Returns the floor id.
         """
-        values = (
-            str(record.get("session_id", "")),
-            int(record.get("floor_number", 1)),
-            float(record.get("timestamp", 0.0)),
-            float(record.get("completion_time", 0.0)),
-            int(record.get("deaths", 0)),
-            float(record.get("damage_dealt", 0.0)),
-            float(record.get("damage_taken", 0.0)),
-            float(record.get("damage_exchange_ratio", 0.0)),
-            int(record.get("rooms_cleared", 0)),
-            int(record.get("enemies_defeated", 0)),
-            int(record.get("hazard_hits", 0)),
-            int(record.get("pickups_collected", 0)),
-            float(record.get("enemy_health", 50.0)),
-            float(record.get("enemy_damage", 15.0)),
-            float(record.get("enemy_speed", 100.0)),
-            float(record.get("enemy_aggro", 200.0)),
-            float(record.get("hazard_density", 0.3)),
-            float(record.get("resource_scarcity", 0.5)),
-            float(record.get("room_count", 6.0)),
-            float(record.get("enemy_count_scale", 1.0)),
-            float(record.get("crawler_ratio", 0.5)),
-            float(record.get("pyromancer_ratio", 0.5)),
-            str(record.get("archetype_mix", "")),
-            str(obs),
-            str(act),
-        )
-        with self.connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(sql, values)
-            conn.commit()
-            return cursor.lastrowid
+        rec = dict(record)
+        if "floor_num" not in rec and "floor_number" in rec:
+            rec["floor_num"] = rec["floor_number"]
+        missing = [c for c in _FLOOR_REQUIRED if rec.get(c) is None]
+        if missing:
+            raise ValueError(f"floor record missing required fields: {missing}")
+        rec.setdefault("created_at", int(float(rec.get("timestamp", 0) or 0)))
+        cols = _et.insert_columns(self._queries["insert_floor"])
+        not_null_defaults = {
+            "deaths": 0,
+            "damage_taken": 0.0,
+            "damage_dealt": 0.0,
+            "rooms_total": 0,
+            "rooms_visited": 0,
+            "exploration_pct": 0.0,
+            "rooms_cleared": 0,
+            "enemies_defeated": 0,
+            "hazards_hit": int(rec.get("hazard_hits", 0) or 0),
+            "pickups_collected": 0,
+        }
+        values = [rec.get(c, not_null_defaults.get(c)) for c in cols]
+        with self.connection() as conn, conn:
+            conn.execute(
+                "DELETE FROM floors WHERE session_id = ? AND floor_num = ?",
+                (rec["session_id"], int(rec["floor_num"])),
+            )
+            cur = conn.execute(self._queries["insert_floor"], values)
+            floor_id = cur.lastrowid
+            for idx, count in (kills or {}).items():
+                conn.execute(self._queries["insert_kill"], (floor_id, int(idx), int(count)))
+        return floor_id
 
     def count_floor_records(self) -> int:
-        """Returns the number of recorded floor outcomes."""
         with self.connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM floor_telemetry;")
-            return cursor.fetchone()[0]
+            return conn.execute("SELECT COUNT(*) FROM floors").fetchone()[0]
 
     def get_all_floor_records(self) -> List[Dict[str, Any]]:
-        """Returns all floor records in chronological sequence."""
+        """One flattened row per floor (v_corpus: session fields, floor columns, kills_0..4)."""
         with self.connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM floor_telemetry ORDER BY session_id, floor_number ASC;")
-            return [self._row_to_dict(row) for row in cursor.fetchall()]
+            rows = conn.execute(self._queries["export_corpus"]).fetchall()
+        return [dict(r) for r in rows]
 
-    def get_judge_training_data(self) -> Dict[str, Any]:
-        """Formats the per-floor telemetry into feature inputs and target outcomes
+    def get_judge_training_data(self, consented_only: bool = False) -> Dict[str, Any]:
+        """Features (settings the floor was played with) -> targets (outcome) for the Judge.
 
-        for training the supervised Judge regressor (Settings -> Outcomes).
+        Rows with any NULL feature/target are skipped and counted in 'skipped'.
+        damage_exchange_ratio = damage_dealt / max(1, damage_taken).
         """
-        records = self.get_all_floor_records()
-        feature_names = [
-            "enemy_health",
-            "enemy_damage",
-            "enemy_speed",
-            "enemy_aggro",
-            "hazard_density",
-            "resource_scarcity",
-            "room_count",
-            "enemy_count_scale",
-            "crawler_ratio",
-            "pyromancer_ratio",
-        ]
-        target_names = [
-            "completion_time",
-            "deaths",
-            "damage_taken",
-            "damage_exchange_ratio",
-        ]
-
+        key = "export_corpus_consented" if consented_only else "export_corpus"
+        with self.connection() as conn:
+            rows = [dict(r) for r in conn.execute(self._queries[key]).fetchall()]
         features: List[List[float]] = []
         targets: List[List[float]] = []
-        for r in records:
-            features.append([float(r[f]) for f in feature_names])
-            targets.append([float(r[t]) for t in target_names])
-
+        skipped = 0
+        for r in rows:
+            r["damage_exchange_ratio"] = float(r["damage_dealt"] or 0.0) / max(
+                1.0, float(r["damage_taken"] or 0.0)
+            )
+            if any(r.get(f) is None for f in JUDGE_FEATURES + JUDGE_TARGETS):
+                skipped += 1
+                continue
+            features.append([float(r[f]) for f in JUDGE_FEATURES])
+            targets.append([float(r[t]) for t in JUDGE_TARGETS])
         return {
             "features": features,
             "targets": targets,
-            "feature_names": feature_names,
-            "target_names": target_names,
-            "sample_count": len(records),
+            "feature_names": list(JUDGE_FEATURES),
+            "target_names": list(JUDGE_TARGETS),
+            "sample_count": len(features),
+            "skipped": skipped,
         }
 
-    # -------------------------------------------------------------------------
-    # Import / Export / Game DB Sync
-    # -------------------------------------------------------------------------
+    # ------------------------------------------------------------------ import / export / sync
     def import_from_json(
         self, json_path: Optional[str] = None, clear_existing: bool = False
     ) -> int:
-        """Imports training snapshots from a JSON file into SQLite, consolidating
-
-        rolling snapshots by session_id into accurate session records.
-        """
+        """Import legacy flat-JSON session snapshots. Multiple snapshots of one session collapse to
+        one row (the latest snapshot wins). Returns the number of distinct sessions imported."""
         path = json_path or DEFAULT_JSON_PATH
         if not os.path.exists(path):
-            raise FileNotFoundError(f"JSON training data not found at: {path}")
-
+            raise FileNotFoundError(f"JSON telemetry not found at: {path}")
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
-
         if not isinstance(data, list):
             raise ValueError(f"Expected JSON array in {path}, got {type(data)}")
-
-        with self.connection() as conn:
-            cursor = conn.cursor()
-            if clear_existing:
-                cursor.execute("DELETE FROM session_telemetry;")
-                cursor.execute("DELETE FROM floor_telemetry;")
-            conn.commit()
-
-        # Sort chronological so upsert maintains latest state for each session
-        sorted_records = sorted(
-            data, key=lambda x: (x.get("session_id", ""), float(x.get("elapsed_seconds", 0.0)))
-        )
-        for rec in sorted_records:
-            self.upsert_session(rec)
-
-        return self.count_sessions()
+        latest: Dict[str, Dict[str, Any]] = {}
+        for snap in data:
+            if isinstance(snap, dict) and snap.get("session_id"):
+                latest[snap["session_id"]] = snap  # later snapshots overwrite earlier ones
+        if clear_existing:
+            with self.connection() as conn, conn:
+                conn.execute("DELETE FROM sessions")
+        return self.upsert_sessions(latest.values())
 
     def export_to_json(self, json_path: Optional[str] = None) -> int:
-        """Exports unique session records to a JSON array file."""
+        """Export session rows to a JSON array. Returns the number written."""
         path = json_path or DEFAULT_JSON_PATH
         sessions = self.get_all_sessions()
-        clean_sessions = []
-        for s in sessions:
-            clean = {k: s[k] for k in SESSION_FIELDS if k in s}
-            clean_sessions.append(clean)
-
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
-            json.dump(clean_sessions, f, indent=4)
-        return len(clean_sessions)
+            json.dump(sessions, f, indent=4)
+        return len(sessions)
+
+    def export_corpus_csv(self, csv_path: str, consented_only: bool = False) -> int:
+        """One CSV row per floor (same columns as the game's export). Returns rows written."""
+        return _et.export_corpus_csv(self.db_path, csv_path, consented_only)
 
     def sync_from_game_db(self, source_db_path: Optional[str] = None) -> Tuple[int, int]:
-        """Copies session and floor records from Godot's runtime user://telemetry.db
-
-        into this training database.
-        """
-        if not source_db_path:
-            source_db_path = self.locate_game_db()
-
-        if not source_db_path or not os.path.exists(source_db_path):
+        """Copy sessions, floors and kill counts from the game's forge_telemetry.db into this DB.
+        Idempotent: re-syncing updates rows instead of duplicating them.
+        Returns (sessions_synced, floors_synced)."""
+        src = source_db_path or self.locate_game_db()
+        if not src or not os.path.exists(src):
+            raise FileNotFoundError(
+                "Game telemetry DB not found. Play the game with godot-sqlite installed, or pass "
+                "source_db_path explicitly."
+            )
+        if os.path.abspath(src) == os.path.abspath(self.db_path):
             return (0, 0)
-
-        imported_sessions = 0
-        imported_floors = 0
-        src_conn = sqlite3.connect(source_db_path)
-        src_conn.row_factory = sqlite3.Row
+        sconn = sqlite3.connect(src)
+        sconn.row_factory = sqlite3.Row
         try:
-            cursor = src_conn.cursor()
-
-            # Sync session_telemetry if present
-            cursor.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='session_telemetry';"
-            )
-            if cursor.fetchone():
-                cursor.execute("SELECT * FROM session_telemetry;")
-                for row in cursor.fetchall():
-                    self.upsert_session(dict(row))
-                    imported_sessions += 1
-
-            # Sync floor_telemetry if present
-            cursor.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='floor_telemetry';"
-            )
-            if cursor.fetchone():
-                cursor.execute("SELECT * FROM floor_telemetry;")
-                for row in cursor.fetchall():
-                    self.upsert_floor_record(dict(row))
-                    imported_floors += 1
+            sessions = [dict(r) for r in sconn.execute("SELECT * FROM sessions").fetchall()]
+            floors = [dict(r) for r in sconn.execute("SELECT * FROM floors").fetchall()]
+            kills: Dict[int, Dict[int, int]] = {}
+            for r in sconn.execute("SELECT floor_id, archetype_idx, count FROM kills_by_archetype"):
+                kills.setdefault(r["floor_id"], {})[r["archetype_idx"]] = r["count"]
         finally:
-            src_conn.close()
-
-        return (imported_sessions, imported_floors)
+            sconn.close()
+        self.upsert_sessions(sessions)
+        for fl in floors:
+            fid = fl.pop("id")
+            self.upsert_floor_record(fl, kills.get(fid, {}))
+        return (len(sessions), len(floors))
 
     @staticmethod
-    def locate_game_db() -> Optional[str]:
-        """Locates Godot's user://telemetry.db file based on current OS conventions."""
-        app_name = "FORGE - Adaptive Dungeon Prototype"
+    def game_userdata_dir() -> Optional[str]:
+        """Godot's user:// directory for this project on the current OS."""
         system = platform.system()
         if system == "Windows":
             appdata = os.environ.get("APPDATA", "")
-            if appdata:
-                path = os.path.join(appdata, "Godot", "app_userdata", app_name, "telemetry.db")
-                if os.path.exists(path):
-                    return path
-        elif system == "Darwin":
-            home = os.path.expanduser("~")
-            path = os.path.join(
-                home,
-                "Library",
-                "Application Support",
-                "Godot",
-                "app_userdata",
-                app_name,
-                "telemetry.db",
+            return (
+                os.path.join(appdata, "Godot", "app_userdata", GODOT_APP_NAME) if appdata else None
             )
-            if os.path.exists(path):
-                return path
-        else:  # Linux / BSD
-            home = os.path.expanduser("~")
-            path = os.path.join(
-                home, ".local", "share", "godot", "app_userdata", app_name, "telemetry.db"
+        home = os.path.expanduser("~")
+        if system == "Darwin":
+            return os.path.join(
+                home, "Library", "Application Support", "Godot", "app_userdata", GODOT_APP_NAME
             )
+        base = os.environ.get("XDG_DATA_HOME") or os.path.join(home, ".local", "share")
+        return os.path.join(base, "godot", "app_userdata", GODOT_APP_NAME)
+
+    @classmethod
+    def locate_game_db(cls) -> Optional[str]:
+        """Path of the game's user://forge_telemetry.db if it exists, else None."""
+        d = cls.game_userdata_dir()
+        if d:
+            path = os.path.join(d, GAME_DB_FILENAME)
             if os.path.exists(path):
                 return path
         return None
 
     def get_summary_stats(self) -> Dict[str, float]:
-        """Calculates aggregated summary metrics across distinct sessions."""
+        """Aggregates over sessions and floors."""
         with self.connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT
-                    COUNT(*) as total_sessions,
-                    AVG(elapsed_seconds) as avg_elapsed_seconds,
-                    AVG(rooms_cleared) as avg_rooms_cleared,
-                    AVG(total_deaths) as avg_deaths,
-                    AVG(damage_dealt) as avg_damage_dealt,
-                    AVG(damage_taken) as avg_damage_taken,
-                    AVG(enemies_defeated) as avg_enemies_defeated,
-                    AVG(rooms_per_minute) as avg_rooms_per_minute
-                FROM session_telemetry;
-            """)
-            row = cursor.fetchone()
-            if not row or row["total_sessions"] == 0:
-                return {"total_sessions": 0.0}
-            return {
-                "total_sessions": float(row["total_sessions"]),
-                "avg_elapsed_seconds": round(float(row["avg_elapsed_seconds"] or 0), 2),
-                "avg_rooms_cleared": round(float(row["avg_rooms_cleared"] or 0), 2),
-                "avg_deaths": round(float(row["avg_deaths"] or 0), 2),
-                "avg_damage_dealt": round(float(row["avg_damage_dealt"] or 0), 2),
-                "avg_damage_taken": round(float(row["avg_damage_taken"] or 0), 2),
-                "avg_enemies_defeated": round(float(row["avg_enemies_defeated"] or 0), 2),
-                "avg_rooms_per_minute": round(float(row["avg_rooms_per_minute"] or 0), 2),
-            }
-
-    @staticmethod
-    def _row_to_dict(row: sqlite3.Row) -> Dict[str, Any]:
-        return dict(row)
+            s = conn.execute(
+                """SELECT COUNT(*) AS n, AVG(elapsed_seconds) AS t, AVG(total_deaths) AS d,
+                          AVG(damage_dealt) AS dd, AVG(damage_taken) AS dt,
+                          AVG(enemies_defeated) AS e FROM sessions"""
+            ).fetchone()
+            f = conn.execute(
+                "SELECT COUNT(*) AS n, AVG(completion_time) AS t, AVG(exploration_pct) AS x FROM floors"
+            ).fetchone()
+        if not s["n"]:
+            return {"total_sessions": 0, "total_floors": float(f["n"] or 0)}
+        return {
+            "total_sessions": float(s["n"]),
+            "total_floors": float(f["n"] or 0),
+            "avg_elapsed_seconds": round(float(s["t"] or 0), 2),
+            "avg_deaths": round(float(s["d"] or 0), 2),
+            "avg_damage_dealt": round(float(s["dd"] or 0), 2),
+            "avg_damage_taken": round(float(s["dt"] or 0), 2),
+            "avg_enemies_defeated": round(float(s["e"] or 0), 2),
+            "avg_floor_time": round(float(f["t"] or 0), 2),
+            "avg_exploration_pct": round(float(f["x"] or 0), 2),
+        }
 
 
 if __name__ == "__main__":
     db = TelemetryDatabase()
-    print(f"TelemetryDatabase active at: {db.db_path}")
-    print(f"Distinct sessions: {db.count_sessions()}")
-    print(f"Floor telemetry records: {db.count_floor_records()}")
-    print("Summary Stats:", db.get_summary_stats())
+    game_db = TelemetryDatabase.locate_game_db()
+    if game_db:
+        n_s, n_f = db.sync_from_game_db(game_db)
+        print(f"Synced {n_s} sessions / {n_f} floors from {game_db} into {db.db_path}")
+    else:
+        print(f"No game DB found under {TelemetryDatabase.game_userdata_dir()}")
+    for k, v in db.get_summary_stats().items():
+        print(f"  {k}: {v}")

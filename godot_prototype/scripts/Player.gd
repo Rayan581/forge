@@ -36,14 +36,30 @@ var knockback_velocity: Vector2 = Vector2.ZERO
 var knockback_decay: float = 1300.0 # Decays ~340px/s impulse smoothly over ~0.26s
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
-@onready var sprite: Sprite2D = get_node_or_null("Sprite2D")
+# --- Sprite animation (AnimatedSprite2D driven by game state) ---
+# The attack animation is 6 frames @ 30 fps (0.2 s); the slash arc is on its frames 3-4, so the
+# damage query fires ATTACK_HIT_DELAY (= 3 frames) after the swing starts. The total attack
+# cooldown (attack_cooldown) is unchanged.
+const ATTACK_ANIM_TIME := 0.2
+const ATTACK_HIT_DELAY := 0.1
+const HURT_ANIM_TIME := 0.25
+var attack_anim_timer: float = 0.0
+var hurt_anim_timer: float = 0.0
+var is_moving: bool = false
+var base_scale: Vector2 = Vector2(2, 2)
+var base_pos: Vector2 = Vector2(0, -15)
+
+@onready var sprite: AnimatedSprite2D = get_node_or_null("AnimatedSprite2D")
 
 func _ready() -> void:
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	current_health = max_health
 	emit_signal("health_changed", current_health, max_health)
-	if not sprite and has_node("Sprite2D"):
-		sprite = $Sprite2D
+	if not sprite and has_node("AnimatedSprite2D"):
+		sprite = $AnimatedSprite2D
+	if sprite:
+		base_scale = sprite.scale
+		base_pos = sprite.position
 
 func _physics_process(delta: float) -> void:
 	if current_health <= 0:
@@ -66,33 +82,27 @@ func _physics_process(delta: float) -> void:
 		perform_dash(input_vector)
 		
 	var move_velocity = Vector2.ZERO
+	is_moving = input_vector != Vector2.ZERO
 	
 	if is_dashing:
 		dash_timer -= delta
 		move_velocity = dash_direction * (move_speed * dash_speed_multiplier)
 		if sprite:
-			sprite.scale = Vector2(1.25, 0.75)
+			sprite.scale = base_scale * Vector2(1.25, 0.75)
 			sprite.modulate = Color(0.6, 1.3, 2.2, 0.85)
 		if dash_timer <= 0.0:
 			is_dashing = false
 			if sprite:
-				sprite.scale = Vector2.ONE
+				sprite.scale = base_scale
 	elif input_vector != Vector2.ZERO:
 		input_vector = input_vector.normalized()
 		facing_direction = input_vector
 		move_velocity = input_vector * move_speed
 		emit_signal("player_moved")
 		
-		# Sprite movement juice: gentle tilt and bob
-		if sprite:
-			sprite.position.y = -2.0 + sin(Time.get_ticks_msec() / 90.0) * 1.5
-			sprite.rotation = sin(Time.get_ticks_msec() / 110.0) * 0.07
-			if abs(facing_direction.x) > 0.1:
-				sprite.flip_h = (facing_direction.x < 0.0)
-	else:
-		if sprite:
-			sprite.position.y = -2.0
-			sprite.rotation = 0.0
+		# The walk cycle supplies the bob; just face the direction of travel.
+		if sprite and attack_anim_timer <= 0.0 and abs(facing_direction.x) > 0.1:
+			sprite.flip_h = (facing_direction.x < 0.0)
 			
 	# 2. Decay Persistent Knockback Force
 	if knockback_velocity != Vector2.ZERO:
@@ -124,8 +134,24 @@ func _physics_process(delta: float) -> void:
 		swing_timer -= delta
 		if swing_timer <= 0.0:
 			is_swinging = false
+	attack_anim_timer = maxf(0.0, attack_anim_timer - delta)
+	hurt_anim_timer = maxf(0.0, hurt_anim_timer - delta)
+	_update_animation()
 			
 	queue_redraw()
+
+## Picks the looping base animation (idle/move). attack/hurt/death are one-shots started by
+## perform_attack() / take_damage() and simply hold priority until their timers run out.
+func _update_animation() -> void:
+	if not sprite or current_health <= 0.0 or attack_anim_timer > 0.0 or hurt_anim_timer > 0.0:
+		return
+	var want := &"move" if (is_moving or is_dashing) else &"idle"
+	if sprite.animation != want or not sprite.is_playing():
+		sprite.play(want)
+
+func _play_oneshot(anim: StringName) -> void:
+	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation(anim):
+		sprite.play(anim)
 
 func perform_dash(input_dir: Vector2) -> void:
 	is_dashing = true
@@ -147,8 +173,6 @@ func apply_knockback(impulse: Vector2) -> void:
 
 func perform_attack() -> void:
 	can_attack = false
-	is_swinging = true
-	swing_timer = 0.18
 	
 	# Attack target point based on mouse or facing direction
 	var mouse_pos = get_global_mouse_position()
@@ -157,6 +181,22 @@ func perform_attack() -> void:
 		attack_dir = facing_direction
 	swing_angle = attack_dir.angle()
 	
+	# Swing animation: face the aim side, play the slash, land the hit on the arc frames.
+	attack_anim_timer = ATTACK_ANIM_TIME
+	if sprite and abs(attack_dir.x) > 0.05:
+		sprite.flip_h = (attack_dir.x < 0.0)
+	_play_oneshot(&"attack")
+	await get_tree().create_timer(ATTACK_HIT_DELAY).timeout
+	if is_instance_valid(self) and current_health > 0.0:
+		is_swinging = true # aimed slash FX lands together with the sprite's arc frames
+		swing_timer = 0.18
+		_apply_attack_hit(attack_dir)
+			
+	# Cooldown timer (total swing time unchanged: ATTACK_HIT_DELAY + remainder == attack_cooldown)
+	await get_tree().create_timer(maxf(attack_cooldown - ATTACK_HIT_DELAY, 0.0)).timeout
+	can_attack = true
+
+func _apply_attack_hit(attack_dir: Vector2) -> void:
 	# Area query for enemies
 	var space_state = get_world_2d().direct_space_state
 	var query = PhysicsShapeQueryParameters2D.new()
@@ -172,10 +212,6 @@ func perform_attack() -> void:
 		var body = hit.collider
 		if body is Enemy and body != self:
 			body.take_damage(attack_damage, attack_dir)
-			
-	# Cooldown timer
-	await get_tree().create_timer(attack_cooldown).timeout
-	can_attack = true
 
 func take_damage(amount: float, from_dir: Vector2 = Vector2.ZERO) -> void:
 	if is_invulnerable or current_health <= 0:
@@ -192,7 +228,15 @@ func take_damage(amount: float, from_dir: Vector2 = Vector2.ZERO) -> void:
 		apply_knockback(from_dir * 340.0)
 		
 	if current_health <= 0:
+		attack_anim_timer = 0.0
+		if sprite:
+			sprite.modulate = Color.WHITE
+			sprite.scale = base_scale
+		_play_oneshot(&"death")
 		emit_signal("player_died")
+	else:
+		hurt_anim_timer = HURT_ANIM_TIME
+		_play_oneshot(&"hurt")
 
 func heal(amount: float) -> void:
 	var actual_heal = minf(amount, max_health - current_health)
@@ -211,16 +255,23 @@ func reset(start_pos: Vector2) -> void:
 	dash_cooldown_timer = 0.0
 	knockback_velocity = Vector2.ZERO
 	velocity = Vector2.ZERO
+	attack_anim_timer = 0.0
+	hurt_anim_timer = 0.0
 	if sprite:
 		sprite.modulate = Color.WHITE
 		sprite.rotation = 0.0
-		sprite.position = Vector2(0, -2)
-		sprite.scale = Vector2.ONE
+		sprite.position = base_pos
+		sprite.scale = base_scale
+		sprite.play(&"idle")
 	emit_signal("health_changed", current_health, max_health)
 
 func _draw() -> void:
 	# Subtle grounded shadow underneath sprite
-	draw_circle(Vector2(0, 10), 16.0, Color(0, 0, 0, 0.4))
+	draw_set_transform(Vector2(0, 11), 0.0, Vector2(1.0, 0.42))
+	draw_circle(Vector2.ZERO, 15.0, Color(0, 0, 0, 0.45))
+	# Faint cyan ground ring so the hero never gets lost among the (also skeletal) crawlers
+	draw_arc(Vector2.ZERO, 15.0, 0.0, TAU, 28, Color(0.35, 0.85, 1.0, 0.55), 1.2)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	
 	# Ethereal Dash Afterimage Trail
 	if is_dashing:
@@ -243,12 +294,12 @@ func _draw() -> void:
 		var end_a = swing_angle + PI/2.6
 		
 		# 1. Outer luminous radiant flare (gold/amber)
-		draw_arc(arc_center, arc_radius + 6.0, start_a, end_a, 24, Color(1.0, 0.75, 0.25, 0.5), 8.0)
+		draw_arc(arc_center, arc_radius + 6.0, start_a, end_a, 24, Color(1.0, 0.75, 0.25, 0.22), 6.0)
 		# 2. Main crescent blade wave (electric gold)
-		draw_arc(arc_center, arc_radius, start_a, end_a, 24, Color(1.0, 0.95, 0.45, 0.95), 4.5)
+		draw_arc(arc_center, arc_radius, start_a, end_a, 24, Color(1.0, 0.95, 0.45, 0.6), 3.0)
 		# 3. Inner razor edge (pure bright white)
-		draw_arc(arc_center, arc_radius - 2.0, start_a + 0.1, end_a - 0.1, 24, Color(1.0, 1.0, 1.0, 1.0), 2.5)
+		draw_arc(arc_center, arc_radius - 2.0, start_a + 0.1, end_a - 0.1, 24, Color(1.0, 1.0, 1.0, 0.7), 1.5)
 		# 4. Kinetic tip punch line
 		var tip_vec = Vector2.from_angle(swing_angle) * (arc_radius + 12.0)
-		draw_line(arc_center, arc_center + tip_vec, Color(1.0, 0.9, 0.5, 0.8), 3.0)
+		draw_line(arc_center, arc_center + tip_vec, Color(1.0, 0.9, 0.5, 0.35), 2.0)
 		draw_circle(arc_center + tip_vec, 3.5, Color(1.0, 1.0, 1.0, 0.9))

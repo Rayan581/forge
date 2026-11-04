@@ -81,7 +81,7 @@ class TestObservationSpace:
 
 class TestActionSpace:
     def test_action_space_shape(self, env):
-        assert env.action_space.shape == (7,)
+        assert env.action_space.shape == (8,)
 
     def test_action_space_bounds(self, env):
         assert np.all(env.action_space.low == -1.0)
@@ -156,7 +156,7 @@ class TestReproducibility:
         np.testing.assert_array_equal(obs1, obs2)
 
     def test_fixed_seed_identical_rewards(self):
-        action = np.zeros(7, dtype=np.float32)
+        action = np.zeros(8, dtype=np.float32)
         rewards1, rewards2 = [], []
         for e, r_list in [(DungeonDifficultyEnv(), rewards1), (DungeonDifficultyEnv(), rewards2)]:
             e.reset(seed=77)

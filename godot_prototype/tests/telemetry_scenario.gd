@@ -53,9 +53,14 @@ func cleanup(tag: String) -> void:
 		if FileAccess.file_exists(p):
 			DirAccess.remove_absolute(p)
 
-## `legacy`: optional legacy JSON content to seed (SQLite import check) is handled by the caller.
-func run(backend: String, tag: String, expect_backend: String) -> void:
+## `legacy_json`: optional legacy flat-JSON history to seed (SQLite import check). It is written
+## AFTER the initial cleanup, so it survives until the first backend open imports it.
+func run(backend: String, tag: String, expect_backend: String, legacy_json: String = "") -> void:
 	cleanup(tag)
+	if not legacy_json.is_empty():
+		var lf := FileAccess.open("user://test_tel_%s.json" % tag, FileAccess.WRITE)
+		lf.store_string(legacy_json)
+		lf.close()
 	var tl = _new_logger(backend, tag)
 	_eq("backend name", tl.get_backend_name(), expect_backend)
 	var sid: String = tl.session_id

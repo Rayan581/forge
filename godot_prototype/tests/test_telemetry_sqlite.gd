@@ -14,15 +14,14 @@ func _init() -> void:
 	var tag := "sqlite"
 	sc.cleanup(tag)
 	# Seed a legacy flat-JSON history: it must be imported exactly once on the first SQLite run.
-	var legacy := FileAccess.open("user://test_tel_%s.json" % tag, FileAccess.WRITE)
-	legacy.store_string(JSON.stringify([
+	# (Passed into run(), which cleans up first and then writes it, so the cleanup cannot delete it.)
+	var legacy_json := JSON.stringify([
 		{"session_id": "sess_legacy_1", "timestamp": 1700000000, "elapsed_seconds": 10.0, "rooms_cleared": 1, "total_deaths": 0,
 		 "damage_dealt": 5.0, "damage_taken": 2.0, "enemies_defeated": 3, "pickups_collected": 0, "hazard_hits": 0},
 		{"session_id": "sess_legacy_1", "timestamp": 1700000000, "elapsed_seconds": 25.0, "rooms_cleared": 2, "total_deaths": 1,
 		 "damage_dealt": 9.0, "damage_taken": 4.0, "enemies_defeated": 6, "pickups_collected": 1, "hazard_hits": 1},
-	]))
-	legacy.close()
-	sc.run("sqlite", tag, "sqlite")
+	])
+	sc.run("sqlite", tag, "sqlite", legacy_json)
 	var tl = sc._new_logger("sqlite", tag)
 	var b = tl._ensure_backend()
 	var leg: Dictionary = b.get_session("sess_legacy_1")

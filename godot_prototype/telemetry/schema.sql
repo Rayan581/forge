@@ -119,3 +119,38 @@ SELECT
     COALESCE((SELECT k.count FROM kills_by_archetype k WHERE k.floor_id = f.id AND k.archetype_idx = 3), 0) AS kills_3,
     COALESCE((SELECT k.count FROM kills_by_archetype k WHERE k.floor_id = f.id AND k.archetype_idx = 4), 0) AS kills_4
 FROM floors f JOIN sessions s ON s.id = f.session_id;
+
+-- migration v2
+-- manual_override = 1 when developer tools changed the floor while it was being played (Defense Panel
+-- sliders or presets, static-baseline toggle, regenerate, auto-kill). Its difficulty settings or
+-- outcome then do not reflect the policy, so it is excluded from the Judge corpus. Existing rows get 0.
+ALTER TABLE floors ADD COLUMN manual_override INTEGER NOT NULL DEFAULT 0 CHECK (manual_override IN (0, 1));
+
+DROP VIEW v_corpus;
+
+-- v_corpus as in v1 plus manual_override (same position as in insert_floor: after created_at).
+CREATE VIEW v_corpus AS
+SELECT
+    s.id AS session_id,
+    s.install_id AS install_id,
+    s.mode AS mode,
+    s.policy_version AS policy_version,
+    s.game_version AS game_version,
+    s.consent AS consent,
+    f.floor_num, f.phase, f.completion_time, f.deaths, f.damage_taken, f.damage_dealt,
+    f.player_max_hp, f.rooms_total, f.rooms_visited, f.exploration_pct, f.rooms_cleared,
+    f.enemies_defeated, f.hazards_hit, f.pickups_collected,
+    f.enemy_health, f.enemy_damage, f.enemy_speed, f.enemy_aggro, f.hazard_density,
+    f.resource_scarcity, f.room_count, f.archetype_complexity,
+    f.archetype_mix_0, f.archetype_mix_1, f.archetype_mix_2, f.archetype_mix_3, f.archetype_mix_4,
+    f.enemy_count_scale, f.difficulty_score,
+    f.action_0, f.action_1, f.action_2, f.action_3, f.action_4, f.action_5, f.action_6, f.action_7,
+    f.obs_0, f.obs_1, f.obs_2, f.obs_3, f.obs_4, f.obs_5, f.obs_6, f.obs_7,
+    f.frame_avg_ms, f.frame_p95_ms, f.frame_max_ms, f.perceived_difficulty, f.created_at,
+    f.manual_override,
+    COALESCE((SELECT k.count FROM kills_by_archetype k WHERE k.floor_id = f.id AND k.archetype_idx = 0), 0) AS kills_0,
+    COALESCE((SELECT k.count FROM kills_by_archetype k WHERE k.floor_id = f.id AND k.archetype_idx = 1), 0) AS kills_1,
+    COALESCE((SELECT k.count FROM kills_by_archetype k WHERE k.floor_id = f.id AND k.archetype_idx = 2), 0) AS kills_2,
+    COALESCE((SELECT k.count FROM kills_by_archetype k WHERE k.floor_id = f.id AND k.archetype_idx = 3), 0) AS kills_3,
+    COALESCE((SELECT k.count FROM kills_by_archetype k WHERE k.floor_id = f.id AND k.archetype_idx = 4), 0) AS kills_4
+FROM floors f JOIN sessions s ON s.id = f.session_id;

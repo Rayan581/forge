@@ -58,6 +58,8 @@ func show_level_announcement(level_num: int, is_calibrating: bool, cal_data: Dic
 		subtitle_label.modulate = Color(0.5, 0.9, 0.7)
 		desc_label.text = "Room topology, enemy aggression, and hazard density synthesized in real time from your past combat telemetry."
 		challenge_label.text = "Conditioned Challenge: %s (%d/100)" % [diff_label, diff_score]
+	# Playtest builds hide the difficulty score so it cannot anchor the player's own 1-5 rating.
+	challenge_label.visible = BuildInfo.dev_tools_enabled()
 		
 	current_tween = create_tween()
 	# Slide & Pop into full view and stay there until player starts moving (after at least 3 seconds)
@@ -97,6 +99,7 @@ func show_ppo_activation_banner() -> void:
 	subtitle_label.modulate = Color(0.6, 0.85, 1.0)
 	desc_label.text = "Cold-Start phase finished. The neural PPO generator is now actively tailoring room density, enemy velocity, and hazard placements to your individual flow state."
 	challenge_label.text = "★ Level 6+ · Full Adaptive Closed-Loop Active ★"
+	challenge_label.visible = true
 	
 	current_tween = create_tween()
 	current_tween.parallel().tween_property(container, "modulate:a", 1.0, 0.4).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)

@@ -16,6 +16,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="FORGE - Adaptive Dungeon Prototype"
 config/description="Personalized Procedural Content Generation Prototype for FORGE FYP"
+config/version="0.9.0"
 run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 boot_splash/bg_color=Color(0.08, 0.09, 0.12, 1)

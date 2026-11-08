@@ -199,6 +199,8 @@ class TelemetryDatabase:
             "enemies_defeated": 0,
             "hazards_hit": int(rec.get("hazard_hits", 0) or 0),
             "pickups_collected": 0,
+            # Rows synced from a schema-v1 game DB have no manual_override column.
+            "manual_override": int(rec.get("manual_override") or 0),
         }
         values = [rec.get(c, not_null_defaults.get(c)) for c in cols]
         with self.connection() as conn, conn:
@@ -226,6 +228,8 @@ class TelemetryDatabase:
         """Features (settings the floor was played with) -> targets (outcome) for the Judge.
 
         Rows with any NULL feature/target are skipped and counted in 'skipped'.
+        Floors played with developer overrides (manual_override = 1: Defense Panel sliders/presets,
+        regenerate, auto-kill) are left out and counted in 'excluded_manual_override'.
         damage_exchange_ratio = damage_dealt / max(1, damage_taken).
         """
         key = "export_corpus_consented" if consented_only else "export_corpus"
@@ -234,7 +238,11 @@ class TelemetryDatabase:
         features: List[List[float]] = []
         targets: List[List[float]] = []
         skipped = 0
+        excluded_override = 0
         for r in rows:
+            if int(r.get("manual_override") or 0) == 1:
+                excluded_override += 1
+                continue
             r["damage_exchange_ratio"] = float(r["damage_dealt"] or 0.0) / max(
                 1.0, float(r["damage_taken"] or 0.0)
             )
@@ -250,6 +258,7 @@ class TelemetryDatabase:
             "target_names": list(JUDGE_TARGETS),
             "sample_count": len(features),
             "skipped": skipped,
+            "excluded_manual_override": excluded_override,
         }
 
     # ------------------------------------------------------------------ import / export / sync

@@ -191,3 +191,74 @@ def test_load_training_data_from_sqlite(temp_db):
     temp_db.upsert_floor_record(full_floor())
     data = load_training_data_from_sqlite(temp_db.db_path)
     assert data["sample_count"] == 1
+
+
+def test_judge_training_data_excludes_manual_override_floors(temp_db):
+    temp_db.upsert_session(SESSION)
+    temp_db.upsert_floor_record(full_floor(floor_num=1))
+    temp_db.upsert_floor_record(full_floor(floor_num=2, manual_override=1))
+    data = temp_db.get_judge_training_data()
+    assert data["sample_count"] == 1
+    assert data["excluded_manual_override"] == 1 and data["skipped"] == 0
+    rows = temp_db.get_all_floor_records()
+    assert [r["manual_override"] for r in rows] == [0, 1]  # still exported, just flagged
+
+
+def test_sync_from_schema_v1_game_db(temp_db):
+    """A game DB created before migration v2 (no manual_override column) still syncs."""
+    import sqlite3
+
+    from ml_spike.analysis import export_telemetry as et
+
+    bootstrap, migs = et.load_schema()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = os.path.join(tmpdir, "forge_telemetry.db")
+        conn = sqlite3.connect(path)
+        for stmt in bootstrap:
+            conn.execute(stmt)
+        version, stmts = migs[0]
+        assert version == 1
+        for stmt in stmts:
+            conn.execute(stmt)
+        conn.execute("INSERT INTO schema_version (version, applied_at) VALUES (1, 0)")
+        q = et.load_queries()
+        cols = et.insert_columns(q["upsert_session"])
+        conn.execute(q["upsert_session"].split(" ON CONFLICT")[0],
+                     [SESSION.get(c, 0 if c != "install_id" else "x") for c in cols])  # fmt: skip
+        fl = full_floor(created_at=1)
+        v1_cols = [c for c in et.insert_columns(q["insert_floor"]) if c != "manual_override"]
+        conn.execute(
+            f"INSERT INTO floors ({', '.join(v1_cols)}) VALUES ({', '.join('?' * len(v1_cols))})",
+            [fl.get(c) for c in v1_cols],
+        )
+        conn.commit()
+        conn.close()
+        assert temp_db.sync_from_game_db(path) == (1, 1)
+    row = temp_db.get_all_floor_records()[0]
+    assert row["manual_override"] == 0 and row["completion_time"] == 42.5
+
+
+def test_opening_v1_db_migrates_to_latest(tmp_path):
+    """Opening an existing v1 database adds manual_override = 0 to its rows and rebuilds v_corpus."""
+    import sqlite3
+
+    from ml_spike.analysis import export_telemetry as et
+
+    bootstrap, migs = et.load_schema()
+    path = tmp_path / "forge_telemetry.db"
+    conn = sqlite3.connect(path)
+    for stmt in bootstrap + migs[0][1]:
+        conn.execute(stmt)
+    conn.execute("INSERT INTO schema_version (version, applied_at) VALUES (1, 0)")
+    conn.execute("INSERT INTO sessions (id, install_id, started_at) VALUES ('s1', 'i', 1)")
+    conn.execute(
+        "INSERT INTO floors (session_id, floor_num, phase, completion_time, created_at) "
+        "VALUES ('s1', 1, 'adaptive', 10.0, 1)"
+    )
+    conn.commit()
+    conn.close()
+    db = TelemetryDatabase(db_path=str(path))
+    rows = db.get_all_floor_records()
+    assert len(rows) == 1 and rows[0]["manual_override"] == 0
+    with db.connection() as c:
+        assert c.execute("SELECT MAX(version) FROM schema_version").fetchone()[0] == migs[-1][0]

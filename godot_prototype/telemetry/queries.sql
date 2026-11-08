@@ -38,8 +38,8 @@ INSERT OR IGNORE INTO sessions (id, install_id, started_at, ended_at, game_versi
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- name: insert_floor
-INSERT INTO floors (session_id, floor_num, phase, completion_time, deaths, damage_taken, damage_dealt, player_max_hp, rooms_total, rooms_visited, exploration_pct, rooms_cleared, enemies_defeated, hazards_hit, pickups_collected, enemy_health, enemy_damage, enemy_speed, enemy_aggro, hazard_density, resource_scarcity, room_count, archetype_complexity, archetype_mix_0, archetype_mix_1, archetype_mix_2, archetype_mix_3, archetype_mix_4, enemy_count_scale, difficulty_score, action_0, action_1, action_2, action_3, action_4, action_5, action_6, action_7, obs_0, obs_1, obs_2, obs_3, obs_4, obs_5, obs_6, obs_7, frame_avg_ms, frame_p95_ms, frame_max_ms, perceived_difficulty, created_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO floors (session_id, floor_num, phase, completion_time, deaths, damage_taken, damage_dealt, player_max_hp, rooms_total, rooms_visited, exploration_pct, rooms_cleared, enemies_defeated, hazards_hit, pickups_collected, enemy_health, enemy_damage, enemy_speed, enemy_aggro, hazard_density, resource_scarcity, room_count, archetype_complexity, archetype_mix_0, archetype_mix_1, archetype_mix_2, archetype_mix_3, archetype_mix_4, enemy_count_scale, difficulty_score, action_0, action_1, action_2, action_3, action_4, action_5, action_6, action_7, obs_0, obs_1, obs_2, obs_3, obs_4, obs_5, obs_6, obs_7, frame_avg_ms, frame_p95_ms, frame_max_ms, perceived_difficulty, created_at, manual_override)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- name: insert_kill
 INSERT INTO kills_by_archetype (floor_id, archetype_idx, count) VALUES (?, ?, ?);

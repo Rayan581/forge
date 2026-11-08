@@ -77,6 +77,7 @@ def _floor(sid, n, with_policy=True):
         "frame_max_ms": 40.0,
         "perceived_difficulty": None,
         "created_at": 1_700_000_050 + n,
+        "manual_override": 0,
     }
     mix = [0.1, 0.2, 0.3, 0.25, 0.15]
     for a in range(5):
@@ -114,7 +115,7 @@ def test_all_queries_have_matching_placeholder_counts():
             cols = insert_columns(sql)
             values_part = sql.split("VALUES", 1)[1].split(")", 1)[0]
             assert values_part.count("?") == len(cols), name
-    assert len(FLOOR_COLS) == 51
+    assert len(FLOOR_COLS) == 52
     assert len(set(FLOOR_COLS)) == len(FLOOR_COLS)
 
 

@@ -35,3 +35,8 @@ data = db.get_judge_training_data()   # features/targets; rows with missing para
 - Missing difficulty parameters are stored as NULL, never filled with defaults; the Judge loader
   skips incomplete rows and reports how many (`skipped`).
 - Zero PII: sessions carry a random install id only. Export with `--consented-only` for the study corpus.
+- `floors.manual_override = 1` (schema v2) marks floors where developer tools changed the floor while it
+  was played (Defense Panel sliders/presets, regenerate, static toggle, auto-kill). They stay in the
+  export but `get_judge_training_data()` leaves them out (`excluded_manual_override`).
+- `floors.perceived_difficulty` is the player's 1–5 rating from the post-floor prompt (consenting
+  players only; NULL when skipped). `sessions.game_version` is e.g. `0.9.0-playtest` / `0.9.0-dev`.

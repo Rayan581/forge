@@ -36,12 +36,22 @@ var damage_floater_scene = preload("res://scenes/DamageFloater.tscn")
 
 var game_started: bool = false
 
+# Playtest study: consent + post-floor difficulty rating (see GameSettings, ConsentScreen, FloorRating).
+var settings: GameSettings
+var floor_rating: FloorRating
+var consent_screen: ConsentScreen = null
+## True from the moment the exit portal is used until the next floor is built (blocks re-entry while
+## the rating prompt / calibration banner is up).
+var _floor_transition: bool = false
+
 func _ready() -> void:
 	difficulty_manager = DifficultyManager.new()
 	# Initialize Level 1 calibration parameters
 	difficulty_manager.apply_calibration_level(1)
 	
 	telemetry_logger = TelemetryLogger.new()
+	settings = GameSettings.new().load_from_disk()
+	telemetry_logger.consent_given = settings.consent_given
 	dungeon_generator = DungeonGenerator.new()
 
 	ppo_policy = PPOPolicy.new()
@@ -62,12 +72,33 @@ func _ready() -> void:
 	
 	# Connect Main Menu signals
 	main_menu.start_run_requested.connect(_on_start_run_requested)
+	main_menu.settings_changed.connect(_on_settings_changed)
+	main_menu.setup(settings)
+
+	floor_rating = FloorRating.new()
+	add_child(floor_rating)
+	if not settings.consent_decided:
+		_show_consent_screen()
 	
 	# Hide player completely until Start Run is clicked from Menu
 	player.visible = false
 	player.position = Vector2(-9999, -9999)
 	player.set_physics_process(false)
 	defense_overlay.visible = false
+
+func _show_consent_screen() -> void:
+	consent_screen = ConsentScreen.new()
+	add_child(consent_screen)
+	consent_screen.decided.connect(_on_consent_decided)
+
+func _on_consent_decided(consent: bool) -> void:
+	settings.set_consent(consent)
+	consent_screen = null
+	_on_settings_changed()
+
+func _on_settings_changed() -> void:
+	telemetry_logger.consent_given = settings.consent_given
+	main_menu.refresh_settings()
 
 func _on_start_run_requested() -> void:
 	game_started = true
@@ -118,7 +149,10 @@ func _on_enemy_damaged(amount: float, pos: Vector2) -> void:
 	telemetry_logger.record_damage_dealt(amount)
 	spawn_damage_floater(pos, amount, false)
 
-func build_new_dungeon(level_num: int) -> void:
+## rebuild = true regenerates the CURRENT floor (Defense Panel): telemetry keeps counting the same
+## floor attempt instead of silently discarding what happened before the rebuild.
+func build_new_dungeon(level_num: int, rebuild: bool = false) -> void:
+	var same_floor_rebuild := rebuild and level_num == telemetry_logger.floor_num
 	current_dungeon_level = level_num
 	var is_calibrating = difficulty_manager.is_in_calibration(level_num)
 	var cal_data: Dictionary = {}
@@ -168,12 +202,17 @@ func build_new_dungeon(level_num: int) -> void:
 	var start_world_pos = generated_data[start_pos].world_pos
 	player.reset(start_world_pos)
 
-	# 5. Snapshot the clock + telemetry for this level
-	level_start_time_msec = Time.get_ticks_msec()
-	level_start_deaths = telemetry_logger.total_deaths
-	level_start_damage_taken = telemetry_logger.damage_taken
-	telemetry_logger.begin_floor(level_num, generated_data.size()) # [telemetry] reset per-floor counters, rooms_total
+	# 5. Snapshot the clock + telemetry for this level (a same-floor rebuild keeps the original
+	#    snapshot, so time/deaths/damage cover the whole attempt and match the session totals)
+	if same_floor_rebuild:
+		telemetry_logger.restart_floor_layout(generated_data.size()) # [telemetry] keeps counters, flags override
+	else:
+		level_start_time_msec = Time.get_ticks_msec()
+		level_start_deaths = telemetry_logger.total_deaths
+		level_start_damage_taken = telemetry_logger.damage_taken
+		telemetry_logger.begin_floor(level_num, generated_data.size()) # [telemetry] reset per-floor counters, rooms_total
 	telemetry_logger.record_room_visited(start_pos) # [telemetry] the start room counts as visited
+	_floor_transition = false
 
 	# 6. Display Level Splash banner
 	var diff_report = difficulty_manager.calculate_difficulty_score()
@@ -224,6 +263,9 @@ func _on_player_died() -> void:
 		defense_overlay.update_room_info(current_dungeon_level, start_pos, is_calibrating)
 
 func _on_dungeon_escaped() -> void:
+	if _floor_transition:
+		return
+	_floor_transition = true
 	# 1. Measure level performance
 	var completion_time_sec = float(Time.get_ticks_msec() - level_start_time_msec) / 1000.0
 	var deaths_this_level = telemetry_logger.total_deaths - level_start_deaths
@@ -239,6 +281,9 @@ func _on_dungeon_escaped() -> void:
 		"player_max_hp": player.max_health,
 		"difficulty_score": diff_report.score,
 	})
+
+	# Post-floor difficulty rating (pauses the game; only for players who agreed to share data)
+	await _ask_floor_rating(current_dungeon_level)
 
 	var next_level = current_dungeon_level + 1
 
@@ -321,6 +366,14 @@ func _on_dungeon_escaped() -> void:
 	telemetry_logger.save_to_file()
 	call_deferred("build_new_dungeon", next_level)
 
+## Shows the 1-5 "how hard did that floor feel?" prompt and stores the answer on the floor row.
+func _ask_floor_rating(floor_num: int) -> void:
+	if settings == null or floor_rating == null or not settings.should_ask_rating():
+		return
+	var value: int = await floor_rating.ask(floor_num)
+	if value > 0:
+		telemetry_logger.set_perceived_difficulty(floor_num, float(value))
+
 func _on_enemy_killed() -> void:
 	add_camera_trauma(0.18) # Satisfying tactile punch on kill
 	telemetry_logger.record_enemy_defeated()
@@ -347,4 +400,4 @@ func _kill_all_enemies_in_all_rooms() -> void:
 			r.kill_all_enemies()
 
 func _on_rebuild_dungeon_requested() -> void:
-	call_deferred("build_new_dungeon", current_dungeon_level)
+	call_deferred("build_new_dungeon", current_dungeon_level, true)

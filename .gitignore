@@ -29,3 +29,8 @@ temp.md
 *.fls
 *.fdb_latexmk
 *.synctex.gz
+# Godot export output (playtest + dev builds) and Windows temp copies of GDExtension DLLs
+godot_prototype/dist/
+godot_prototype/dist_dev/
+~*.TMP
+*.dll~*

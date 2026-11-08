@@ -24,6 +24,7 @@ const TELEMETRY_FILE_PATH = "user://session_telemetry.json"
 const TelemetrySQL = preload("res://telemetry/TelemetrySQL.gd")
 const SqliteBackend = preload("res://telemetry/SqliteBackend.gd")
 const JsonBackend = preload("res://telemetry/JsonBackend.gd")
+const BuildInfoScript = preload("res://scripts/BuildInfo.gd")
 
 const DB_FILE_PATH := "user://forge_telemetry.db"
 const INSTALL_ID_PATH := "user://forge_install_id.txt"
@@ -58,6 +59,9 @@ var floor_hazard_hits: int = 0
 var floor_pickups: int = 0
 var floor_rooms_cleared: int = 0
 var floor_kills: Dictionary = {}          # archetype_idx -> count
+## Set when developer tools touched this floor (see mark_manual_override); stored as floors.manual_override.
+var floor_manual_override: bool = false
+var floor_override_reasons: PackedStringArray = PackedStringArray()
 var _floor_rooms_visited: Dictionary = {} # room key -> true
 var _frame_ms: PackedFloat32Array = PackedFloat32Array()
 var _pending_obs: PackedFloat32Array = PackedFloat32Array()
@@ -255,12 +259,30 @@ func _reset_floor_state(p_floor_num: int, p_rooms_total: int) -> void:
 	floor_pickups = 0
 	floor_rooms_cleared = 0
 	floor_kills = {}
+	floor_manual_override = false
+	floor_override_reasons = PackedStringArray()
 	_floor_rooms_visited = {}
 	_frame_ms = PackedFloat32Array()
 
 ## Call when a new floor is built: resets the per-floor accumulators.
 func begin_floor(p_floor_num: int, p_rooms_total: int) -> void:
 	_reset_floor_state(p_floor_num, p_rooms_total)
+
+## Call when the CURRENT floor is rebuilt with a new layout (Defense Panel "regenerate", preset, static
+## toggle). The attempt continues: deaths, damage, kills, time and frames carry over, so the floor row
+## and the session totals stay consistent. Only the room set changes (rooms_total / visited restart on
+## the new layout). The floor is flagged as manually overridden.
+func restart_floor_layout(p_rooms_total: int) -> void:
+	floor_rooms_total = p_rooms_total
+	_floor_rooms_visited = {}
+	mark_manual_override("regenerated layout")
+
+## Flags the current floor: a developer tool changed its settings or outcome while it was played, so
+## the row must not be used as policy/Judge training data (floors.manual_override = 1).
+func mark_manual_override(reason: String) -> void:
+	floor_manual_override = true
+	if not floor_override_reasons.has(reason):
+		floor_override_reasons.append(reason)
 
 ## Marks a room as visited on the current floor (key can be a Vector2i grid position, an id, ...).
 func record_room_visited(room_key: Variant) -> void:
@@ -353,6 +375,7 @@ func record_floor(p_diff: Object, extras: Dictionary = {}) -> bool:
 		"difficulty_score": score,
 		"perceived_difficulty": extras.get("perceived_difficulty", null),
 		"created_at": int(Time.get_unix_time_from_system()),
+		"manual_override": 1 if (floor_manual_override or bool(extras.get("manual_override", false))) else 0,
 	}
 	var mix: Variant = _obj_get(p_diff, "archetype_mix")
 	for a in range(5):
@@ -374,6 +397,10 @@ func record_floor(p_diff: Object, extras: Dictionary = {}) -> bool:
 	_pending_obs = PackedFloat32Array()
 	_pending_action = PackedFloat32Array()
 
+	if row["manual_override"] == 1:
+		print("[TelemetryLogger] Floor %d flagged manual_override (%s): excluded from the Judge corpus" % [
+			fnum, ", ".join(floor_override_reasons) if not floor_override_reasons.is_empty() else "extras"])
+
 	var persisted := false
 	var b := _ensure_backend()
 	if b != null:
@@ -392,8 +419,12 @@ func load_floors(p_session_id: String) -> Array:
 	var b := _ensure_backend()
 	return b.get_floors(p_session_id) if b != null else []
 
-## Stores the post-floor difficulty rating (future UI) for an already recorded floor.
+## Stores the post-floor difficulty rating (1 = very easy .. 5 = very hard, from FloorRating) for an
+## already recorded floor of this session. Also updates the in-memory floor history.
 func set_perceived_difficulty(p_floor_num: int, value: float) -> bool:
+	for h in floor_history:
+		if int(h.get("floor_num", -1)) == p_floor_num:
+			h["perceived_difficulty"] = value
 	var b := _ensure_backend()
 	return b != null and b.set_perceived_difficulty(session_id, p_floor_num, value)
 
@@ -457,9 +488,11 @@ func _load_install_id() -> String:
 			fw.close()
 	return install_id
 
+## application/config/version + build flavour (e.g. "0.9.0-playtest"). The old code stored "" because
+## the project had no version set and get_setting() returns the empty string, not the default.
 func _game_version() -> String:
 	if game_version.is_empty():
-		game_version = str(ProjectSettings.get_setting("application/config/version", "dev"))
+		game_version = BuildInfoScript.version()
 	return game_version
 
 func _policy_version() -> String:

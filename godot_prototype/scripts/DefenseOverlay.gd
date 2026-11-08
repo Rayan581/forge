@@ -49,6 +49,9 @@ var font_inter: Font = null
 
 var is_panel_open: bool = false
 var _current_floor: int = 1
+## False in playtest builds (BuildInfo): the panel, its Tab shortcut and on-screen difficulty
+## numbers are hidden so testers play exactly what the policy generated.
+var dev_tools: bool = true
 
 func _ready() -> void:
 	# Load Google Fonts
@@ -81,6 +84,21 @@ func _ready() -> void:
 	slider_scarce.value_changed.connect(_on_slider_changed)
 	
 	set_panel_visible(false)
+	_apply_build_flavour()
+
+func _apply_build_flavour() -> void:
+	dev_tools = BuildInfo.dev_tools_enabled()
+	toggle_btn.visible = dev_tools
+	hud_diff_label.visible = dev_tools
+	if has_node("Control/TopBar/VSeparator2"):
+		get_node("Control/TopBar/VSeparator2").visible = dev_tools
+	if not dev_tools:
+		set_panel_visible(false)
+
+## Telemetry: the current floor no longer reflects the policy's settings/outcome.
+func _flag_override(reason: String) -> void:
+	if telemetry_logger:
+		telemetry_logger.mark_manual_override(reason)
 
 func _apply_typography() -> void:
 	# Apply Cinzel (Epic medieval font) to headers, badges, and action buttons
@@ -112,6 +130,8 @@ func _apply_typography() -> void:
 		label_scarce.add_theme_font_override("font", font_inter)
 
 func _input(event: InputEvent) -> void:
+	if not dev_tools or not visible:
+		return
 	if event.is_action_pressed("toggle_defense_panel") and not event.is_echo():
 		toggle_panel()
 
@@ -132,11 +152,14 @@ func _on_toggle_panel_pressed() -> void:
 	toggle_panel()
 
 func _on_auto_kill_toggled(enabled: bool) -> void:
+	if enabled:
+		_flag_override("auto-kill") # kill() deals the enemy's remaining HP, inflating damage/kills
 	emit_signal("auto_kill_toggled", enabled)
 	if minimap:
 		minimap.set_reveal_exit(enabled)
 
 func _on_static_baseline_toggled(enabled: bool) -> void:
+	_flag_override("static baseline toggled")
 	difficulty_manager.static_baseline_mode = enabled
 	if enabled:
 		difficulty_manager.apply_static_baseline(_current_floor)
@@ -148,12 +171,14 @@ func _on_static_baseline_toggled(enabled: bool) -> void:
 	emit_signal("regenerate_room_requested")
 
 func _on_preset_selected(tier: DifficultyManager.ProfileTier) -> void:
+	_flag_override("preset")
 	difficulty_manager.apply_preset(tier)
 	sync_ui_with_manager()
 	emit_signal("parameters_updated")
 	emit_signal("regenerate_room_requested")
 
 func _on_slider_changed(_val: float) -> void:
+	_flag_override("slider")
 	difficulty_manager.current_profile = DifficultyManager.ProfileTier.CUSTOM
 	difficulty_manager.enemy_health = slider_hp.value
 	difficulty_manager.enemy_damage = slider_dmg.value
@@ -223,6 +248,9 @@ func update_player_hp(current: float, max_val: float) -> void:
 
 func update_room_info(dungeon_level: int, grid_pos: Vector2i, is_calibrating: bool = false) -> void:
 	_current_floor = dungeon_level
+	if not dev_tools:
+		room_label.text = "Floor %d" % dungeon_level
+		return
 	var mode_tag = "[CALIBRATION %d/5]" % dungeon_level if is_calibrating else "[ADAPTIVE PPO]"
 	if difficulty_manager and difficulty_manager.static_baseline_mode:
 		mode_tag = "[STATIC +8%/floor]"

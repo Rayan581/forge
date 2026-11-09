@@ -81,6 +81,12 @@ var lunge_hit: bool = false
 var orbit_dir: float = 1.0
 var orbit_switch_timer: float = 2.0
 var orbit_radius: float = 140.0
+
+# Pyromancer line-of-sight (walls = physics layer 3 -> mask bit 4). Cached so we don't raycast every frame.
+const WALL_MASK := 4
+const LOS_CHECK_INTERVAL := 0.1
+var _los_timer: float = 0.0
+var _has_los: bool = false
 var swarm_offset_rad: float = 0.0      # flank angle offset (swarmer), set by Room via set_swarm_offset_deg()
 
 ## Per-archetype animated art (SpriteFrames built by tools/build_sprite_frames.py).
@@ -313,9 +319,30 @@ func _process_crawler_ai(dist_to_player: float, dir_to_player: Vector2, delta: f
 		
 	return move_velocity
 
+## True if no wall lies between this enemy and the player. Re-evaluated at most every LOS_CHECK_INTERVAL.
+func _can_see_player(delta: float) -> bool:
+	_los_timer -= delta
+	if _los_timer > 0.0:
+		return _has_los
+	_los_timer = LOS_CHECK_INTERVAL
+	if not is_instance_valid(player_ref):
+		_has_los = false
+		return false
+	var query := PhysicsRayQueryParameters2D.create(global_position, player_ref.global_position, WALL_MASK)
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+	_has_los = get_world_2d().direct_space_state.intersect_ray(query).is_empty()
+	return _has_los
+
 func _process_pyromancer_ai(dist_to_player: float, dir_to_player: Vector2, delta: float) -> Vector2:
 	var move_velocity = Vector2.ZERO
-	
+	var can_see := _can_see_player(delta)
+
+	# Lost sight mid-cast (player ducked behind a wall): abort instead of firing into the wall.
+	if is_charging and not can_see:
+		is_charging = false
+		charge_timer = 0.0
+
 	if is_charging:
 		current_state = State.CHARGING
 		charge_timer += delta
@@ -326,8 +353,8 @@ func _process_pyromancer_ai(dist_to_player: float, dir_to_player: Vector2, delta
 			shoot_fireball(dir_to_player)
 		return move_velocity
 		
-	# If player is outside aggro radius: Wander casually
-	if dist_to_player > aggro_radius:
+	# If player is outside aggro radius OR hidden behind a wall: Wander casually
+	if dist_to_player > aggro_radius or not can_see:
 		current_state = State.WANDER
 		wander_timer -= delta
 		if wander_timer <= 0.0:

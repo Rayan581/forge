@@ -14,7 +14,7 @@ var checks := 0
 ## A GDScript runtime error aborts the current function but not the caller, so each step counts
 ## itself as finished; a missing count fails the test instead of reporting a false PASS.
 var steps_finished := 0
-const STEPS := 4
+const STEPS := 5
 const TAG := "test_pt"
 
 func _initialize() -> void:
@@ -45,6 +45,7 @@ func _run() -> void:
 	_test_logger_override_and_restart()
 	await _test_main_flow(true)
 	await _test_main_flow(false)
+	await _test_pause_menu()
 	BuildInfo.force_playtest = -1
 	_cleanup()
 	_eq("all steps ran to the end", steps_finished, STEPS)
@@ -181,6 +182,70 @@ func _test_main_flow(consent: bool) -> void:
 	var sess: Dictionary = tl._ensure_backend().get_session(tl.session_id)
 	_eq("[%s] session consent" % tag, int(sess.get("consent", -1)), 1 if consent else 0)
 	_ok("[%s] session game_version is the playtest build" % tag, str(sess.get("game_version", "")).ends_with("-playtest"))
+
+	tl.close()
+	main.queue_free()
+	await _frames(2)
+	paused = false
+	steps_finished += 1
+
+## Pause menu: opens only during a run, freezes the clock, resumes, and "Return to Main Menu" saves the
+## session, starts a fresh one and lets the player start again.
+func _test_pause_menu() -> void:
+	_cleanup()
+	BuildInfo.force_playtest = 1
+	var s := GameSettings.new()
+	s.set_consent(true)
+	var main = load("res://scenes/Main.tscn").instantiate()
+	root.add_child(main)
+	await process_frame
+	var tl = main.telemetry_logger
+	tl.backend_preference = "json"
+	tl.json_path = "user://%s_tel.json" % TAG
+	tl.db_path = "user://%s_tel.db" % TAG
+	tl.install_id_path = "user://%s_install.txt" % TAG
+	await _frames(3)
+	_eq("[pause] cannot pause from the main menu", main._can_pause(), false)
+	main.main_menu.visible = false
+	main._on_start_run_requested()
+	await _frames(6)
+	_eq("[pause] can pause during a run", main._can_pause(), true)
+	main.pause_menu.open("test")
+	await _frames(1)
+	_eq("[pause] menu open", main.pause_menu.is_open, true)
+	_eq("[pause] tree paused", paused, true)
+	_eq("[pause] cannot open twice", main._can_pause(), false)
+	var t0: float = tl.elapsed_seconds
+	await _frames(12)
+	_eq("[pause] clock frozen", tl.elapsed_seconds, t0)
+	main.pause_menu.resume()
+	await _frames(2)
+	_eq("[pause] resumed: tree running", paused, false)
+	_ok("[pause] resumed: clock runs again", tl.elapsed_seconds > t0)
+
+	# Return to the main menu mid-run
+	var old_session: String = tl.session_id
+	tl.elapsed_seconds = maxf(tl.elapsed_seconds, 1.0) # a run shorter than 0.5 s is not worth a row
+	main.pause_menu.open("test")
+	await _frames(1)
+	main._return_to_main_menu()
+	await _frames(3)
+	_eq("[pause] leaving: tree running", paused, false)
+	_eq("[pause] leaving: run ended", main.game_started, false)
+	_eq("[pause] leaving: menu visible", main.main_menu.visible, true)
+	_eq("[pause] leaving: player hidden", main.player.visible, false)
+	_eq("[pause] leaving: dungeon cleared", main.active_rooms.size(), 0)
+	_ok("[pause] leaving: new session id", tl.session_id != old_session)
+	_ok("[pause] leaving: fresh clock", tl.elapsed_seconds < 0.5)
+	_eq("[pause] cannot pause from the menu again", main._can_pause(), false)
+	_eq("[pause] old session was saved", not tl._ensure_backend().get_session(old_session).is_empty(), true)
+
+	# And a second run starts normally
+	main.main_menu.visible = false
+	main._on_start_run_requested()
+	await _frames(6)
+	_eq("[pause] second run: floor 1 built", main.current_dungeon_level, 1)
+	_eq("[pause] second run: can pause", main._can_pause(), true)
 
 	tl.close()
 	main.queue_free()

@@ -482,6 +482,18 @@ func _page_privacy() -> Control:
 # Behaviour
 # ------------------------------------------------------------------------------------------------
 
+## Brings the menu back after a run (pause menu -> Return to Main Menu).
+func show_menu() -> void:
+	_starting = false
+	_root.modulate.a = 1.0
+	_front.position.x = 0.0
+	_guide.visible = false
+	_embers.emitting = true
+	visible = true
+	ForgeUI.fade_in(_root, 0.3)
+	refresh_settings()
+	_btn_play.call_deferred("grab_focus")
+
 func open_guide(tab: int = Tab.HOW_TO_PLAY) -> void:
 	_guide.visible = true
 	_show_tab(tab)

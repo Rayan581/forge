@@ -18,30 +18,19 @@
 - [x] Cite Reference [9] in §2.1
 - [x] Add Professional, Societal & Ethical Compliance section (§8.4)
 - [x] Create `CHANGES.md` change control register
+- [x] Add fixed set of 3–5 placement calibration maps in Godot prototype (`godot_prototype/`)
 
 ## Upcoming Implementation Milestones (Gate 2 & 3)
-- [ ] Add fixed set of 3–5 placement calibration maps in Godot prototype (`godot_prototype/`)
 - [ ] Migrate `TelemetryLogger.gd` from JSON to embedded SQLite
 - [ ] Implement remaining 4 enemy archetypes and activate 8th action dimension (`archetype_complexity`)
 - [ ] Calculating difficulty and skill level
-- [ ] FYP Announcement Yesterday
-    "Dear FYP groups,
 
-    In FYP-1 mid supervisory evaluation, other than the report, FYP groups are required to implement at least the core module with CI/CD pipeline using the live/functional interface (or its improved version) that was shown as a POC in the proposal defense. Please refer to the FYP handbook (especially the forms section) to see the requirements of the FYP-1 mid-supervisory evaluation.
-
-    The FYP groups should effectively and meaningfully use Github as CI/CD pipeline, having meaningful branches and automated testing for CI and CD. The School of Computing wants the FYP groups to take their projects as products, adopting as much IT industry practice as possible. The following are some of the CI/CD-related resources for reference.
-
-    What is CI/CD Pipeline?https://www.youtube.com/watch?v=gLptmcuCx6Q
-
-    Complete Git and GitHub Tutorial for Beginnershttps://www.youtube.com/watch?v=Ez8F0nW6S-w
-
-    CI/CD Tutorial using GitHub Actions - Automated Testing & Automated Deploymentshttps://www.youtube.com/watch?v=YLtlz88zrLg
-
-    GitHub Actions Tutorial for Beginners – CI/CD Pipeline from Scratch (2026)https://www.youtube.com/watch?v=0PbxpIao_EU
-
-    Mastering GitHub Actionshttps://www.youtube.com/watch?v=zH8hz_21x_0&list=PLLrA_pU9-Gz2GnvKN0kzVfIZVEUApgjTN"
-
-- architecture diagram
-- behavior design (fix)
-- implementation documentation
-- [] testing, validation and tool/risk disclosure
+## To implement for final FYP 1
+- [ ] Enemy types
+- [ ] sqlite migration
+- [ ] - No need to set all the tiles of a room with an item with the corresponding matching tile, i.e., healing type tile with a healing item. Currently if there is an item (let's say healing item) in a room, all the tiles in that room are healing type tiles. We don't need to set the tiles for each that specific item. Similarly with the finish portal room, all the tiles are purple, no need to do that. 
+- [ ] The finish room shouldn't be placed closer to the starting room.
+- [ ] The sizes of the rooms should be dynamic, not static so that there is more diversity in the map generation.
+- [ ] I have downloaded assets for the game. See the assets and use the appropriate for everything including the characters, rooms, tiles, walls, items, etc. The character sprite have animations, so make sure to incorporate them. I want to use enemy-skeleton1 sprites from the Enemy_Animations_Set/ for the main character. Use one of the skeletons from the 2D Pixel Dungeon Asset Pack/Character_animation/monsters_idle for the crawlers and maybe priests for the pyromancer.
+- [ ] For the enemy types that you'll be adding now, search and download appropriate pixel art sprites for them from the internet. 
+- [ ] Fix the simulator and retrain PPO

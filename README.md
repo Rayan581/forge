@@ -55,8 +55,8 @@ FORGE investigates whether **learned difficulty conditioning** — an RL agent t
 2. Does **multi-parameter joint optimization** (7 parameters simultaneously) outperform single-axis adjustment?
 3. Can the policy's decisions be made interpretable to both the player and an evaluating panel?
 
-Full literature review and research context: [`FORGE_Proposal.md`](FORGE_Proposal.md)
-Academic papers surveyed: [`papers/`](papers/) and [`DDA_Research_Papers.md`](DDA_Research_Papers.md)
+Full literature review and research context: [`docs/proposal/FORGE_Proposal.md`](docs/proposal/FORGE_Proposal.md)
+Academic papers surveyed: [`papers/`](papers/) and [`docs/research/DDA_Research_Papers.md`](docs/research/DDA_Research_Papers.md)
 
 ---
 
@@ -158,18 +158,29 @@ FORGE/
 |   +-- ci.yml                     Lint, pytest, policy checks, Godot import/solvability/PCK
 |   +-- release.yml                Windows PE32+ build packaging
 |
-+-- F26_FYP1_Mid_Report_LaTeX_Updated/   LaTeX source of the FYP-1 Mid Report
-+-- F26_012_i230018_i230060_i232574.pdf  Final signed Mid Report (PDF)
-+-- drawio_diagrams/               Editable draw.io sources (+ PDF/PNG renders) of report figures
-+-- compile_report.py              Local LaTeX build helper
-+-- AI Logs/                       AI usage disclosure log
-|   +-- AI logs.xlsx               Entries AI-001, AI-002
-+-- papers/                        Curated academic library (see papers/README.md)
-+-- assets/                        Architecture diagrams
-+-- FORGE_Proposal.md              Full research proposal (Markdown)
-+-- MID_EVAL_IMPLEMENTATION_PLAN.md  Mid-1 implementation plan and status
-+-- CHANGES.md                     Changelog
-+-- TODO.md                        Development roadmap
++-- docs/                          Comprehensive documentation & university deliverables
+|   +-- guidelines/                FAST-NUCES policies, grading rubrics, orientation notes
+|   +-- research/                  DDA literature surveys, related works, paper dossiers
+|   +-- proposal/                  Full FYP proposal (Markdown + DOCX), defense slides, CCP justification
+|   +-- mid_evaluation/            Mid-1 presentation deck, implementation roadmap, session logs
+|   +-- reports/mid_report/        Mid-1 formal report submissions
+|       +-- latex/                 LaTeX report source (main.tex, chapters/, ThesisFigs/)
+|       +-- diagrams/              Draw.io vector sources and diagram exports
+|       +-- *.pdf                  Signed final submission PDF and compiled reports
+|
++-- assets/                        Art assets, diagrams & showcase deliverables
+|   +-- diagrams/                  Architecture & Gantt SVG/PNG diagrams
+|   +-- poster/                    Exhibition poster PSD, fonts, and preview renders
+|   +-- 2D Pixel Dungeon Asset Pack/ Tilemaps and character animations
+|   +-- Enemy_Animations_Set/      Enemy sprite animations
+|
++-- papers/                        Curated academic paper library (PDFs)
++-- tools/                         Build scripts, tectonic LaTeX compiler, Godot launcher
++-- AI Logs/                       AI usage disclosure log (FAST requirement)
++-- archive/                       Historical spikes and early outlines
++-- scratch/                       Temporary scratch scripts and intermediate notes
++-- CHANGES.md                     Formal scope change control register
++-- TODO.md                        Active development roadmap & action items
 ```
 
 ---
@@ -532,7 +543,7 @@ After retraining, run `python godot_prototype/ai/jh.py` to verify no reward hack
 
 This repository is maintained as part of the Senior Final Year Project at the **National University of Computer and Emerging Sciences (FAST-NUCES)**, Islamabad. All work is subject to FAST's academic integrity policy.
 
-- **Academic sources** are cited in [`FORGE_Proposal.md`](FORGE_Proposal.md) and archived in [`papers/`](papers/).
+- **Academic sources** are cited in [`docs/proposal/FORGE_Proposal.md`](docs/proposal/FORGE_Proposal.md) and archived in [`papers/`](papers/).
 - **AI-assisted development** is disclosed in [`AI Logs/AI logs.xlsx`](AI%20Logs/AI%20logs.xlsx) per FAST FYP guidelines.
 - **Third-party assets:** pixel art sprites generated with [`generate_prototype_sprites.py`](generate_prototype_sprites.py); Google Fonts (Inter) used under the Open Font License.
 

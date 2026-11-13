@@ -22,6 +22,8 @@ To try the playtest flavour without exporting: `.\godot --path godot_prototype -
   Stored in `user://forge_settings.cfg`; changeable in Main Menu → Data & Privacy.
 - **After every floor** (consenting players only): "How hard did that floor feel?" 1–5
   (Very easy … Very hard), keys 1–5, Esc to skip. The game is paused while it is open.
+- **Esc during a run:** pause menu (Resume / Return to Main Menu / Quit Game). Time stops while it is
+  open. Leaving or quitting saves the session so far; a new run after "Return to Main Menu" is a new session.
 - **No developer tools:** the Defense Panel, its Tab shortcut, the difficulty badge, the archetype-mix
   HUD text and the difficulty score on the floor banner are hidden, so testers play exactly what the
   policy generated and their ratings are not anchored by an on-screen "Hard (64/100)".

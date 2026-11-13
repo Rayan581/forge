@@ -40,6 +40,7 @@ var game_started: bool = false
 var settings: GameSettings
 var floor_rating: FloorRating
 var consent_screen: ConsentScreen = null
+var pause_menu: PauseMenu
 ## True from the moment the exit portal is used until the next floor is built (blocks re-entry while
 ## the rating prompt / calibration banner is up).
 var _floor_transition: bool = false
@@ -77,6 +78,10 @@ func _ready() -> void:
 
 	floor_rating = FloorRating.new()
 	add_child(floor_rating)
+	pause_menu = PauseMenu.new()
+	add_child(pause_menu)
+	pause_menu.main_menu_requested.connect(_return_to_main_menu)
+	pause_menu.quit_requested.connect(_quit_game)
 	if not settings.consent_decided:
 		_show_consent_screen()
 	
@@ -99,6 +104,63 @@ func _on_consent_decided(consent: bool) -> void:
 func _on_settings_changed() -> void:
 	telemetry_logger.consent_given = settings.consent_given
 	main_menu.refresh_settings()
+
+## Esc during a run opens the pause menu (everything else that owns Esc is closed or handles it first).
+func _unhandled_input(event: InputEvent) -> void:
+	if not event.is_action_pressed("ui_cancel") or event.is_echo():
+		return
+	if _can_pause():
+		pause_menu.open("Floor %d  ·  %s" % [current_dungeon_level, _fmt_time(telemetry_logger.elapsed_seconds)])
+		get_viewport().set_input_as_handled()
+
+func _can_pause() -> bool:
+	return game_started and not _floor_transition and not pause_menu.is_open \
+		and not floor_rating.is_open and consent_screen == null and not main_menu.visible \
+		and not get_tree().paused
+
+func _fmt_time(sec: float) -> String:
+	var t := int(sec)
+	return "%02d:%02d" % [t / 60, t % 60]
+
+## Pause menu -> Return to Main Menu: store what was played, then start from a clean slate.
+func _return_to_main_menu() -> void:
+	pause_menu.close_silently()
+	_save_session_if_played()
+	telemetry_logger.start_new_session() # the next run is its own session
+	if difficulty_manager.static_baseline_mode:
+		difficulty_manager.apply_static_baseline(1)
+	else:
+		difficulty_manager.apply_calibration_level(1)
+	defense_overlay.sync_ui_with_manager()
+	for child in dungeon_container.get_children():
+		child.queue_free()
+	active_rooms.clear()
+	game_started = false
+	_floor_transition = false
+	current_dungeon_level = 1
+	level_splash.visible = false
+	player.visible = false
+	player.position = Vector2(-9999, -9999)
+	player.set_physics_process(false)
+	defense_overlay.visible = false
+	main_menu.show_menu()
+
+## Pause menu -> Quit Game.
+func _quit_game() -> void:
+	pause_menu.close_silently()
+	_save_session_if_played()
+	telemetry_logger.close()
+	get_tree().quit()
+
+func _save_session_if_played() -> void:
+	if game_started and telemetry_logger.elapsed_seconds > 0.5:
+		telemetry_logger.save_to_file()
+
+## Closing the window mid-run keeps the data of the session so far.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST and telemetry_logger != null:
+		_save_session_if_played()
+		telemetry_logger.close()
 
 func _on_start_run_requested() -> void:
 	game_started = true
@@ -253,6 +315,8 @@ func _on_player_died() -> void:
 	
 	# Small delay then respawn in start room
 	await get_tree().create_timer(1.2).timeout
+	if not game_started:
+		return # the player left to the main menu during the respawn delay
 	var start_pos = dungeon_generator.start_room_pos
 	if dungeon_generator.rooms.has(start_pos):
 		var start_world_pos = dungeon_generator.rooms[start_pos].world_pos

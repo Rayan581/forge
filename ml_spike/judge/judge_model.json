@@ -1,0 +1,873 @@
+{
+  "model": "LightGBM regressor (gbdt)",
+  "lightgbm_version": "4.7.0",
+  "features": [
+    "enemy_health",
+    "enemy_damage",
+    "enemy_speed",
+    "enemy_aggro",
+    "hazard_density",
+    "resource_scarcity",
+    "room_count",
+    "archetype_complexity",
+    "archetype_mix_0",
+    "archetype_mix_1",
+    "archetype_mix_2",
+    "archetype_mix_3",
+    "archetype_mix_4",
+    "enemy_count_scale",
+    "prev_time_per_room",
+    "prev_deaths",
+    "prev_damage_frac",
+    "prev_difficulty_score"
+  ],
+  "context_features": [
+    "prev_time_per_room",
+    "prev_deaths",
+    "prev_damage_frac",
+    "prev_difficulty_score"
+  ],
+  "first_floor_context": "NaN (LightGBM missing-value branch)",
+  "target": {
+    "name": "difficulty",
+    "range": [
+      0.0,
+      1.0
+    ],
+    "primary": "(perceived_difficulty - 1) / 4 when the 1-5 rating exists",
+    "fallback": "0.4*min(damage_taken/player_max_hp, 1.0) + 0.35*min(deaths, 3)/3 + 0.25*min((completion_time/rooms)/15, 1)",
+    "constants": {
+      "W_DAMAGE": 0.4,
+      "W_DEATHS": 0.35,
+      "W_PACE": 0.25,
+      "DAMAGE_CAP": 1.0,
+      "DEATH_CAP": 3.0,
+      "PACE_CAP_S_PER_ROOM": 15.0
+    }
+  },
+  "target_mode": "auto",
+  "training_corpus": {
+    "path": "ml_spike/judge/data/synthetic_corpus.csv",
+    "sources": [
+      "synthetic"
+    ],
+    "synthetic": true,
+    "counts": {
+      "rows_in": 30199,
+      "excluded_manual_override": 0,
+      "excluded_missing_settings": 0,
+      "excluded_no_target": 0,
+      "rows_used": 30199,
+      "rows_with_rating": 0,
+      "sessions": 3000,
+      "players": 3000
+    },
+    "train_rows": 24092,
+    "test_rows": 6107,
+    "train_players": 2400,
+    "test_players": 600,
+    "split": "grouped by install_id; test_frac=0.2; seed=0"
+  },
+  "params": {
+    "objective": "regression",
+    "metric": "l1",
+    "learning_rate": 0.05,
+    "num_leaves": 31,
+    "min_data_in_leaf": 40,
+    "feature_fraction": 0.9,
+    "bagging_fraction": 0.8,
+    "bagging_freq": 1,
+    "lambda_l2": 1.0,
+    "verbose": -1,
+    "deterministic": true,
+    "force_row_wise": true,
+    "num_threads": 4,
+    "seed": 0,
+    "num_boost_round": 349
+  },
+  "cv": {
+    "folds": [
+      {
+        "fold": 0,
+        "best_iteration": 315,
+        "judge": {
+          "n": 4859,
+          "mae": 0.0517175171213197,
+          "rmse": 0.0765727261277347,
+          "r2": 0.8210021839573747
+        },
+        "proxy_raw": {
+          "n": 4859,
+          "mae": 0.21561480067494965,
+          "rmse": 0.2523865780371065,
+          "r2": -0.94460780598978
+        },
+        "proxy_cal": {
+          "n": 4859,
+          "mae": 0.10819777558875628,
+          "rmse": 0.13860706035168419,
+          "r2": 0.4134970243570363
+        },
+        "linear": {
+          "n": 4859,
+          "mae": 0.07024812443072943,
+          "rmse": 0.09540573168787891,
+          "r2": 0.7221256580257522
+        },
+        "mean": {
+          "n": 4859,
+          "mae": 0.14720503908494048,
+          "rmse": 0.18137260298235292,
+          "r2": -0.004252417353886706
+        }
+      },
+      {
+        "fold": 1,
+        "best_iteration": 259,
+        "judge": {
+          "n": 4854,
+          "mae": 0.053701950789412395,
+          "rmse": 0.0790200848581189,
+          "r2": 0.8132421654503986
+        },
+        "proxy_raw": {
+          "n": 4854,
+          "mae": 0.20574227617580218,
+          "rmse": 0.24229165195847624,
+          "r2": -0.7558230586969812
+        },
+        "proxy_cal": {
+          "n": 4854,
+          "mae": 0.10659484947384276,
+          "rmse": 0.13904433823926363,
+          "r2": 0.42175689201792155
+        },
+        "linear": {
+          "n": 4854,
+          "mae": 0.07061858546159934,
+          "rmse": 0.09640109569399843,
+          "r2": 0.7220492908312519
+        },
+        "mean": {
+          "n": 4854,
+          "mae": 0.14602792110342677,
+          "rmse": 0.1828568688319821,
+          "r2": -6.079890768817542e-05
+        }
+      },
+      {
+        "fold": 2,
+        "best_iteration": 431,
+        "judge": {
+          "n": 4754,
+          "mae": 0.05425612692529083,
+          "rmse": 0.07886010648204965,
+          "r2": 0.8143180677034814
+        },
+        "proxy_raw": {
+          "n": 4754,
+          "mae": 0.20387359271105213,
+          "rmse": 0.2398050133778963,
+          "r2": -0.7170045464870616
+        },
+        "proxy_cal": {
+          "n": 4754,
+          "mae": 0.10477439859764645,
+          "rmse": 0.1368102515702919,
+          "r2": 0.4411539165388091
+        },
+        "linear": {
+          "n": 4754,
+          "mae": 0.06962649233064055,
+          "rmse": 0.09467241191346784,
+          "r2": 0.7323903243246862
+        },
+        "mean": {
+          "n": 4754,
+          "mae": 0.14782542609568697,
+          "rmse": 0.1830972826208961,
+          "r2": -0.0009646182669316161
+        }
+      },
+      {
+        "fold": 3,
+        "best_iteration": 384,
+        "judge": {
+          "n": 4764,
+          "mae": 0.054718399909588704,
+          "rmse": 0.08073382578824619,
+          "r2": 0.8118472520018356
+        },
+        "proxy_raw": {
+          "n": 4764,
+          "mae": 0.20445293452575816,
+          "rmse": 0.24108190372931837,
+          "r2": -0.6777557032738457
+        },
+        "proxy_cal": {
+          "n": 4764,
+          "mae": 0.10720221876781984,
+          "rmse": 0.13915729371772145,
+          "r2": 0.4410004637605289
+        },
+        "linear": {
+          "n": 4764,
+          "mae": 0.07125556360062116,
+          "rmse": 0.09769093797883718,
+          "r2": 0.7245085922433836
+        },
+        "mean": {
+          "n": 4764,
+          "mae": 0.15002409698404465,
+          "rmse": 0.186284311134847,
+          "r2": -0.0017331814291243752
+        }
+      },
+      {
+        "fold": 4,
+        "best_iteration": 354,
+        "judge": {
+          "n": 4861,
+          "mae": 0.05436792271063425,
+          "rmse": 0.07954120040937299,
+          "r2": 0.8080168238719894
+        },
+        "proxy_raw": {
+          "n": 4861,
+          "mae": 0.20770052687535637,
+          "rmse": 0.2432765485396975,
+          "r2": -0.7958885509210489
+        },
+        "proxy_cal": {
+          "n": 4861,
+          "mae": 0.10477628079468523,
+          "rmse": 0.13685052199885311,
+          "r2": 0.43170765372053765
+        },
+        "linear": {
+          "n": 4861,
+          "mae": 0.07042361207450015,
+          "rmse": 0.09604379728960659,
+          "r2": 0.7200905664817444
+        },
+        "mean": {
+          "n": 4861,
+          "mae": 0.14598481058515514,
+          "rmse": 0.1815350774351165,
+          "r2": -2.493893980215489e-11
+        }
+      }
+    ],
+    "summary": {
+      "judge_mae_mean": 0.05375238349124918,
+      "judge_mae_std": 0.0010685558758742858,
+      "judge_rmse_mean": 0.07894558873310449,
+      "judge_rmse_std": 0.0013561621485750927,
+      "judge_r2_mean": 0.813685298597016,
+      "judge_r2_std": 0.004234231833489497,
+      "proxy_raw_mae_mean": 0.20747682619258373,
+      "proxy_raw_mae_std": 0.004275805111717702,
+      "proxy_raw_rmse_mean": 0.243768339128499,
+      "proxy_raw_rmse_std": 0.0044636619725633596,
+      "proxy_raw_r2_mean": -0.7782159330737435,
+      "proxy_raw_r2_std": 0.09202076856476399,
+      "proxy_cal_mae_mean": 0.1063091046445501,
+      "proxy_cal_mae_std": 0.0013528675090530623,
+      "proxy_cal_rmse_mean": 0.13809389317556287,
+      "proxy_cal_rmse_std": 0.0010479708714157935,
+      "proxy_cal_r2_mean": 0.42982319007896674,
+      "proxy_cal_r2_std": 0.010848749825360297,
+      "linear_mae_mean": 0.07043447557961813,
+      "linear_mae_std": 0.0005283490671784606,
+      "linear_rmse_mean": 0.09604279491275779,
+      "linear_rmse_std": 0.0010127739272017796,
+      "linear_r2_mean": 0.7242328863813637,
+      "linear_r2_std": 0.0043124731313123055,
+      "mean_mae_mean": 0.1474134587706508,
+      "mean_mae_std": 0.0014825206904956103,
+      "mean_rmse_mean": 0.18302922860103893,
+      "mean_rmse_std": 0.0017667369746866477,
+      "mean_r2_mean": -0.0014022031965139625,
+      "mean_r2_std": 0.001561428006947665
+    },
+    "rounds": 349
+  },
+  "test_metrics": {
+    "judge": {
+      "n": 6107,
+      "mae": 0.05220891270835051,
+      "rmse": 0.07644338531116904,
+      "r2": 0.8230412818415621
+    },
+    "proxy_raw": {
+      "n": 6107,
+      "mae": 0.20637406825258703,
+      "rmse": 0.2424127104733263,
+      "r2": -0.7795201726877565
+    },
+    "proxy_cal": {
+      "n": 6107,
+      "mae": 0.10443664415359383,
+      "rmse": 0.13538939247543405,
+      "r2": 0.44491253603260095
+    },
+    "linear": {
+      "n": 6107,
+      "mae": 0.06915530108425492,
+      "rmse": 0.09374708212798946,
+      "r2": 0.7338615281213425
+    },
+    "mean": {
+      "n": 6107,
+      "mae": 0.14630575595416156,
+      "rmse": 0.18174288001239983,
+      "r2": -0.00024629689990152137
+    }
+  },
+  "raw_outcome_models": {
+    "completion_time": {
+      "n": 6107,
+      "mae": 10.252312392599368,
+      "rmse": 16.28439989169553,
+      "r2": 0.8035854273193774
+    },
+    "deaths": {
+      "n": 6107,
+      "mae": 0.04294402235421293,
+      "rmse": 0.15208397673127155,
+      "r2": 0.3473643212479093
+    },
+    "damage_taken": {
+      "n": 6107,
+      "mae": 10.842873638281896,
+      "rmse": 19.822440820852787,
+      "r2": 0.7539632377322107
+    }
+  },
+  "real_eval": {
+    "sources": [
+      {
+        "file": "forge_telemetry.db",
+        "sessions": 5,
+        "floors": 29
+      }
+    ],
+    "counts": {
+      "rows_in": 29,
+      "excluded_manual_override": 0,
+      "excluded_missing_settings": 0,
+      "excluded_no_target": 0,
+      "rows_used": 29,
+      "rows_with_rating": 29,
+      "sessions": 3,
+      "players": 1
+    },
+    "consented_only": true,
+    "rows": [
+      {
+        "session_id": "sess_1794126052_583b",
+        "floor_num": 1,
+        "phase": "calibration",
+        "rating": 2.0,
+        "target": 0.25,
+        "target_kind": "rating",
+        "measured": 0.21111111111111114,
+        "judge": 0.0658946532155208,
+        "proxy_raw": 0.12
+      },
+      {
+        "session_id": "sess_1794126052_583b",
+        "floor_num": 2,
+        "phase": "calibration",
+        "rating": 2.0,
+        "target": 0.25,
+        "target_kind": "rating",
+        "measured": 0.2729375,
+        "judge": 0.15294887419182263,
+        "proxy_raw": 0.24
+      },
+      {
+        "session_id": "sess_1794126052_583b",
+        "floor_num": 3,
+        "phase": "calibration",
+        "rating": 3.0,
+        "target": 0.5,
+        "target_kind": "rating",
+        "measured": 0.42857916666666673,
+        "judge": 0.22609797965323764,
+        "proxy_raw": 0.37
+      },
+      {
+        "session_id": "sess_1794126052_583b",
+        "floor_num": 4,
+        "phase": "calibration",
+        "rating": 4.0,
+        "target": 0.75,
+        "target_kind": "rating",
+        "measured": 0.7123700000000001,
+        "judge": 0.47386442466945333,
+        "proxy_raw": 0.52
+      },
+      {
+        "session_id": "sess_1794126052_583b",
+        "floor_num": 5,
+        "phase": "calibration",
+        "rating": 5.0,
+        "target": 1.0,
+        "target_kind": "rating",
+        "measured": 0.7666666666666667,
+        "judge": 0.6129706461267195,
+        "proxy_raw": 0.68
+      },
+      {
+        "session_id": "sess_1794126052_583b",
+        "floor_num": 6,
+        "phase": "adaptive",
+        "rating": 3.0,
+        "target": 0.5,
+        "target_kind": "rating",
+        "measured": 0.19370266485744053,
+        "judge": 0.16011069376809822,
+        "proxy_raw": 0.21
+      },
+      {
+        "session_id": "sess_1794126052_583b",
+        "floor_num": 7,
+        "phase": "adaptive",
+        "rating": 3.0,
+        "target": 0.5,
+        "target_kind": "rating",
+        "measured": 0.30541470720635544,
+        "judge": 0.15788632118378215,
+        "proxy_raw": 0.26
+      },
+      {
+        "session_id": "sess_1794126052_583b",
+        "floor_num": 8,
+        "phase": "adaptive",
+        "rating": 3.0,
+        "target": 0.5,
+        "target_kind": "rating",
+        "measured": 0.17995021724734042,
+        "judge": 0.14436713974498885,
+        "proxy_raw": 0.24
+      },
+      {
+        "session_id": "sess_1794126052_583b",
+        "floor_num": 9,
+        "phase": "adaptive",
+        "rating": 3.0,
+        "target": 0.5,
+        "target_kind": "rating",
+        "measured": 0.28516432679891585,
+        "judge": 0.15135851716790352,
+        "proxy_raw": 0.27
+      },
+      {
+        "session_id": "sess_1794126052_583b",
+        "floor_num": 10,
+        "phase": "adaptive",
+        "rating": 3.0,
+        "target": 0.5,
+        "target_kind": "rating",
+        "measured": 0.16173527962631648,
+        "judge": 0.13801794241428503,
+        "proxy_raw": 0.26
+      },
+      {
+        "session_id": "sess_1794126052_583b",
+        "floor_num": 11,
+        "phase": "adaptive",
+        "rating": 3.0,
+        "target": 0.5,
+        "target_kind": "rating",
+        "measured": 0.2233040901462237,
+        "judge": 0.15035136976254207,
+        "proxy_raw": 0.29
+      },
+      {
+        "session_id": "sess_1794126052_583b",
+        "floor_num": 12,
+        "phase": "adaptive",
+        "rating": 3.0,
+        "target": 0.5,
+        "target_kind": "rating",
+        "measured": 0.06706388888888888,
+        "judge": 0.12816049858533576,
+        "proxy_raw": 0.29
+      },
+      {
+        "session_id": "sess_1794127312_b6e6",
+        "floor_num": 1,
+        "phase": "calibration",
+        "rating": 1.0,
+        "target": 0.0,
+        "target_kind": "rating",
+        "measured": 0.10626111111111111,
+        "judge": 0.0658946532155208,
+        "proxy_raw": 0.12
+      },
+      {
+        "session_id": "sess_1794129326_a596",
+        "floor_num": 1,
+        "phase": "calibration",
+        "rating": 1.0,
+        "target": 0.0,
+        "target_kind": "rating",
+        "measured": 0.10822777777777778,
+        "judge": 0.0658946532155208,
+        "proxy_raw": 0.12
+      },
+      {
+        "session_id": "sess_1794129326_a596",
+        "floor_num": 2,
+        "phase": "calibration",
+        "rating": 2.0,
+        "target": 0.25,
+        "target_kind": "rating",
+        "measured": 0.1880041666666667,
+        "judge": 0.1276337496904907,
+        "proxy_raw": 0.24
+      },
+      {
+        "session_id": "sess_1794129326_a596",
+        "floor_num": 3,
+        "phase": "calibration",
+        "rating": 3.0,
+        "target": 0.5,
+        "target_kind": "rating",
+        "measured": 0.08952500000000001,
+        "judge": 0.17191745817628187,
+        "proxy_raw": 0.37
+      },
+      {
+        "session_id": "sess_1794129326_a596",
+        "floor_num": 4,
+        "phase": "calibration",
+        "rating": 3.0,
+        "target": 0.5,
+        "target_kind": "rating",
+        "measured": 0.6939466666666667,
+        "judge": 0.16343501374738664,
+        "proxy_raw": 0.52
+      },
+      {
+        "session_id": "sess_1794129326_a596",
+        "floor_num": 5,
+        "phase": "calibration",
+        "rating": 4.0,
+        "target": 0.75,
+        "target_kind": "rating",
+        "measured": 0.5449966666666667,
+        "judge": 0.5657868203179997,
+        "proxy_raw": 0.68
+      },
+      {
+        "session_id": "sess_1794129326_a596",
+        "floor_num": 6,
+        "phase": "adaptive",
+        "rating": 3.0,
+        "target": 0.5,
+        "target_kind": "rating",
+        "measured": 0.205079740613699,
+        "judge": 0.08416341751646947,
+        "proxy_raw": 0.26
+      },
+      {
+        "session_id": "sess_1794129326_a596",
+        "floor_num": 7,
+        "phase": "adaptive",
+        "rating": 3.0,
+        "target": 0.5,
+        "target_kind": "rating",
+        "measured": 0.09165454856124189,
+        "judge": 0.15535189266934013,
+        "proxy_raw": 0.28
+      },
+      {
+        "session_id": "sess_1794129326_a596",
+        "floor_num": 8,
+        "phase": "adaptive",
+        "rating": 3.0,
+        "target": 0.5,
+        "target_kind": "rating",
+        "measured": 0.3297656413309631,
+        "judge": 0.12403922280637299,
+        "proxy_raw": 0.36
+      },
+      {
+        "session_id": "sess_1794129326_a596",
+        "floor_num": 9,
+        "phase": "adaptive",
+        "rating": 3.0,
+        "target": 0.5,
+        "target_kind": "rating",
+        "measured": 0.14223736555320876,
+        "judge": 0.1459862687041413,
+        "proxy_raw": 0.34
+      },
+      {
+        "session_id": "sess_1794129326_a596",
+        "floor_num": 10,
+        "phase": "adaptive",
+        "rating": 3.0,
+        "target": 0.5,
+        "target_kind": "rating",
+        "measured": 0.437676531199898,
+        "judge": 0.14325330056057312,
+        "proxy_raw": 0.41
+      },
+      {
+        "session_id": "sess_1794129326_a596",
+        "floor_num": 11,
+        "phase": "adaptive",
+        "rating": 3.0,
+        "target": 0.5,
+        "target_kind": "rating",
+        "measured": 0.14022960904226417,
+        "judge": 0.17163455574780706,
+        "proxy_raw": 0.35
+      },
+      {
+        "session_id": "sess_1794129326_a596",
+        "floor_num": 12,
+        "phase": "adaptive",
+        "rating": 3.0,
+        "target": 0.5,
+        "target_kind": "rating",
+        "measured": 0.17018334830779383,
+        "judge": 0.15670985945893906,
+        "proxy_raw": 0.43
+      },
+      {
+        "session_id": "sess_1794129326_a596",
+        "floor_num": 13,
+        "phase": "adaptive",
+        "rating": 4.0,
+        "target": 0.75,
+        "target_kind": "rating",
+        "measured": 0.4898904761904762,
+        "judge": 0.19116629414257458,
+        "proxy_raw": 0.48
+      },
+      {
+        "session_id": "sess_1794129326_a596",
+        "floor_num": 14,
+        "phase": "adaptive",
+        "rating": 3.0,
+        "target": 0.5,
+        "target_kind": "rating",
+        "measured": 0.13786105208070507,
+        "judge": 0.1955757905637345,
+        "proxy_raw": 0.39
+      },
+      {
+        "session_id": "sess_1794129326_a596",
+        "floor_num": 15,
+        "phase": "adaptive",
+        "rating": 4.0,
+        "target": 0.75,
+        "target_kind": "rating",
+        "measured": 0.2705954010479507,
+        "judge": 0.16412509088012917,
+        "proxy_raw": 0.48
+      },
+      {
+        "session_id": "sess_1794129326_a596",
+        "floor_num": 16,
+        "phase": "adaptive",
+        "rating": 3.0,
+        "target": 0.5,
+        "target_kind": "rating",
+        "measured": 0.40486131145178916,
+        "judge": 0.23242686519513545,
+        "proxy_raw": 0.48
+      }
+    ],
+    "vs_measured": {
+      "judge": {
+        "n": 29,
+        "mae": 0.12116077152882854,
+        "rmse": 0.1647261314194096,
+        "r2": 0.2675228577429093
+      },
+      "proxy_raw": {
+        "n": 29,
+        "mae": 0.1092592507423693,
+        "rmse": 0.13914033822626165,
+        "r2": 0.47739304193236165
+      },
+      "proxy_cal": {
+        "n": 29,
+        "mae": 0.13672950850899526,
+        "rmse": 0.16974608333972996,
+        "r2": 0.2221988106825532
+      },
+      "linear": {
+        "n": 29,
+        "mae": 0.13836776743970414,
+        "rmse": 0.18378675120044752,
+        "r2": 0.08820442573191678
+      },
+      "mean": {
+        "n": 29,
+        "mae": 0.1482052825888082,
+        "rmse": 0.19497838337820683,
+        "r2": -0.026223625510673587
+      }
+    },
+    "vs_rating": {
+      "judge": {
+        "n": 29,
+        "mae": 0.31126050502655095,
+        "rmse": 0.333536725003832,
+        "r2": -1.7217022302546336
+      },
+      "proxy_raw": {
+        "n": 29,
+        "mae": 0.1624137931034483,
+        "rmse": 0.1850722133058635,
+        "r2": 0.16201600000000027
+      },
+      "proxy_cal": {
+        "n": 29,
+        "mae": 0.31087153566341275,
+        "rmse": 0.33437304252293415,
+        "r2": -1.7353682573685218
+      },
+      "linear": {
+        "n": 29,
+        "mae": 0.3346173927658529,
+        "rmse": 0.3617504559926622,
+        "r2": -2.2016323786928313
+      },
+      "mean": {
+        "n": 29,
+        "mae": 0.2712280116010343,
+        "rmse": 0.3094727617629271,
+        "r2": -1.3431395263924029
+      }
+    },
+    "spearman_vs_rating": {
+      "judge": 0.7207383874686843,
+      "proxy_raw": 0.8030208829605332,
+      "measured_target": 0.5203415033349985
+    },
+    "status": "ok (n too small to conclude)"
+  },
+  "expected_value_mean_train": 0.25707303492473715,
+  "feature_reference": {
+    "enemy_health": {
+      "q25": 45.0,
+      "q50": 64.80000000000001,
+      "q75": 90.0
+    },
+    "enemy_damage": {
+      "q25": 14.275927529918457,
+      "q50": 23.532837282362838,
+      "q75": 31.344074937493016
+    },
+    "enemy_speed": {
+      "q25": 110.0,
+      "q50": 132.24254241560803,
+      "q75": 160.77624928924212
+    },
+    "enemy_aggro": {
+      "q25": 200.0,
+      "q50": 250.0,
+      "q75": 319.3711835762129
+    },
+    "hazard_density": {
+      "q25": 0.1964371469026076,
+      "q50": 0.37945129367523367,
+      "q75": 0.5360778368734489
+    },
+    "resource_scarcity": {
+      "q25": 0.26326441234978415,
+      "q50": 0.4,
+      "q75": 0.6048207353911631
+    },
+    "room_count": {
+      "q25": 5.0,
+      "q50": 6.0,
+      "q75": 7.0
+    },
+    "archetype_complexity": {
+      "q25": 0.19583404807809018,
+      "q50": 0.45,
+      "q75": 0.56
+    },
+    "archetype_mix_0": {
+      "q25": 0.07036533385631506,
+      "q50": 0.11486321209646871,
+      "q75": 0.25176064337700377
+    },
+    "archetype_mix_1": {
+      "q25": 0.14507992062053127,
+      "q50": 0.25,
+      "q75": 0.36926393766764426
+    },
+    "archetype_mix_2": {
+      "q25": 0.049596268116192936,
+      "q50": 0.0953481527274358,
+      "q75": 0.15452131447413509
+    },
+    "archetype_mix_3": {
+      "q25": 0.09460365420288015,
+      "q50": 0.1890092306229512,
+      "q75": 0.2507431221045164
+    },
+    "archetype_mix_4": {
+      "q25": 0.11250333615497232,
+      "q50": 0.22421431285579907,
+      "q75": 0.3118226243854165
+    },
+    "enemy_count_scale": {
+      "q25": 1.0,
+      "q50": 1.0,
+      "q75": 1.0
+    },
+    "prev_time_per_room": {
+      "q25": 4.898485783058416,
+      "q50": 7.421333379781105,
+      "q75": 11.054992434253348
+    },
+    "prev_deaths": {
+      "q25": 0.0,
+      "q50": 0.0,
+      "q75": 0.0
+    },
+    "prev_damage_frac": {
+      "q25": 0.06491949157879001,
+      "q50": 0.18190741929108373,
+      "q75": 0.4209045033316812
+    },
+    "prev_difficulty_score": {
+      "q25": 35.0,
+      "q50": 47.0,
+      "q75": 57.99999999999999
+    }
+  },
+  "feature_importance_gain": {
+    "enemy_health": 2011.7517,
+    "enemy_damage": 836.0027,
+    "enemy_speed": 50.6703,
+    "enemy_aggro": 62.131,
+    "hazard_density": 245.2708,
+    "resource_scarcity": 55.7104,
+    "room_count": 187.1768,
+    "archetype_complexity": 59.9984,
+    "archetype_mix_0": 31.2555,
+    "archetype_mix_1": 13.3617,
+    "archetype_mix_2": 36.3722,
+    "archetype_mix_3": 14.7853,
+    "archetype_mix_4": 10.0974,
+    "enemy_count_scale": 88.9206,
+    "prev_time_per_room": 1348.4184,
+    "prev_deaths": 0.2915,
+    "prev_damage_frac": 391.7525,
+    "prev_difficulty_score": 521.7925
+  },
+  "git_commit": "24d99eb515afec0c53c7851c0146d43d8e77f61f",
+  "trained_at": "2026-11-15T17:01:53Z"
+}

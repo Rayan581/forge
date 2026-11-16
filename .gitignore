@@ -34,3 +34,5 @@ godot_prototype/dist/
 godot_prototype/dist_dev/
 ~*.TMP
 *.dll~*
+# Judge: synthetic corpus is regenerated deterministically (python -m ml_spike.judge.make_synthetic_corpus)
+ml_spike/judge/data/

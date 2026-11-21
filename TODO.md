@@ -19,18 +19,27 @@
 - [x] Add Professional, Societal & Ethical Compliance section (§8.4)
 - [x] Create `CHANGES.md` change control register
 - [x] Add fixed set of 3–5 placement calibration maps in Godot prototype (`godot_prototype/`)
+- [x] Migrate `TelemetryLogger.gd` from JSON to embedded SQLite
+- [x] Implement remaining 4 enemy archetypes and activate 8th action dimension (`archetype_complexity`)
+- [x] Enemy types
+- [x] sqlite migration
+- [x] - No need to set all the tiles of a room with an item with the corresponding matching tile, i.e., healing type tile with a healing item. Currently if there is an item (let's say healing item) in a room, all the tiles in that room are healing type tiles. We don't need to set the tiles for each that specific item. Similarly with the finish portal room, all the tiles are purple, no need to do that. 
+- [x] The finish room shouldn't be placed closer to the starting room.
+- [x] The sizes of the rooms should be dynamic, not static so that there is more diversity in the map generation.
+- [x] I have downloaded assets for the game. See the assets and use the appropriate for everything including the characters, rooms, tiles, walls, items, etc. The character sprite have animations, so make sure to incorporate them. I want to use enemy-skeleton1 sprites from the Enemy_Animations_Set/ for the main character. Use one of the skeletons from the 2D Pixel Dungeon Asset Pack/Character_animation/monsters_idle for the crawlers and maybe priests for the pyromancer.
+- [x] For the enemy types that you'll be adding now, search and download appropriate pixel art sprites for them from the internet. 
 
 ## Upcoming Implementation Milestones (Gate 2 & 3)
-- [ ] Migrate `TelemetryLogger.gd` from JSON to embedded SQLite
-- [ ] Implement remaining 4 enemy archetypes and activate 8th action dimension (`archetype_complexity`)
 - [ ] Calculating difficulty and skill level
 
 ## To implement for final FYP 1
-- [ ] Enemy types
-- [ ] sqlite migration
-- [ ] - No need to set all the tiles of a room with an item with the corresponding matching tile, i.e., healing type tile with a healing item. Currently if there is an item (let's say healing item) in a room, all the tiles in that room are healing type tiles. We don't need to set the tiles for each that specific item. Similarly with the finish portal room, all the tiles are purple, no need to do that. 
-- [ ] The finish room shouldn't be placed closer to the starting room.
-- [ ] The sizes of the rooms should be dynamic, not static so that there is more diversity in the map generation.
-- [ ] I have downloaded assets for the game. See the assets and use the appropriate for everything including the characters, rooms, tiles, walls, items, etc. The character sprite have animations, so make sure to incorporate them. I want to use enemy-skeleton1 sprites from the Enemy_Animations_Set/ for the main character. Use one of the skeletons from the 2D Pixel Dungeon Asset Pack/Character_animation/monsters_idle for the crawlers and maybe priests for the pyromancer.
-- [ ] For the enemy types that you'll be adding now, search and download appropriate pixel art sprites for them from the internet. 
 - [ ] Fix the simulator and retrain PPO
+
+# Supervisor Meeting
+- 18/11/2026 - Show a consent screen after the user clicks on the Play button. If the user wants to record this session, show the level difficulty screen only then. 
+
+# Off the Head
+- Show controls while playing the game on the level. 
+- Have doors between some rooms and the key should be in one of the rooms in chest. That chest can also contain credits once we implement the credits and items system. 
+- Don't show the map overlay, as it helps the player a little too much. 
+- The difficulty isn't very well tuned and trained. 

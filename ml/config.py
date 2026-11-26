@@ -49,7 +49,12 @@ DEFAULTS: dict = {
         #   real      -> real telemetry only (fails if too few players)
         #   synthetic -> synthetic sim-v3 corpus; real telemetry is used only to validate
         #   mixed     -> synthetic corpus + real rows (real rows are always in the held-out check)
+        #   mlp1_synth-> corpus SIMULATED by MLP1 trained on the recorded players (ml/judge_corpus.py):
+        #                real players are split by install_id; MLP1 learns from one part, the
+        #                other part is held out and is the Judge's only real-data check
         "train_on": "auto",
+        "mlp1_players": 2000,  # simulated players in the MLP1 corpus
+        "mlp1_holdout_frac": 0.34,  # share of real players held out (at least 1 on each side)
         "min_real_players": 7,
         "target": "auto",  # auto | measured | rating   (see ml_spike/judge/common.py)
         "synthetic_players": 3000,

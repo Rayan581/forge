@@ -287,7 +287,7 @@ def run(
         "training_corpus": {
             "path": _rel(corpus),
             "sources": sources,
-            "synthetic": sources == ["synthetic"],
+            "synthetic": all(s.startswith("synthetic") for s in sources),
             "counts": counts,
             "train_rows": int(len(df_tr)),
             "test_rows": int(len(df_te)),

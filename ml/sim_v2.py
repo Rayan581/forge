@@ -65,6 +65,20 @@ def _load_judge(path: str) -> JudgeScorer:
     return JudgeScorer(path)
 
 
+def sample_outcome(pm: PlayerModel, y, mix, count_scale: float, skill: float, history, rng):
+    """ONE MLP1 outcome x = (norm_time, norm_deaths, norm_dmg) for explicit settings y (8,).
+
+    Shared by the simulator and the MLP1 Judge corpus (ml/judge_corpus.py): pick a random ensemble
+    member, draw from its Gaussian, clip to the observation range, snap deaths to k/3."""
+    y = np.asarray(y, dtype=np.float64)
+    base = analytic_base(y, skill, np.asarray(mix, dtype=np.float64), count_scale)[None]
+    hist = _pad_history(history)[None]
+    mm, ss = pm._member_outputs(build_features(y[None], [skill], base, hist), base)
+    m = int(rng.integers(0, len(pm.members)))
+    x = mm[m, 0] + ss[m, 0] * rng.standard_normal(D.X_DIM)
+    return _finish_sample(x[None], True)[0]
+
+
 def params_from_action(action) -> tuple[dict, float]:
     a = np.clip(np.asarray(action, dtype=np.float64), -1.0, 1.0)
     p = {k: float(sim.denorm(a[i], k)) for i, k in enumerate(sim.PARAM_ORDER)}
@@ -142,12 +156,7 @@ class DungeonDifficultyEnvV2(gym.Env):
         return self._sample_y(y, np.asarray(mix, dtype=np.float64), count_scale, skill)
 
     def _sample_y(self, y, mix, count_scale, skill):
-        base = analytic_base(y, skill, mix, count_scale)[None]
-        hist = _pad_history(self._hist_arr())[None]
-        mm, ss = self.pm._member_outputs(build_features(y[None], [skill], base, hist), base)
-        m = int(self.rng.integers(0, len(self.pm.members)))
-        x = mm[m, 0] + ss[m, 0] * self.rng.standard_normal(D.X_DIM)
-        return _finish_sample(x[None], True)[0]
+        return sample_outcome(self.pm, y, mix, count_scale, skill, self._hist_arr(), self.rng)
 
     def _hist_arr(self):
         return None if not self.hist else np.stack(self.hist[-D.HISTORY_LEN :])

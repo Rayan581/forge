@@ -128,6 +128,9 @@ def build(cfg: dict, manifest: dict, out: Path) -> Path:
         j = st["judge"]
         what = {"real": "the telemetry file", "synthetic": "the sim-v3 synthetic corpus",
                 "mixed": "synthetic corpus + telemetry"}.get(j["train_on"], j["train_on"])  # fmt: skip
+        if j["train_on"] == "mlp1_synth":
+            what = (f"players SIMULATED by MLP1, which was trained on {j.get('mlp1_train_players')} "
+                    f"recorded player(s); {j.get('mlp1_heldout_players')} other player(s) held out")  # fmt: skip
         t.add("2 Judge", j["data_source"].upper(), f"trained on {what} ({j['corpus']})")
     tables.append(t)
     synthetic_any = any(

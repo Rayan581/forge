@@ -2,7 +2,7 @@
   "run_name": "smoke",
   "data": {"telemetry": "synthetic", "consented_only": true, "smoke_players": 60},
   "player_model": {"members": 2, "epochs": 15},
-  "judge": {"synthetic_players": 300, "shap_rows": 300, "folds": 3},
+  "judge": {"synthetic_players": 300, "mlp1_players": 150, "shap_rows": 300, "folds": 3},
   "sim": {"sanity_episodes": 3},
   "ppo": {"seeds": [0], "total_timesteps": 2048, "n_envs": 2,
           "hyper": {"n_steps": 256, "batch_size": 256, "n_epochs": 2},

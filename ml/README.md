@@ -72,6 +72,35 @@ floor as the held-out check (all real players are then unseen). MLP1 falls back 
 when there is one player (it prints a warning). Today's real data (29 floors, one player) therefore gives
 a **synthetic-trained Judge validated on 29 real floors**; that is labelled in every output.
 
+### Judge corpus from the recorded players (`judge.train_on = "mlp1_synth"`)
+
+Instead of the hand-written sim-v3 physics, the Judge's corpus can be **simulated by MLP1 trained on
+the recorded players** (`ml/judge_corpus.py`):
+
+1. The real players are split **by `install_id`**: `judge.mlp1_holdout_frac` (0.34, at least one
+   player on each side) are held out, the rest train a separate MLP1 (`2_judge/mlp1_corpus/player_model_corpus.pt`).
+2. That MLP1 simulates `judge.mlp1_players` (2000) players with the sim-v4 latent player (skill,
+   reflex/tactics bias, drift, abrupt shifts) and the same floor mixture as the sim-v3 corpus; each
+   outcome is one MLP1 draw (`sim_v2.sample_outcome`, the same function the simulator uses).
+3. The rows are written in the `v_corpus` format with `source = synthetic_mlp1` (`2_judge/mlp1_corpus/mlp1_corpus.csv`)
+   and the Judge trains on them. **The held-out players are the only real rows it is checked on**;
+   neither MLP1 nor the Judge has seen them. Everything is labelled SYNTHETIC in the outputs.
+
+Needs at least 2 real players. Merge the collected databases into one file first, e.g.
+
+```powershell
+python -c "from ml_spike.telemetry_data.telemetry_db import TelemetryDatabase as T; import glob; db=T('ml/merged.db'); [print(f, db.sync_from_game_db(f)) for f in glob.glob('ml_spike/telemetry_data/collected_data/*.db')]"
+python -m ml.pipeline judge --config ml/configs/default.json --set data.telemetry=ml/merged.db --set judge.train_on=mlp1_synth
+```
+
+Standalone, from any MLP1 model: `python -m ml.judge_corpus --player-model <model.pt> --players 2000 --out corpus.csv`.
+
+Limits: with a handful of players MLP1 stays close to its physics prior (its residual is small and
+bounded), so the corpus is mostly that prior plus what those players taught it. MLP1 caps time at
+90 s and deaths at 3 (the observation contract), and predicts no ratings, so the Judge trained on it
+learns the **measured** difficulty only. The real-data check is one or two held-out players, far
+too few to conclude anything; it is reported as a pilot.
+
 ## Configuration
 
 `ml/config.py` holds every knob with its default and a comment. A config file only needs the keys it

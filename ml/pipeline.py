@@ -115,7 +115,8 @@ def telemetry_is_synthetic(path: Path | None) -> bool:
         import pandas as pd
 
         head = pd.read_csv(path, usecols=lambda c: c == "source", nrows=5000)
-        return bool("source" in head and (head["source"].astype(str) == "synthetic").all())
+        # "synthetic" (sim-v3) and "synthetic_mlp1" (ml/judge_corpus.py) are both simulated players
+        return bool("source" in head and head["source"].astype(str).str.startswith("synthetic").all())
     return False
 
 
@@ -204,6 +205,9 @@ def stage_judge(cfg, man: Manifest, out: Path):
         )
     if mode == "real" and n_real < int(jc["min_real_players"]):
         raise SystemExit(f"judge.train_on=real but the telemetry has only {n_real} player(s)")
+    if mode not in ("real", "synthetic", "mixed", "mlp1_synth"):
+        raise SystemExit(f"unknown judge.train_on={mode!r} (auto, real, synthetic, mixed, mlp1_synth)")
+    mlp1_info = None
     syn_path = out / "synthetic_corpus.csv"
     if mode in ("synthetic", "mixed"):
         print(f"[judge] generating SYNTHETIC sim-v3 corpus ({jc['synthetic_players']} players)")
@@ -213,6 +217,18 @@ def stage_judge(cfg, man: Manifest, out: Path):
         C.read_corpus(tel, consented).to_csv(corpus, index=False)
     elif mode == "synthetic":
         corpus, real_eval = syn_path, ([str(tel)] if tel else [])
+    elif mode == "mlp1_synth":
+        # MLP1 trained on PART of the recorded players simulates the corpus; the other players are
+        # held out (grouped by install_id) and are the only real rows the Judge is checked on.
+        from . import judge_corpus as JC
+
+        if tel is None:
+            raise SystemExit("judge.train_on=mlp1_synth needs real telemetry (data.telemetry)")
+        try:
+            mlp1_info = JC.build(tel, out / "mlp1_corpus", cfg, consented)
+        except ValueError as e:
+            raise SystemExit(f"[judge] {e}") from e
+        corpus, real_eval = Path(mlp1_info["corpus"]), [mlp1_info["heldout_csv"]]
     else:  # mixed: synthetic + real rows in ONE corpus (grouped split keeps players apart)
         real_raw = C.read_corpus(tel, consented)
         real_raw["source"] = real_raw.get("source", "real")
@@ -228,12 +244,20 @@ def stage_judge(cfg, man: Manifest, out: Path):
         df[C.group_column(df)].to_numpy(), float(jc["test_frac"]), int(cfg["seed"])
     )
     meta["feature_range"] = feature_range(C.feature_matrix(df.iloc[tr]))
-    corpus_synthetic = mode == "synthetic" or telemetry_is_synthetic(tel)
+    corpus_synthetic = mode in ("synthetic", "mlp1_synth") or telemetry_is_synthetic(tel)
     meta["pipeline"] = dict(train_on=mode, real_players=n_real, telemetry=_rel(tel) if tel else None,
                             telemetry_is_synthetic=telemetry_is_synthetic(tel))  # fmt: skip
+    if mlp1_info is not None:
+        meta["pipeline"]["mlp1_corpus"] = dict(
+            mlp1_info, corpus=_rel(mlp1_info["corpus"]), heldout_csv=_rel(mlp1_info["heldout_csv"]),
+            train_csv=_rel(mlp1_info["train_csv"]), player_model=_rel(mlp1_info["player_model"]),
+            note="SYNTHETIC rows simulated by MLP1 trained on the training players; the held-out "
+                 "players were never seen by MLP1 or the Judge",
+        )  # fmt: skip
     (out / "judge_model.json").write_text(json.dumps(meta, indent=2), "utf-8")
     booster = TJ.lgb.Booster(model_file=str(out / "judge_model.txt"))
-    label = "synthetic test sample" if corpus_synthetic else "held-out real players"
+    label = ("MLP1-simulated test sample" if mode == "mlp1_synth"
+             else "synthetic test sample" if corpus_synthetic else "held-out real players")  # fmt: skip
     shap_info = X.global_figures(booster, Path(corpus), out / "figures", int(jc["shap_rows"]),
                                  int(cfg["seed"]), label=label)  # fmt: skip
     # one example Design Insight Report (first real session if any, else a held-out corpus session)
@@ -247,13 +271,18 @@ def stage_judge(cfg, man: Manifest, out: Path):
     test = meta["test_metrics"]
     print(f"[judge] held-out players: Judge MAE {test['judge']['mae']:.4f} vs old formula "
           f"(proxy_raw) {test['proxy_raw']['mae']:.4f}, calibrated {test['proxy_cal']['mae']:.4f}")  # fmt: skip
-    return {
+    res = {
         "model": _rel(out / "judge_model.txt"), "meta": _rel(out / "judge_model.json"),
         "figures": _rel(out / "figures"), "insight_example": _rel(out / "insight_report_example.txt"),
         "train_on": mode, "corpus": _rel(corpus), "data_source": "synthetic" if corpus_synthetic else "real",
         "test_mae": test["judge"]["mae"], "proxy_mae": test["proxy_raw"]["mae"],
         "shap_top": sorted(shap_info["mean_abs_shap"].items(), key=lambda kv: -kv[1])[:5],
     }  # fmt: skip
+    if mlp1_info is not None:
+        res["corpus_kind"] = "mlp1"
+        res["mlp1_train_players"] = len(mlp1_info["train_players"])
+        res["mlp1_heldout_players"] = len(mlp1_info["heldout_players"])
+    return res
 
 
 def _old_policy(cfg):

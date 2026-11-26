@@ -41,6 +41,14 @@ const DIRS: Array = [
 	{"dir": Vector2i(-1, 0), "name": "W", "opp": "E"}
 ]
 
+## Layout algorithm: LAYOUT_FORGE (random walk, the adaptive game) or LAYOUT_BSP (non-adaptive BSP
+## baseline, see BSPGenerator.gd). Main sets it from DifficultyManager.generator_mode before each floor.
+const LAYOUT_FORGE: String = "forge"
+const LAYOUT_BSP: String = "bsp"
+var layout_mode: String = LAYOUT_FORGE
+var bsp_min_rooms: int = 5
+var bsp_max_rooms: int = 9
+
 var rooms: Dictionary = {} # Vector2i -> RoomData
 var start_room_pos: Vector2i = Vector2i.ZERO
 var exit_room_pos: Vector2i = Vector2i.ZERO
@@ -54,14 +62,21 @@ var corridor_spacing: float = 160.0
 ## still passes it explicitly so this function stays testable in isolation.
 func generate_dungeon(p_diff: DifficultyManager, target_room_count: int = 6) -> Dictionary:
 	rooms.clear()
-	
-	# 1. Generate the room layout (random walk with branching). The layout is retried (bounded,
+	var use_bsp: bool = layout_mode == LAYOUT_BSP
+	var bsp_sizes: Dictionary = {}
+
+	# 1. Generate the room layout. FORGE: random walk with branching, retried (bounded,
 	#    deterministic under the global seed) until the exit would sit deep in the graph.
+	#    BSP baseline: BSPGenerator picks its own room count (bsp_min_rooms..bsp_max_rooms) and
+	#    ignores target_room_count.
 	var min_depth: int = 2 if target_room_count >= 3 else (1 if target_room_count == 2 else 0)
 	var goal_depth: int = maxi(min_depth, int(ceil(target_room_count * 0.5)))
 	var best: Dictionary = {}
 	var best_score: int = -1
-	for attempt in range(LAYOUT_ATTEMPTS):
+	if use_bsp:
+		best = _bsp_layout(bsp_sizes)
+		target_room_count = best.size()
+	for attempt in range(0 if use_bsp else LAYOUT_ATTEMPTS):
 		var layout = _random_layout(target_room_count)
 		var depths = bfs_depths(layout, Vector2i.ZERO)
 		var max_d = 0
@@ -126,7 +141,11 @@ func generate_dungeon(p_diff: DifficultyManager, target_room_count: int = 6) -> 
 	rooms[exit_room_pos].hazards_count = clampi(int(p_diff.hazard_density * 6.0), 1, 6)
 	
 	# 4. Per-room sizes, then world positions / per-door corridor lengths.
-	_assign_sizes(target_room_count)
+	if use_bsp:
+		for pos in rooms.keys():
+			rooms[pos].size = bsp_sizes[pos] # BSP: room size follows the leaf size
+	else:
+		_assign_sizes(target_room_count)
 	_layout_world()
 	for pos in rooms.keys():
 		rooms[pos].visual_seed = randi()
@@ -182,6 +201,21 @@ func _random_layout(count: int) -> Dictionary:
 				break
 		if not placed:
 			queue.remove_at(pick_idx)
+	return layout
+
+## BSP baseline layout as RoomData (start at grid 0,0). Fills `sizes_out` with pos -> size.
+func _bsp_layout(sizes_out: Dictionary) -> Dictionary:
+	var bsp := BSPGenerator.new()
+	bsp.min_rooms = bsp_min_rooms
+	bsp.max_rooms = bsp_max_rooms
+	var data: Dictionary = bsp.generate()
+	var layout: Dictionary = _make_start()
+	for pos in data.sizes.keys():
+		if not layout.has(pos):
+			layout[pos] = _new_room(pos)
+		for dn in ["N", "S", "E", "W"]:
+			layout[pos].doors[dn] = bool(data.doors[pos][dn])
+		sizes_out[pos] = data.sizes[pos]
 	return layout
 
 ## Last-resort layout: a straight line of rooms (depth = count - 1).

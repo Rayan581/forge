@@ -1,0 +1,3 @@
+Stage,Data source,Detail
+1 MLP1 player model,SYNTHETIC,"400 player(s), split by_player"
+2 Judge,SYNTHETIC,trained on the sim-v3 synthetic corpus (ml/runs/synthetic_check/2_judge/synthetic_corpus.csv)

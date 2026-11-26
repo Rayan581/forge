@@ -1,0 +1,5 @@
+Condition,fit err,pace err,deaths,damage,shift impact,recovery floors
+bsp_fixed,0.114,0.368,0.000,0.220,-0.126,1
+static_8pct,0.239,0.787,0.265,0.599,0.425,-
+ppo_old,0.066,0.131,0.000,0.254,0.110,3
+ppo_new,0.066,0.186,0.000,0.242,0.005,2

@@ -1,0 +1,26 @@
+\chapter{Proposal Action Register}
+\label{app:action_reg}
+
+This appendix reproduces the committee's written feedback from the FYP Proposal Defense I for Project \textbf{F26-012-FORGE} in full, followed by the status of each directive at Final-1. The register groups the feedback into ten directives; the requests to explore recent RL techniques and to evaluate engagement and satisfaction are covered under rows 6 and 5.
+
+\section*{Official Evaluation Committee Review}
+\begin{itemize}
+    \item \textbf{Project Code:} F26-012-FORGE
+    \item \textbf{Decision:} Approved with Minor Modifications
+    \item \textbf{Issuing Authority:} FYP Committee, School of Computing, FAST-NUCES, Islamabad
+\end{itemize}
+
+\subsection*{Comments / Recommended Modifications (verbatim)}
+\begin{quote}\small
+Good project. Good presentation and demonstration. Demonstrates satisfactory understanding of the project concepts and approach. The game's aesthetics should be improved. They should study related literature review deeply as the game is based on research. They only covered one aspect. Students need to explore recent RL techniques, as well as other areas of the latest research. Students also need to work on the aesthetics of the application, as in the game industry there is a lot of competition with respect to features as well as aesthetics. Overall concept is fine. Focus also on aesthetics; also keep a variety of attacks for enemy and player powers. Your game should also give a good, playable, engaging experience without AI. Write the scope clearly regarding what you will do and what you will not. The final game/product should have a clear, measurable way of evaluating your RL model and game. Extend the literature review to comprehensively cover Dynamic Difficulty Adjustment (DDA), in addition to procedural content generation. The review should identify established player-performance, engagement, satisfaction, and difficulty measures and use these to refine the proposed player model and evaluation strategy. Strengthen the technical justification for PPO by comparing it with appropriate alternative reinforcement-learning approaches and explaining why PPO is suitable for the expected gradual and abrupt changes in player performance. Similarly, define and validate the judge model using empirical player data rather than primarily manually assigned difficulty weights. Clearly distinguish procedural level generation from difficulty adaptation and demonstrate the benefit of the closed-loop adaptive approach over a strong non-adaptive procedural-generation baseline. Evaluation should consider not only difficulty matching but also player engagement and satisfaction. Further specify measurable acceptance criteria, including convergence time, solvability, difficulty-prediction error, layout diversity, adaptation stability, and player-experience measures. Also document risks, fallback strategies, and ethical considerations related to player profiling and telemetry data.
+\end{quote}
+
+\section*{Status at Final-1}
+The full register, with the action taken for each directive, its status and the evidence, is Table~\ref{tab:action_register} in Chapter~\ref{chap:plan}. In summary:
+\begin{itemize}
+    \item \textbf{Completed (6):} 1 aesthetics, 3 playable without AI, 4 scope, 6 literature review, 7 PPO justification, 10 risks and ethics.
+    \item \textbf{Partly completed (4):} 2 attack variety (player powers come with the shop in FYP-2 Mid); 5 measurable criteria (layout diversity and player experience still to measure); 8 empirical Judge (learned Judge built, but trained on simulated data and checked on one real player); 9 benefit over a strong non-adaptive baseline (simulated comparison done; BSP not built yet).
+\end{itemize}
+
+\section*{Feedback After Mid-1}
+\tofill{record the Mid-1 evaluation feedback here, including the guidance to deliver the Judge and SHAP at Final-1, and the supervisor's 18 Nov 2026 request to ask for consent after the Play button}

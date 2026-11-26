@@ -1,0 +1,6 @@
+Model,MAE,RMSE,R2
+LightGBM Judge,0.052,0.076,0.823
+old formula (difficulty_score/100),0.206,0.242,-0.780
+"old formula, rescaled",0.104,0.135,0.445
+linear regression,0.069,0.094,0.734
+mean predictor,0.146,0.182,-0.000

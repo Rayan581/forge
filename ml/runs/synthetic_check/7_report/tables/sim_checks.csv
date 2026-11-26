@@ -1,0 +1,5 @@
+Check,Passed
+damage_rises_with_enemy_damage,yes
+judge_rises_with_enemy_damage,yes
+damage_falls_with_skill,yes
+finite_rewards,yes

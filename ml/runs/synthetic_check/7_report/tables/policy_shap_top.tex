@@ -1,0 +1,20 @@
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{lrr}
+\toprule
+Action (setting) & Top observation (new PPO) & Top observation (old PPO) \\
+\midrule
+enemy\_health & norm\_time & enemy\_hp \\
+enemy\_damage & norm\_time & enemy\_hp \\
+enemy\_speed & norm\_dmg & enemy\_hp \\
+enemy\_aggro & norm\_time & rooms \\
+hazard\_density & norm\_time & hazard \\
+resource\_scarcity & norm\_time & norm\_time \\
+room\_count & rooms & rooms \\
+archetype\_complexity & rooms & enemy\_hp \\
+\bottomrule
+\end{tabular}
+\caption{What drives each setting the policy picks (mean |SHAP|)}
+\label{tab:policy_shap_top}
+\end{table}

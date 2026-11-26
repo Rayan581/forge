@@ -1,0 +1,15 @@
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{lrrrrr}
+\toprule
+Policy & reward/floor & pace err & deaths & D\_judge & D\_real \\
+\midrule
+random & -0.991 & 0.429 & 0.135 & 0.316 & 0.351 \\
+static\_8pct & -1.675 & 0.679 & 0.520 & 0.470 & 0.524 \\
+ppo\_old & 0.179 & 0.223 & 0.000 & 0.224 & 0.224 \\
+\bottomrule
+\end{tabular}
+\caption{New simulator (MLP1 + Judge) sanity run, 20 episodes each}
+\label{tab:sim_sanity}
+\end{table}

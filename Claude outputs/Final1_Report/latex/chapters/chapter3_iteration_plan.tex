@@ -1,0 +1,144 @@
+\chapter{Proposal Feedback and Iteration Plan}
+\label{chap:plan}
+
+\section{Proposal Feedback Summary}
+Project FORGE was defended at the FYP Proposal Defense before the Evaluation Committee of the FAST School of Computing, FAST-NUCES, Islamabad. The committee's verdict was:
+\begin{quote}
+\textbf{Decision:} \textit{Approved with Minor Modifications (Project Code: F26-012-FORGE)}\\
+\textbf{Committee Summary (excerpt; full text in Appendix~\ref{app:action_reg}):} \textit{``Good project. Good presentation and demonstration. \ldots\ The game's aesthetics should be improved. \ldots\ Extend the literature review to comprehensively cover Dynamic Difficulty Adjustment (DDA)\ldots\ Strengthen the technical justification for PPO\ldots\ Define and validate the judge model using empirical player data\ldots\ Clearly distinguish procedural level generation from difficulty adaptation and demonstrate the benefit of the closed-loop adaptive approach over a strong non-adaptive procedural-generation baseline\ldots\ Specify measurable acceptance criteria\ldots\ Document risks, fallback strategies, and ethical considerations.''}
+\end{quote}
+
+After Mid-1 the committee's guidance was that the Judge model and its explanation should be delivered at FYP-1 Final rather than FYP-2. We therefore swapped two items: the Judge and SHAP moved into Final-1, and the in-run equipment shop moved to FYP-2 Mid. \tofill{if the Mid-1 evaluation produced written feedback, quote it here and add it to Appendix~\ref{app:action_reg}}
+
+\section{Proposal Action Register}
+Table~\ref{tab:action_register} maps every committee directive to what we did, its status at Final-1 and where the evidence is. Six directives are complete, and four are partly complete. We do not mark directive 8 (empirical Judge) as complete, because the Judge is trained on simulated data and checked on only one real player.
+
+\begin{table}[!htbp]
+\centering
+\caption{Proposal Feedback Resolution Action Register (status at Final-1)}
+\label{tab:action_register}
+\scriptsize
+\begin{tabular}{p{0.04\textwidth}p{0.20\textwidth}p{0.36\textwidth}p{0.13\textwidth}p{0.18\textwidth}}
+\toprule
+\textbf{No.} & \textbf{Directive} & \textbf{What we did (up to Final-1)} & \textbf{Status} & \textbf{Evidence} \\
+\midrule
+1 & Improve game aesthetics & Pixel-art asset packs with animations for the player and all five enemies, tileset floors and walls, camera shake, damage numbers. & Completed & Section~\ref{sec:iter3_features} \\
+\midrule
+2 & Variety of enemy attacks and player powers & Five enemy archetypes, each with its own attack and telegraph (fireball, ground slam, lunge, pack bites). Player powers come with the equipment shop in FYP-2 Mid. & Partly completed (player powers in Mid-2) & \texttt{Enemy.gd}, Table~\ref{tab:archetypes} \\
+\midrule
+3 & Playable and engaging without AI & Static $+8\%$ mode; the game also runs on a rule-based heuristic if the policy file is missing. & Completed & Section~\ref{sec:iter1_features} \\
+\midrule
+4 & Clear scope & Scope matrix updated for Final-1. & Completed & Table~\ref{tab:scope_matrix} \\
+\midrule
+5 & Measurable evaluation criteria (convergence time, solvability, prediction error, layout diversity, stability, player experience) & Convergence time, adaptation stability and Judge error are now defined and measured in simulation. Layout diversity needs the BSP baseline; player experience is measured in the FYP-2 UAT. & Partly completed & Table~\ref{tab:success_criteria}, Chapter~\ref{chap:testing} \\
+\midrule
+6 & Literature review on DDA and player measures & Structured review of 40 sources; DDA grouped into three paradigms; GEQ, PENS and per-floor ratings discussed. & Completed & Chapter~\ref{chap:research} \\
+\midrule
+7 & Justify PPO against alternatives & Compared with SAC, DQN and bandits; abrupt-change behaviour now measured in simulation (recovery in 2 floors). & Completed & Section~\ref{sec:ppo_proof}, Section~\ref{sec:shift_test} \\
+\midrule
+8 & Define and validate the Judge with empirical data & A learned LightGBM Judge with TreeSHAP replaces hand-set weights offline. It is trained on 30,199 simulated floors and checked on 29 real floors from one player, where it does not yet beat the old formula. Retraining on 25+ players' ratings is scheduled. & Partly completed & Section~\ref{sec:judge}, Section~\ref{sec:judge_results} \\
+\midrule
+9 & Separate PCG from DDA; show benefit over a strong non-adaptive baseline & Two-stage design (layout, then difficulty). Simulated comparison against static $+8\%$, a heuristic and a random policy done. The BSP generator, a stronger baseline, is not built yet. & Partly completed (BSP planned) & Section~\ref{sec:sim_results}, Section~\ref{sec:bsp_plan} \\
+\midrule
+10 & Risks, fallbacks and telemetry ethics & Heuristic fallback, risk register, consent screen; privacy section corrected for the pseudonymous install ID. & Completed & Section~\ref{sec:ethics}, Section~\ref{sec:risk} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Iterative Development Strategy}
+FORGE follows an iterative plan with five evaluation gates over two semesters:
+\begin{itemize}
+    \item \textbf{Gate 1 (Inception and technical spike, Weeks 1--6):} showed that a PPO policy trained in Python can run as a GDScript forward pass.
+    \item \textbf{Gate 2 (Requirements, Weeks 7--8):} testable requirements and the cold-start calibration.
+    \item \textbf{Gate 3 (Mid-1, Weeks 9--10, and Final-1, Weeks 11--14):} Mid-1 delivered visuals, ranged combat, the static baseline and CI. Final-1 delivers the five archetypes, SQLite telemetry, the learned Judge and SHAP, the revised ML pipeline (player model, calibrated simulator, retrained PPO, Policy SHAP) and the BSP baseline.
+    \item \textbf{Gate 4 (Mid-2, Weeks 15--26):} equipment shop, integration, performance benchmarks and release readiness.
+    \item \textbf{Gate 5 (Final-2, Weeks 27--32):} 10-participant user study, statistics, thesis and packaging.
+\end{itemize}
+
+\section{Iteration 1 Plan (Weeks 1--6, Proposal and POC Spike)}
+Goal: check the core idea, that a policy trained offline can control difficulty inside Godot. Delivered a prototype with placeholder shapes, a 3-room layout, a first training script that exports JSON weights, and basic telemetry. Outcome: GDScript can run the forward pass with no external runtime.
+
+\section{Iteration 2 Plan (Weeks 7--10, Mid-1)}
+Goal: answer the committee's first directives. Delivered pixel-art sprites, camera shake and damage numbers; the Ranged Pyromancer and the dodge roll; the five-floor calibration with $CR_0$; the static $+8\%$ mode; and a GitHub Actions CI pipeline with headless Godot.
+
+\section{Iteration 3 Plan (Weeks 11--14, Final-1)}
+\label{sec:iter3_plan}
+Goal: learn and explain the Judge, make the policy personalise all its outputs, and prepare a fair comparison with non-adaptive baselines. The plan has three parallel tracks (Table~\ref{tab:iter3_tracks}). The ML track is the longest chain, because each step needs the one before it.
+
+\begin{table}[!htbp]
+\centering
+\caption{Iteration 3 work tracks, owners and status}
+\label{tab:iter3_tracks}
+\scriptsize
+\begin{tabular}{p{0.12\textwidth}p{0.14\textwidth}p{0.48\textwidth}p{0.18\textwidth}}
+\toprule
+\textbf{Track} & \textbf{Owner} & \textbf{Work items, in order} & \textbf{Status} \\
+\midrule
+ML / PCG & Rana Raza Ahmed & (1) Simulator v3 and PPO retrain; (2) Judge + TreeSHAP; (3) data audit; (4) player model MLP1; (5) calibrated simulator; (6) PPO retrain on it; (7) Policy SHAP & (1)--(3) done; (4)--(7) planned \\
+\midrule
+Engine / gameplay & Rayan Ahmed & (1) Five archetypes and art; (2) map generation fixes; (3) consent screen, floor rating, pause menu, playtest build; (4) consent after Play; (5) BSP generator and mode switch & (1)--(3) done; (4)--(5) planned \\
+\midrule
+Telemetry, CI, evaluation & Uwaid Munir & (1) SQLite telemetry and migrations; (2) CI tests for the new features; (3) playtest data sync; (4) BSP tests in CI; (5) layout-diversity metrics; (6) one evaluation script & (1)--(2) done; (3) in progress; (4)--(6) planned \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Work Breakdown and Responsibilities}
+Table~\ref{tab:wbs} gives each member's ownership. Every member must still be able to explain and change any module.
+
+\begin{table}[!htbp]
+\centering
+\caption{Team Member Responsibility Matrix}
+\label{tab:wbs}
+\small
+\begin{tabular}{p{0.22\textwidth}p{0.24\textwidth}p{0.46\textwidth}}
+\toprule
+\textbf{Team Member} & \textbf{Role} & \textbf{Modules and tasks} \\
+\midrule
+\textbf{Rayan Ahmed}\newline (23i-0018) & Engine and Gameplay Lead & Godot framework, player combat and dodge roll, five enemy archetypes and their AI, sprites and animation, map generation, consent and rating screens, BSP generator. \\
+\midrule
+\textbf{Rana Raza Ahmed}\newline (23i-0060) & ML and PCG Lead & Training simulator and reward, PPO training and export, \texttt{PPOPolicy.gd}, cold-start $CR_0$, Judge and TreeSHAP, player model MLP1, calibrated simulator, Policy SHAP. \\
+\midrule
+\textbf{Uwaid Munir}\newline (23i-2574) & Telemetry, CI and Evaluation Lead & \texttt{TelemetryLogger.gd} and the SQLite backend, data export and sync, GitHub Actions CI, test design, layout-diversity metrics, evaluation script, report compilation. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Progress Against Plan}
+Table~\ref{tab:milestones} tracks the main deliverables against the plan.
+
+\begin{table}[!htbp]
+\centering
+\caption{Milestone Tracking and Schedule Progress}
+\label{tab:milestones}
+\scriptsize
+\begin{tabular}{p{0.36\textwidth}p{0.14\textwidth}p{0.18\textwidth}p{0.22\textwidth}}
+\toprule
+\textbf{Milestone / Deliverable} & \textbf{Planned} & \textbf{Actual} & \textbf{Status} \\
+\midrule
+Proposal Defense & Week 4 & Week 4 & Completed (approved) \\
+Mid-1 Evaluation & Week 10 & Week 10 (15 Oct) & Completed \\
+Five enemy archetypes, 8-D action & Week 12 & \tofill{week} & \stdone \\
+SQLite telemetry & Week 12 & \tofill{week} & \stdone \\
+Simulator v3 and PPO retrain & Week 12 & \tofill{week} & \stdone \\
+Consent screen, floor rating, playtest build & Week 13 & \tofill{week} & \stdone \\
+Learned Judge + TreeSHAP (offline) & Week 13 & \tofill{week} & \stdone{} (synthetic training) \\
+Player model MLP1 & Week 13 & -- & \stplan \\
+Calibrated simulator + PPO retrain on it & Week 14 & -- & \stplan \\
+Policy SHAP & Week 14 & -- & \stplan \\
+BSP baseline + layout diversity & Week 14 & -- & \stplan{} (behind schedule) \\
+Final-1 Evaluation & Week 14 & \tofill{date} & In progress \\
+Equipment shop & \textit{was} Final-1 & moved to Week 26 & Moved to FYP-2 Mid \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Delays, Deviations and Recovery Plan}
+\begin{enumerate}
+    \item \textbf{Judge trained on simulated data.} The plan was to train the Judge on 25+ real players. We have 29 floors from one player, which cannot train a model. \textbf{Recovery:} train on 30,199 simulated floors, check on the real floors, and retrain on real ratings once enough players have played (the code already accepts a real corpus with no change).
+    \item \textbf{In-game TreeSHAP moved to FYP-2 Mid.} Explanations currently run offline in Python as ``Design Insight Reports''. Porting the trees to GDScript is not needed to answer the committee and was deferred.
+    \item \textbf{Equipment shop moved to FYP-2 Mid,} swapped with the Judge, as decided after Mid-1.
+    \item \textbf{Action space grew from 7-D to 8-D.} The 8th output chooses the enemy mix. The game still accepts an old 7-output policy file.
+    \item \textbf{Architecture revised late in the iteration.} Adding the player model and Policy SHAP makes the ML track the critical path (about 11--16 person-days, estimated). \textbf{Recovery:} the engine and evaluation tracks run in parallel; if time runs short we keep Policy SHAP as offline plots and drop extras such as model ensembles.
+    \item \textbf{BSP baseline behind schedule.} Not started. \textbf{Recovery:} a simple BSP that snaps leaves to the existing room grid, so the rest of the game works unchanged.
+\end{enumerate}

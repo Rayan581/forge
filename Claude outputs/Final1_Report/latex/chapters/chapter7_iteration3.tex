@@ -1,0 +1,146 @@
+\chapter{Iteration 3: Design and Implementation (Final-1)}
+\label{chap:iter3}
+
+\section{Iteration Objectives}
+Iteration 3 (Weeks 11--14) had four goals, taken from the committee directives and the Mid-1 results:
+\begin{enumerate}
+    \item \textbf{Learn and explain the Judge} from data instead of hand-set weights (directive 8).
+    \item \textbf{Make the policy personalise all its outputs.} At Mid-1 the policy kept enemy damage at its minimum and speed at its maximum for every player, because the simulator rewarded that.
+    \item \textbf{Prepare a fair comparison} with a strong non-adaptive baseline (directive 9): the BSP generator and layout-diversity metrics.
+    \item \textbf{Grow the game:} five enemy archetypes, SQLite telemetry, consent and ratings for playtests, better map generation and art.
+\end{enumerate}
+
+\section{Final-1 Status at a Glance}
+Table~\ref{tab:final1_status} is the honest status of every Final-1 item. ``Implemented'' means the code exists and has an automated test. ``In progress'' means work has started but is not finished or not merged. ``Planned'' means not started.
+
+\begin{table}[!htbp]
+\centering
+\caption{Final-1 scope: implemented, in progress and planned}
+\label{tab:final1_status}
+\scriptsize
+\begin{tabular}{p{0.25\textwidth}p{0.13\textwidth}p{0.40\textwidth}p{0.13\textwidth}}
+\toprule
+\textbf{Item} & \textbf{Status} & \textbf{What exists / what is left} & \textbf{Owner} \\
+\midrule
+Five enemy archetypes + 8-D action & \stdone & Brute, Skirmisher, Swarmer added; mix set by $a_7$; 3 tests in CI & Rayan \\
+SQLite telemetry & \stdone & Schema v2, migrations, JSON fallback, test against the real extension in CI & Uwaid \\
+Consent screen, 1--5 rating, playtest build & \stdone & Playtest build 0.9.0 (Windows); consent-after-Play change left to do & Rayan \\
+``Don't ask again'' option for the rating & \stprog & Change prepared, not yet merged \tofill{confirm} & Rayan \\
+Simulator v3 + PPO retrain & \stdone & 3 seeds $\times$ 1M steps; passes all acceptance checks in simulation & Raza \\
+Learned Judge + TreeSHAP & \stdone{} (offline) & Trained on 30,199 synthetic floors; checked on 29 real floors (pilot); no in-game version yet & Raza \\
+Data audit & \stdone & 29 floors, 3 sessions, 1 player; too little to fit MLP1 alone & Uwaid / Raza \\
+Player model MLP1 & \stplan & Grey-box model on top of simulator v3 & Raza \\
+Calibrated simulator & \stplan & New environment with MLP1 and the Judge reward term; keep v3 for ablation & Raza \\
+PPO retrain on calibrated simulator & \stplan & Same contract; re-run the sensitivity audit for new exploits & Raza \\
+Policy SHAP & \stplan & Exact Shapley over the 8 inputs on the actor & Raza \\
+BSP baseline generator & \stplan & Same RoomData output; \texttt{generator\_mode = bsp}; schema v3 & Rayan / Uwaid \\
+Layout-diversity metrics + evaluation script & \stplan & FORGE vs BSP vs static; one results table & Uwaid \\
+Judge and SHAP inside Godot & \stplan{} (FYP-2 Mid) & Port trees and SHAP to GDScript & Raza \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Selected Use Cases and Features}
+Iteration 3 extends UC-01 (adaptive session; now with five archetypes and SQLite logging), UC-02 (combat; three new archetypes) and UC-03 (Defense Overlay; shows the live enemy mix), and adds UC-04 (consent and floor rating).
+
+\section{Design}
+The game-side design is in Chapter~\ref{chap:design}: the 8-D action and archetype mix (Equation~\ref{eq:mix}), the SQLite schema (Figure~\ref{fig:erd}) and the enemy archetypes (Table~\ref{tab:archetypes}). The ML-side design is the revised architecture in Section~\ref{sec:revised_arch}.
+
+\section{Completed Features}
+\label{sec:iter3_features}
+
+\subsection{Five Enemy Archetypes and the 8th Action}
+Rayan added the Heavy Brute (ground slam with a wind-up circle), the Agile Skirmisher (orbit, aim line, lunge) and the Swarmer (packs of three), next to the Crawler and Pyromancer (Table~\ref{tab:archetypes}). Each enemy spawn slot samples its type from the floor's mix. The policy chooses the mix through a new 8th output, archetype complexity (Equation~\ref{eq:mix}). The enum order of the archetypes is shared with Python and must not change.
+
+\subsection{Art, Animation and Map Generation}
+\begin{itemize}
+    \item The game now uses downloaded pixel-art asset packs: a skeleton for the player and the Crawler, a priest for the Pyromancer, and CC0 art for the three new enemies, built into animations by \texttt{tools/build\_sprite\_frames.py}. Tileset floors, walls and torches replaced the script-made tiles.
+    \item Rooms have their own sizes (widths 608--1120\,px, heights 416--672\,px), so floors look more varied.
+    \item The exit room is placed at the maximum BFS door depth from the start, so it is never next to the start room.
+    \item Rooms are no longer tinted by role.
+\end{itemize}
+
+\subsection{SQLite Telemetry}
+Uwaid moved telemetry from a flat JSON file to SQLite (Section~\ref{sec:sqlite_schema_sec}). Every floor is one row with its outcomes, all settings, the observation and action vectors, frame times and the rating. The Python side can merge game databases and export the Judge corpus.
+
+\subsection{Playtest Features}
+A consent screen, a 1--5 ``How hard did that floor feel?'' rating, a pause menu and a playtest build (version 0.9.0, Windows) that hides the Defense Overlay. Instructions for testers are in \texttt{PLAYTEST.md}. The supervisor asked on 18 Nov 2026 that consent be asked after the Play button; this is planned.
+
+\subsection{Simulator v3 and the Retrained Policy}
+The Mid-1 simulator let the policy ignore enemy damage and resource scarcity. Simulator v2 fixed the obvious artefacts (damage pinned low, speed pinned high, aggro and scarcity having no effect, no enemy-count or archetype model). Simulator v3 gave damage and scarcity their own player-dependent effects: a \emph{reflex} axis (how well the player avoids hits) and a \emph{tactics} axis (how well they use healing), plus random abrupt skill changes. The reward is Equation~\ref{eq:reward_function}. The shipped policy comes from 3 seeds $\times$ 1M steps. Results are in Section~\ref{sec:sim_results}.
+
+\subsection{Learned Judge with TreeSHAP}
+Raza built the Judge described in Section~\ref{sec:judge} (\texttt{ml\_spike/judge/}): a synthetic corpus generator (\texttt{make\_synthetic\_corpus.py}, 30,199 floors from 3,000 simulated players, same columns as the game's \texttt{v\_corpus} view), a trainer with player-grouped cross-validation (\texttt{train\_judge.py}) and an explainer (\texttt{explain.py}). The game still shows the old linear score; the Judge runs offline only. Results are in Section~\ref{sec:judge_results}.
+
+\section{Technical Implementation Details}
+\subsection{Design Insight Report (example output)}
+\texttt{explain.py} turns the SHAP values of one floor into a short sentence. Two real floors from the pilot player:
+\begin{lstlisting}[caption={Design Insight Report for two real floors (pilot player)}, label={lst:insight}]
+Floor 5 (calibration): predicted difficulty 0.57 (average floor 0.26, +0.31).
+  Harder than average mostly because enemy health was high (90) (+0.09),
+  damage taken on the previous floor was high (119% of max HP) (+0.07) and
+  the enemy count scale was high (1.30) (+0.04).
+  Actual: measured 0.54, player rating 4/5 (= 0.75).
+
+Floor 13 (adaptive): predicted difficulty 0.19 (average floor 0.26, -0.07).
+  Easier than average mostly because the previous floor was fast
+  (4.8 s/room) (-0.08) and enemy health was low (51) (-0.04).
+  Actual: measured 0.49, player rating 4/5 (= 0.75).
+\end{lstlisting}
+Floor 5 is predicted well. Floor 13 is under-predicted: the model read the fast previous floor as ``strong player''. The explanation makes this sim-to-real gap visible.
+
+\section{Algorithms and Technical Decisions}
+
+\subsection{Reward-Hacking History (one consistent account)}
+\label{sec:reward_history}
+Earlier documents described this event in different ways. After checking \texttt{train\_ppo\_difficulty.py} and the README, this is the account we use:
+\begin{enumerate}
+    \item \textbf{First reward (before Mid-1):} it compared the \emph{total} floor time with a fixed 45\,s target. Total time is rooms $\times$ time per room, so for a fast player the agent could hit the target simply by \emph{adding rooms}, without making combat harder. The sensitivity sweep (\texttt{ai/jh.py}) showed that room count was doing the work.
+    \item \textbf{Fix:} judge pace \emph{per room} ($t_{room} = T / n_{rooms}$, target 7.5\,s) and add a separate room-count term (tied to combat challenge at Mid-1, and to player skill since v2). Changing the room count alone no longer moves the pace score.
+    \item \textbf{Second problem (found at Mid-1):} the policy kept enemy damage at its minimum and speed at its maximum for everyone, and its aggro and scarcity outputs were untrained. This was a flaw of the simulator, not of PPO, and simulators v2 and v3 fixed it.
+\end{enumerate}
+\texttt{CHANGES.md} (CR-03) still says the agent ``collapsed room counts to $N = 4$''. That is not possible with the current 5--9 room range and contradicts the account above, so CR-03 will be corrected. \tofill{confirm the direction (adding rooms) from the git history of \texttt{train\_ppo\_difficulty.py}}
+
+\subsection{Why Train the Judge on Synthetic Data First}
+With one real player, any model trained on real rows would learn that player, not difficulty. Training on simulated floors gives a working pipeline and a fair comparison with the old formula now. Because the corpus has the same columns as the game's database view, retraining on real data later needs no code change (\texttt{--corpus <db> --target rating}); the trainer refuses to run with fewer than 7 players.
+
+\subsection{BSP Baseline Design (planned)}
+\label{sec:bsp_plan}
+\begin{itemize}
+    \item Recursively split a rectangle (split ratio 0.35--0.65, minimum leaf size, depth limit), one room per leaf, and connect sibling leaves bottom-up so the graph is connected.
+    \item Output the same \texttt{RoomData} dictionary as \texttt{DungeonGenerator.gd}, so rooms, the minimap, pickups and enemies work unchanged.
+    \item Start in one leaf, exit at the farthest leaf by graph distance; difficulty fixed at the Intermediate preset; no PPO and no calibration.
+    \item Selected by \texttt{generator\_mode} (\texttt{forge}, \texttt{static}, \texttt{bsp}) in the dev build or with \texttt{-- --mode=bsp}; schema v3 records the generator per session.
+    \item Test: 200 seeds $\times$ 4--10 rooms, all connected, exit reachable, no overlaps, deterministic per seed; added to CI.
+\end{itemize}
+
+\section{Tools, Frameworks and Technologies}
+\begin{table}[!htbp]
+\centering
+\caption{Technology stack at Final-1}
+\label{tab:tech_stack3}
+\small
+\begin{tabular}{p{0.25\textwidth}p{0.25\textwidth}p{0.42\textwidth}}
+\toprule
+\textbf{Area} & \textbf{Technology} & \textbf{Use} \\
+\midrule
+Game engine & Godot 4.7.2, GDScript & Game, GDScript forward pass \\
+Database & SQLite via godot-sqlite (CI uses v4.9) & Telemetry \\
+RL training & Python 3.12, Stable-Baselines3, Gymnasium, PyTorch & Simulator and PPO \\
+Judge & LightGBM 4.7.0, SHAP 0.54.1, pandas, NumPy & Judge and TreeSHAP \\
+CI & GitHub Actions, ruff 0.4.10, pytest & Lint, tests, headless Godot \\
+Art & Downloaded pixel-art packs, CC0 0x72 sprites & Characters, enemies, tiles \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Demonstration Evidence}
+\begin{itemize}
+    \item \textbf{Live demo:} a full run of the playtest build: consent, five calibration floors, the ``PPO activated'' banner, adaptive floors with changing enemy mixes, and the rating after each floor. \tofill{screenshots: one floor per archetype, the consent screen, the rating screen}
+    \item \textbf{Dev build:} the Defense Overlay (Tab) shows the mode, the live mix and the settings; the static $+8\%$ toggle still works.
+    \item \textbf{Offline:} the Judge results file, the SHAP figures (Figure~\ref{fig:judge_shap}) and a Design Insight Report for a recorded session (Listing~\ref{lst:insight}).
+    \item \textbf{CI:} \tofill{link to the latest green CI run on \texttt{main}}
+\end{itemize}
+
+\section{Iteration Outcome}
+The game side of Final-1 is done: five archetypes, SQLite telemetry, playtest features and a retrained policy that uses all eight outputs in simulation. A learned Judge with explanations exists offline and beats the old formula on simulated players, but not yet on the one real player. The ML pipeline of the revised architecture (player model, calibrated simulator, retrain on it, Policy SHAP) and the BSP baseline are still to be built, and are the main work left before the Final-1 evaluation.

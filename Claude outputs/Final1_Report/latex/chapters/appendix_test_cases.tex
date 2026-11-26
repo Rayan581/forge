@@ -1,0 +1,97 @@
+\chapter{Detailed Test Cases and Verification Procedures}
+\label{app:test_cases}
+
+This appendix provides the step-by-step execution procedures for the primary test cases documented in Chapter~\ref{chap:testing}.
+
+\section{TC-01: In-Session Telemetry Event Capture}
+\begin{itemize}
+    \item \textbf{Objective:} Verify that \texttt{TelemetryLogger.gd} logs combat events accurately.
+    \item \textbf{Setup:} Automated headless test \texttt{tests/test\_damage\_telemetry.gd}, which instantiates the real \texttt{Main.tscn}, starts a run and generates Floor 1. Run: \texttt{godot --headless --path godot\_prototype --script res://tests/test\_damage\_telemetry.gd}.
+    \item \textbf{Procedure:}
+    \begin{enumerate}
+        \item The player takes one $20$\,dmg hit (\texttt{Player.take\_damage}).
+        \item The player lands 3 sword hits on an enemy in the floor ($3 \times 35 = 105$\,dmg).
+        \item The test saves and reads the telemetry snapshot (\texttt{get\_summary()}).
+    \end{enumerate}
+    \item \textbf{Expected Output:} Snapshot contains \texttt{"damage\_taken": 20.0} and \texttt{"damage\_dealt": 105.0}; exit code \texttt{0}.
+    \item \textbf{Actual Output:} Before fix DEF-05 the snapshot showed \texttt{0.0} for both fields (the test fails on that code). After the fix: \texttt{damage\_taken=20.0}, \texttt{damage\_dealt=105.0}, exit code \texttt{0} (Godot 4.7.2). \textbf{Status: Pass.}
+\end{itemize}
+
+\section{TC-02: Cold-Start $CR_0$ and $s_0$ Seed}
+\begin{itemize}
+    \item \textbf{Objective:} Verify the $CR_0$ formula and that the Floor 6 observation $s_0$ uses the training observation scales.
+    \item \textbf{Setup:} Automated headless test \texttt{tests/test\_cold\_start.gd}.
+    \item \textbf{Procedure:} Play back three scripted profiles (novice, intermediate, expert) as calibration records; compute $CR_0$ and $s_0$; apply one PPO step and check the enemy count multiplier.
+    \item \textbf{Expected Output:} $CR_0$ = 19.65 / 60.25 / 95.0; $s_0[0..2]$ equal to Equation~\ref{eq:s0_seed}; \texttt{enemy\_count\_scale} = 1.0 after the PPO step; all 15 checks executed.
+    \item \textbf{Actual Output:} All 15 checks pass (exit code \texttt{0}). \textbf{Status: Pass.}
+\end{itemize}
+
+\section{TC-04: Fault-Tolerant Heuristic Fallback Verification}
+\begin{itemize}
+    \item \textbf{Objective:} Verify that missing or corrupted policy weights engage the heuristic fallback without crashing.
+    \item \textbf{Setup:} Rename the file \texttt{res://ai/\allowbreak policy\_\allowbreak weights.json} to \texttt{policy\_\allowbreak weights.json.bak}.
+    \item \textbf{Procedure:}
+    \begin{enumerate}
+        \item Launch game from main executable.
+        \item Observe console output during initialization.
+        \item Advance from Floor 1 to Floor 2.
+    \end{enumerate}
+    \item \textbf{Expected Output:} Console logs warning: \texttt{"[PPOPolicy] No trained weights found..."}; engine engages \texttt{\_fallback\_heuristic()}; Floor 2 loads successfully.
+    \item \textbf{Actual Output:} Smooth gameplay continuation; zero unhandled exceptions. \textbf{Status: Pass.} (Since Iteration 3 a file whose input width is not 8 is also rejected by a shape check.)
+\end{itemize}
+
+\section{TC-06: Automated Headless CI Solvability Verification}
+\begin{itemize}
+    \item \textbf{Objective:} Regression-test that every generated room is reachable, for every room count the game can request.
+    \item \textbf{Setup:} GitHub Actions Ubuntu runner with the Godot 4.7.2 headless binary (checksum-pinned).
+    \item \textbf{Procedure:}
+    \begin{enumerate}
+        \item CI workflow invokes: \texttt{godot --headless --path godot\_prototype --script tests/ci\_solvability\_runner.gd}.
+        \item For each room count from 3 to 9, the script iterates seeds $1$ through $500$, seeding the RNG and calling \texttt{generate\_dungeon()} with that room count.
+        \item For each layout it checks the room count, that every door has a matching door on the neighbouring room, and that a breadth-first search from the start room reaches every room, including the exit.
+    \end{enumerate}
+    \item \textbf{Expected Output:} Script logs \texttt{"Solvability Results: 3500 / 3500 Solvable"}; exits with return code \texttt{0}. Since Iteration 3 it also checks for overlapping rooms or corridors, the exit at maximum depth, and room sizes.
+    \item \textbf{Actual Output:} 500/500 for each room count, 3,500/3,500 in total, exit code \texttt{0}. \textbf{Status: Pass.}
+\end{itemize}
+
+\section{TC-09: Player Dodge Roll Invulnerability (iframes)}
+\begin{itemize}
+    \item \textbf{Objective:} Verify that the dash grants damage immunity for its duration plus a $0.06$\,s grace period ($0.26$\,s).
+    \item \textbf{Setup:} Position player directly in trajectory of incoming Pyromancer fireball.
+    \item \textbf{Procedure:}
+    \begin{enumerate}
+        \item Press \texttt{Spacebar} $0.1$\,s prior to projectile impact.
+        \item Observe player health bar and floating combat indicators.
+    \end{enumerate}
+    \item \textbf{Expected Output:} Fireball overlaps player sprite; zero damage deducted; no red damage floater pops.
+    \item \textbf{Actual Output:} Full invulnerability confirmed; dash cooldown bar activates on HUD. \textbf{Status: Pass.}
+\end{itemize}
+
+\section{Mapping of Test Cases to Test Files (Final-1)}
+\begin{table}[!htbp]
+\centering
+\caption{Automated test files and the test cases they cover}
+\label{tab:test_files}
+\scriptsize
+\begin{tabular}{p{0.34\textwidth}p{0.12\textwidth}p{0.44\textwidth}}
+\toprule
+\textbf{File} & \textbf{Test case} & \textbf{What it checks} \\
+\midrule
+\texttt{tests/test\_damage\_telemetry.gd} & TC-01 & Damage events reach the logger \\
+\texttt{tests/test\_cold\_start.gd} & TC-02 & $CR_0$, $s_0$, count scale reset \\
+\texttt{ml\_spike/tests/test\_sb3\_parity.py}, \texttt{test\_inference\_parity.py} & TC-03 & GDScript mirror equals SB3 output \\
+\texttt{tests/ci\_solvability\_runner.gd} & TC-06 & 3,500 layouts \\
+\texttt{tests/test\_static\_baseline.gd} & TC-10 & $+8\%$ per floor \\
+\texttt{tests/test\_telemetry\_sqlite.gd} & TC-11 & Real SQLite extension \\
+\texttt{tests/test\_telemetry\_fallback.gd} & TC-12 & JSON fallback \\
+\texttt{tests/test\_enemy\_archetypes.gd}, \texttt{test\_archetype\_mix.gd}, \texttt{test\_swarm\_room.gd} & TC-13 & Archetypes, mix, swarm packs \\
+\texttt{tests/test\_playtest\_flow.gd} & TC-14 & Consent and rating flow \\
+\texttt{ml\_spike/tests/test\_judge.py} & TC-15 & Judge pipeline and SHAP additivity \\
+\texttt{tests/test\_overlay\_sync.gd} & TC-16 & Overlay slider fix (DEF-10) \\
+\texttt{tests/test\_animations.gd}, \texttt{test\_telemetry\_logger.gd} & -- & Sprite animations; logger records \\
+\texttt{ml\_spike/tests/test\_sim\_v3.py}, \texttt{test\_sim\_v2.py}, \texttt{test\_env\_validation.py} & -- & Simulator checks (monotone levers, no dominated dimension) \\
+\texttt{tests/benchmark\_inference.gd} & NFR-06 & Latency (not in CI) \\
+\texttt{tests/test\_bsp\_generator.gd} (planned) & TC-17 & BSP layouts \\
+\bottomrule
+\end{tabular}
+\end{table}

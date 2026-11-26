@@ -1,0 +1,100 @@
+{
+  "run": "synthetic_check",
+  "synthetic_any": true,
+  "mlp1_mae": {
+    "time": 9.26186352968216,
+    "deaths": 0.033425685949623585,
+    "damage": 0.09933075308799744
+  },
+  "judge": {
+    "test_mae": 0.05220891270835051,
+    "old_formula_mae": 0.20637406825258703,
+    "beats_old_formula": true
+  },
+  "ppo": {
+    "best_seed": 0,
+    "exploit_check_passed": true,
+    "policy_json": "/home/user/work/FYP/ml/runs/synthetic_check/4_ppo/policy_weights.json",
+    "policy_json_kb": 110.7
+  },
+  "baselines_new_sim": {
+    "bsp_fixed": {
+      "reward": -0.4812663190571329,
+      "pace_err": 0.4105958128664179,
+      "deaths": 0.014888888888888889,
+      "dmg_ratio": 0.3189252213528574,
+      "fit_err": 0.11866236474926185,
+      "measured": 0.2790595724236541,
+      "rooms": 6.496666666666667,
+      "n_episodes": 150
+    },
+    "static_8pct": {
+      "reward": -1.7252227023557232,
+      "pace_err": 0.6924428308705489,
+      "deaths": 0.5433333333333333,
+      "dmg_ratio": 0.6788567526800455,
+      "fit_err": 0.29737650042768576,
+      "measured": 0.5398953093433753,
+      "rooms": 6.0,
+      "n_episodes": 150
+    },
+    "ppo_old": {
+      "reward": 0.13903420586750975,
+      "pace_err": 0.23631460781747762,
+      "deaths": 0.0022222222222222227,
+      "dmg_ratio": 0.25861984947424693,
+      "fit_err": 0.07875669597837916,
+      "measured": 0.22554037574666896,
+      "rooms": 6.827111111111111,
+      "n_episodes": 150
+    },
+    "ppo_new": {
+      "reward": 0.09759067181069919,
+      "pace_err": 0.24953569435650266,
+      "deaths": 0.004222222222222222,
+      "dmg_ratio": 0.2647123448132382,
+      "fit_err": 0.07509707368205182,
+      "measured": 0.2336132383523066,
+      "rooms": 7.369111111111111,
+      "n_episodes": 150
+    }
+  },
+  "variety": {
+    "forge_ppo": {
+      "n": 300,
+      "solvable_pct": 100.0,
+      "rooms_mean": 6.73,
+      "rooms_std": 0.5004331457181203,
+      "path_len": 4.446666666666666,
+      "dead_ends": 2.716666666666667,
+      "branching": 2.214444444444444,
+      "size_var": 1.3707940335978233,
+      "unique_shapes_pct": 91.0,
+      "pairwise_dist": 0.5289272069362341
+    },
+    "static_8pct": {
+      "n": 300,
+      "solvable_pct": 100.0,
+      "rooms_mean": 6.0,
+      "rooms_std": 0.0,
+      "path_len": 3.72,
+      "dead_ends": 2.6566666666666667,
+      "branching": 2.255555555555556,
+      "size_var": 1.3844181932562964,
+      "unique_shapes_pct": 76.0,
+      "pairwise_dist": 0.4929295823979876
+    },
+    "bsp": {
+      "n": 300,
+      "solvable_pct": 100.0,
+      "rooms_mean": 6.596666666666667,
+      "rooms_std": 1.0926979861283213,
+      "path_len": 4.96,
+      "dead_ends": 2.49,
+      "branching": 2.134888888888889,
+      "size_var": 2.180474968717757,
+      "unique_shapes_pct": 51.666666666666664,
+      "pairwise_dist": 0.4903476032864198
+    }
+  }
+}

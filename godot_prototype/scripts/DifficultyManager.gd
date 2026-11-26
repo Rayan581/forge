@@ -190,8 +190,8 @@ const CALIBRATION_LEVELS = {
 }
 
 func is_in_calibration(level_num: int) -> bool:
-	# The static baseline has no calibration phase and no PPO phase.
-	if static_baseline_mode:
+	# The static and BSP baselines have no calibration phase and no PPO phase.
+	if static_baseline_mode or bsp_baseline_mode:
 		return false
 	return level_num >= 1 and level_num <= 5
 
@@ -218,6 +218,56 @@ func apply_static_baseline(level_num: int) -> void:
 	set_archetype_from_a7(STATIC_BASELINE_A7)  # fixed c = 0.45 on every floor
 	room_count_target = 6
 	enemy_count_scale = 1.0
+
+# --- BSP non-adaptive baseline (comparison condition "Baseline A") ---
+# Layouts come from BSPGenerator.gd instead of the random-walk generator, and every floor uses the
+# fixed Intermediate preset (no calibration, no PPO, no +8 % growth). The room count is whatever the
+# BSP tree produces (5-9), so room_count_target is set from the generated layout by Main.
+var bsp_baseline_mode: bool = false
+
+const GENERATOR_FORGE: String = "forge"
+const GENERATOR_STATIC: String = "static"
+const GENERATOR_BSP: String = "bsp"
+
+## "forge" (calibration + PPO), "static" (+8 %/floor) or "bsp" (BSP layouts, fixed Intermediate).
+func generator_mode() -> String:
+	if bsp_baseline_mode:
+		return GENERATOR_BSP
+	if static_baseline_mode:
+		return GENERATOR_STATIC
+	return GENERATOR_FORGE
+
+## Switch the condition. The modes are exclusive; unknown names fall back to "forge".
+func set_generator_mode(mode: String) -> void:
+	static_baseline_mode = mode == GENERATOR_STATIC
+	bsp_baseline_mode = mode == GENERATOR_BSP
+
+## True for the two non-adaptive comparison conditions.
+func is_baseline_mode() -> bool:
+	return static_baseline_mode or bsp_baseline_mode
+
+## Layout algorithm DungeonGenerator should use for this condition.
+func layout_mode() -> String:
+	return GENERATOR_BSP if bsp_baseline_mode else GENERATOR_FORGE
+
+func apply_bsp_baseline(_level_num: int) -> void:
+	var p = PRESETS[ProfileTier.INTERMEDIATE]
+	current_profile = ProfileTier.CUSTOM
+	enemy_health = p.health
+	enemy_damage = p.damage
+	enemy_speed = p.speed
+	enemy_aggro = p.aggro
+	hazard_density = p.hazard
+	resource_scarcity = p.scarcity
+	set_archetype_from_a7(STATIC_BASELINE_A7)  # same fixed mix as the static baseline (c = 0.45)
+	enemy_count_scale = 1.0
+
+## Applies the per-floor settings of the active baseline (static or BSP). No-op in FORGE mode.
+func apply_baseline(level_num: int) -> void:
+	if bsp_baseline_mode:
+		apply_bsp_baseline(level_num)
+	elif static_baseline_mode:
+		apply_static_baseline(level_num)
 
 func apply_calibration_level(level_num: int) -> Dictionary:
 	if CALIBRATION_LEVELS.has(level_num):

@@ -1,0 +1,16 @@
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{lrrrrrr}
+\toprule
+Condition & fit err & pace err & deaths & damage & shift impact & recovery floors \\
+\midrule
+bsp\_fixed & 0.114 & 0.368 & 0.000 & 0.220 & -0.126 & 1 \\
+static\_8pct & 0.239 & 0.787 & 0.265 & 0.599 & 0.425 & - \\
+ppo\_old & 0.066 & 0.131 & 0.000 & 0.254 & 0.110 & 3 \\
+ppo\_new & 0.066 & 0.186 & 0.000 & 0.242 & 0.005 & 2 \\
+\bottomrule
+\end{tabular}
+\caption{FORGE vs baselines in sim-v3 (physics), 30 episodes x 5 skill profiles}
+\label{tab:baselines_old_sim}
+\end{table}

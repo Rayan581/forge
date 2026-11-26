@@ -1,0 +1,17 @@
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{lrrr}
+\toprule
+Model & MAE & RMSE & R2 \\
+\midrule
+LightGBM Judge & 0.052 & 0.076 & 0.823 \\
+old formula (difficulty\_score/100) & 0.206 & 0.242 & -0.780 \\
+old formula, rescaled & 0.104 & 0.135 & 0.445 \\
+linear regression & 0.069 & 0.094 & 0.734 \\
+mean predictor & 0.146 & 0.182 & -0.000 \\
+\bottomrule
+\end{tabular}
+\caption{Judge vs the old hand-weighted formula on held-out players (600 players, 6107 floors, synthetic data)}
+\label{tab:judge_vs_formula}
+\end{table}

@@ -147,6 +147,7 @@ def _row(sid, floor_num, phase, p, mix, complexity, cs, action, res, rho, tau, s
         "enemy_count_scale": float(cs),
         "difficulty_score": float(difficulty_score(p)),
         "manual_override": 0,
+        "generator": "forge",
         "source": "synthetic",
         "sim_skill": skill,
         "sim_reflex": rho,

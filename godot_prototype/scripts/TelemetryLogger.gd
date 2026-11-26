@@ -39,7 +39,7 @@ var install_id_path: String = INSTALL_ID_PATH
 ## Playtester consent to contribute data to the Judge corpus. Defaults to false (zero PII either way).
 var consent_given: bool = false
 var game_version: String = ""
-var mode: String = "adaptive"       # "adaptive" | "static"
+var mode: String = "adaptive"       # "adaptive" | "static" (static and BSP baselines)
 var policy_version: String = ""
 
 var started_at: int = 0
@@ -334,13 +334,15 @@ func record_floor(p_diff: Object, extras: Dictionary = {}) -> bool:
 	var rooms_visited: int = int(extras.get("rooms_visited", _floor_rooms_visited.size()))
 	var phase: String = str(extras.get("phase", ""))
 	if phase.is_empty():
-		if _obj_get(p_diff, "static_baseline_mode") == true:
-			phase = "static"
+		if _obj_get(p_diff, "static_baseline_mode") == true or _obj_get(p_diff, "bsp_baseline_mode") == true:
+			phase = "static" # non-adaptive; floors.generator tells static (+8 %) and BSP apart
 		elif p_diff != null and p_diff.has_method("is_in_calibration") and p_diff.is_in_calibration(fnum):
 			phase = "calibration"
 		else:
 			phase = "adaptive"
-	mode = "static" if phase == "static" or _obj_get(p_diff, "static_baseline_mode") == true else "adaptive"
+	mode = "static" if phase == "static" or _obj_get(p_diff, "static_baseline_mode") == true \
+		or _obj_get(p_diff, "bsp_baseline_mode") == true else "adaptive"
+	var generator: String = str(extras.get("generator", "bsp" if _obj_get(p_diff, "bsp_baseline_mode") == true else "forge"))
 
 	var score: Variant = extras.get("difficulty_score", null)
 	if score == null and p_diff != null and p_diff.has_method("calculate_difficulty_score"):
@@ -376,6 +378,7 @@ func record_floor(p_diff: Object, extras: Dictionary = {}) -> bool:
 		"perceived_difficulty": extras.get("perceived_difficulty", null),
 		"created_at": int(Time.get_unix_time_from_system()),
 		"manual_override": 1 if (floor_manual_override or bool(extras.get("manual_override", false))) else 0,
+		"generator": generator, # schema v3: "forge" (random-walk layouts) or "bsp" (BSP baseline)
 	}
 	var mix: Variant = _obj_get(p_diff, "archetype_mix")
 	for a in range(5):

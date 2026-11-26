@@ -1,0 +1,66 @@
+\chapter{Repository and Contribution Evidence}
+\label{app:repo}
+
+This appendix provides concrete version control evidence, repository commit history, and continuous integration pipeline logs from the project repository (\texttt{Rayan581/forge}).
+
+\section[Continuous Integration Workflow Configuration]{Continuous Integration Workflow Configuration}
+Listing~\ref{lst:ci_yaml} gives an abridged outline of the GitHub Actions workflow in the repository: Python lint and tests for the training code, plus a headless Godot 4.7.2 validation job (project import, script load and parse checks, the reachability harness, headless GDScript tests, required-scene check, policy-file check and a \texttt{.pck} export smoke test). The solvability harness (\texttt{godot\_prototype/tests/ci\_solvability\_runner.gd}) runs 500 seeds for each room count from 3 to 9; a single failing layout fails the build. The load-check step now requires an explicit success line, after it was found to pass without running (DEF-09).
+
+\begin{lstlisting}[language=Python, caption={Outline of \texttt{.github/workflows/ci.yml} (abridged)}, label={lst:ci_yaml}]
+name: FORGE CI
+on:
+  push:         { branches: ["main", "dev"] }
+  pull_request: { branches: ["main"] }
+  workflow_dispatch:
+env:
+  GODOT_VERSION: "4.7.2-stable"   # pinned with SHA-256
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  python-lint:        # ruff 0.4.10 on ml_spike/
+  python-tests:       # pytest ml_spike/tests/ (CPU-only torch), incl. SB3 parity
+  policy-validation:  # test_policy_validation.py, test_inference_parity.py
+  godot-headless:     # "Godot Headless Validation"
+    steps:
+      - Setup Godot (./.github/actions/setup-godot)
+      - Import project resources:  godot --headless --import --path godot_prototype
+      - GDScript load check:       copy ci_load_check.gd into project; --script res://ci_load_check.gd
+                                   (fails unless "ALL RESOURCES OK" is printed)
+      - Solvability harness:       --script tests/ci_solvability_runner.gd (500 seeds x rooms 3-9)
+      - GDScript tests (11):       test_damage_telemetry, test_cold_start, test_static_baseline,
+                                   test_telemetry_fallback, test_archetype_mix, test_enemy_archetypes,
+                                   test_swarm_room, test_animations, test_overlay_sync,
+                                   test_telemetry_logger, test_playtest_flow
+      - SQLite test:               downloads godot-sqlite v4.9; test_telemetry_sqlite (fails if skipped)
+      - GDScript parse check:      godot --headless --quit --path godot_prototype
+      - Verify required scenes (Main, MainMenu, Room, Player, Enemy) exist
+      - Verify godot_prototype/ai/policy_weights.json exists
+      - PCK export smoke test (--export-pack, GDPC magic bytes)
+  ci-gate:            # requires the four jobs above to pass
+\end{lstlisting}
+
+\section{Representative Repository Commit Log}
+
+\begin{table}[!htbp]
+\centering
+\caption{Detailed Commit History Across Iterations 1 and 2 (Iteration 3 commits are in Table~\ref{tab:commit_evidence})}
+\label{tab:app_commits}
+\small
+\begin{tabular}{p{0.11\textwidth}p{0.12\textwidth}p{0.16\textwidth}p{0.42\textwidth}p{0.11\textwidth}}
+\toprule
+\textbf{SHA} & \textbf{Date} & \textbf{Author} & \textbf{Commit Message} & \textbf{Category} \\
+\midrule
+\texttt{4e46fbc} & Oct 15 & Rayan Ahmed & ci: fix Godot 4.3 binary and template SHA-256 checksums and export path & CI fix \\
+\texttt{7b2a8d8} & Oct 15 & Rayan Ahmed & ci/cd: Apply Claude audit fixes & CI hardening \\
+\texttt{cb56ca3} & Oct 14 & Rayan Ahmed & fix(ranged): fix projectile spawn positioning, casting trigger, and aggro range & Bug fix \\
+\texttt{35654da} & Oct 14 & Rana Raza Ahmed & feat(combat): add Ranged Pyromancer archetype, fireball projectile, and Player dodge roll & Feature \\
+\texttt{c0d9813} & Oct 14 & Rayan Ahmed & ci: add complete GitHub Actions CI/CD pipeline for FORGE & CI setup \\
+\texttt{1044ee8} & Oct 10 & Rayan Ahmed & docs: add lean Mid-Evaluation implementation plan and team WBS & Docs \\
+\texttt{b7dd94f} & Oct 10 & Rayan Ahmed & feat: visual assets, combat polish, documentation, literature, and repository cleanup & Milestone \\
+\texttt{367b803} & Oct 11 & Rana Raza Ahmed & taking all5 into account & Level design \\
+\texttt{9308f7c} & Oct 11 & Rana Raza Ahmed & tried improving graphics & Visuals \\
+\texttt{3f34ad1} & Aug 30 & Rayan Ahmed & Add Godot 4.x procedural multi-room dungeon prototype & Foundation \\
+\texttt{2f2c412} & Sep 10 & Rayan Ahmed & Updated proposal document & Proposal \\
+\bottomrule
+\end{tabular}
+\end{table}

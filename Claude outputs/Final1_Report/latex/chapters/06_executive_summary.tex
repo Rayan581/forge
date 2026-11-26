@@ -1,0 +1,33 @@
+\chapter*{Executive Summary}
+\addcontentsline{toc}{chapter}{Executive Summary}
+
+\section*{Document Control}
+\begin{tabular}{ll}
+\textbf{Document} & FORGE FYP-1 Final (Final-1) Report \\
+\textbf{Version} & 2.0-draft (the Mid-1 report was version 1.0, 15 Oct 2026) \\
+\textbf{Date} & \tofill{date of this version} \\
+\textbf{Authors} & Rayan Ahmed, Rana Raza Ahmed, Uwaid Munir \\
+\textbf{Status} & Draft for supervisor review (25 Nov 2026) \\
+\end{tabular}
+
+\section*{What FORGE Is}
+FORGE (Project ID F26-012-FORGE) is a 2D top-down dungeon game in Godot 4.7 that changes its difficulty for each player. After every floor it measures how the player did (time, deaths, damage taken) and a PPO policy picks the settings for the next floor: enemy health, damage, speed and aggro range, hazards, healing supply, number of rooms, and which of five enemy types appear. The policy is trained offline in Python and runs inside the game in plain GDScript. The first five floors are fixed calibration floors that give the policy its first picture of the player.
+
+\section*{What Changed Since Mid-1}
+The committee asked us to (1) learn the difficulty Judge from player data instead of hand-set weights, (2) explain it, and (3) show that adaptation beats a strong non-adaptive baseline. We therefore moved the Judge and SHAP from FYP-2 into Final-1 and moved the in-run equipment shop to FYP-2 Mid. We also revised the architecture (Section~\ref{sec:revised_arch}) into four parts:
+\begin{enumerate}
+    \item \textbf{PPO policy} (unchanged interface): 8 observations in, 8 difficulty settings out.
+    \item \textbf{Player model (MLP1):} a small neural network, learned from real telemetry, that predicts how a player will do on a given floor. It will replace the hand-written simulated player used for training.
+    \item \textbf{Judge:} a learned model that predicts how hard a floor will feel. It shows which settings make a floor hard (Judge SHAP) and will give the difficulty term of the PPO reward.
+    \item \textbf{Policy SHAP:} explains why the policy chose a setting for this player, computed directly on the policy network.
+\end{enumerate}
+
+\section*{Status at Final-1}
+\begin{itemize}
+    \item \textbf{Implemented and tested:} five enemy archetypes (Crawler, Pyromancer, Brute, Skirmisher, Swarmer) with an 8th action output that sets their mix; SQLite telemetry with consent and a 1--5 rating after each floor; a playtest build; a retrained PPO policy (simulator v3, 3 seeds $\times$ 1M steps) that beats a random policy, the heuristic and the static $+8\%$ baseline on all six simulated profiles; an offline LightGBM Judge with TreeSHAP (test MAE $0.052$ on synthetic players, against $0.104$ for the hand-weighted formula).
+    \item \textbf{Still to do for Final-1:} the player model MLP1, the calibrated simulator, the PPO retrain on it, Policy SHAP, the BSP baseline generator and the layout-diversity comparison. Table~\ref{tab:final1_status} gives the full status.
+    \item \textbf{Honest limits:} real data is 29 floors from one player. On those floors the learned Judge does not beat the hand-weighted formula. Every player-based result is therefore a pilot, and all PPO results so far come from simulation.
+\end{itemize}
+
+\section*{Remaining Work}
+Final-1 work is split by role: Rana Raza Ahmed leads the ML track (player model, simulator, retrain, Policy SHAP), Rayan Ahmed the engine track (BSP generator, consent change, playtest build) and Uwaid Munir telemetry, CI and evaluation (data sync, BSP tests, diversity metrics, evaluation script). FYP-2 Mid (Week 26) adds the equipment shop, integration and performance tests, and retrains the Judge on real ratings. FYP-2 Final (Week 32) is a 10-participant counterbalanced user study comparing FORGE with the non-adaptive baselines.

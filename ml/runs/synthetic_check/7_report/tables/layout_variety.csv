@@ -1,0 +1,4 @@
+Generator,solvable %,rooms,path,dead ends,size var,unique %,pairwise dist
+forge_ppo,100.000,6.730,4.447,2.717,1.371,91.000,0.529
+static_8pct,100.000,6.000,3.720,2.657,1.384,76.000,0.493
+bsp,100.000,6.597,4.960,2.490,2.180,51.667,0.490

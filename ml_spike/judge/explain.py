@@ -164,7 +164,14 @@ def _style(ax):
     ax.tick_params(colors=INK_2, labelcolor=INK)
 
 
-def global_figures(booster, corpus: Path, out_dir: Path, n: int = 3000, seed: int = 0) -> Dict:
+def global_figures(
+    booster,
+    corpus: Path,
+    out_dir: Path,
+    n: int = 3000,
+    seed: int = 0,
+    label: str = "synthetic test sample",
+) -> Dict:
     import matplotlib
 
     matplotlib.use("Agg")
@@ -190,7 +197,7 @@ def global_figures(booster, corpus: Path, out_dir: Path, n: int = 3000, seed: in
     fig = plt.gcf()
     fig.set_facecolor(SURFACE)
     _style(plt.gca())
-    plt.title("Judge: SHAP value per floor (synthetic test sample)", color=INK, loc="left")
+    plt.title(f"Judge: SHAP value per floor ({label})", color=INK, loc="left")
     plt.xlabel("SHAP value (effect on predicted difficulty, 0-1 scale)", color=INK)
     fig.tight_layout()
     fig.savefig(out_dir / "shap_beeswarm.png", dpi=160, facecolor=SURFACE)

@@ -1,6 +1,10 @@
 ## Post-floor difficulty rating: "How hard did that floor feel?" (1 = very easy .. 5 = very hard).
 ## The game is paused while it is open. `ask()` returns the rating, or 0 when the player skips.
 ## Keyboard: 1-5 to answer, Esc to skip. Stored by Main via TelemetryLogger.set_perceived_difficulty().
+## "Don't ask again" checkbox: if it is ticked when the player picks a rating (1-5), `stop_asking`
+## becomes true and Main skips this prompt on the remaining floors of the run. It is per run only:
+## Main calls `reset_for_new_run()` when a new run starts. Skipping (Esc) with the box ticked does not
+## count, because the request was "tick it and rate that floor".
 class_name FloorRating
 extends CanvasLayer
 
@@ -15,6 +19,9 @@ var _floor_label: Label
 var _root: Control
 var _buttons: Array[Button] = []
 var _paused_before: bool = false
+## Set to true once the player rates a floor with "Don't ask again" ticked. Main reads it.
+var stop_asking: bool = false
+var _dont_ask_box: CheckBox
 
 func _init() -> void:
 	layer = 40
@@ -79,6 +86,25 @@ func _build() -> void:
 	skip.pressed.connect(func(): _finish(0))
 	foot.add_child(skip)
 
+	# "Don't ask again" checkbox at the bottom of the card. FOCUS_NONE so it never takes keyboard
+	# focus away from the 1-5 answer buttons; it is toggled with the mouse.
+	col.add_child(ForgeUI.spacer(6))
+	var box_row := ForgeUI.hbox(0)
+	box_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_child(box_row)
+	_dont_ask_box = CheckBox.new()
+	_dont_ask_box.text = "Don't ask again this run"
+	_dont_ask_box.focus_mode = Control.FOCUS_NONE
+	_dont_ask_box.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	if ForgeUI.inter():
+		_dont_ask_box.add_theme_font_override("font", ForgeUI.inter())
+	_dont_ask_box.add_theme_font_size_override("font_size", 13)
+	_dont_ask_box.add_theme_color_override("font_color", ForgeUI.MUTED)
+	_dont_ask_box.add_theme_color_override("font_hover_color", ForgeUI.TEXT)
+	_dont_ask_box.add_theme_color_override("font_pressed_color", ForgeUI.TEXT)
+	_dont_ask_box.add_theme_color_override("font_hover_pressed_color", ForgeUI.TEXT)
+	box_row.add_child(_dont_ask_box)
+
 func _answer_button(i: int) -> Button:
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(122, 108)
@@ -113,6 +139,7 @@ func _answer_button(i: int) -> Button:
 ## Shows the prompt, pauses the game until the player answers. Returns 1..5, or 0 if skipped.
 func ask(floor_num: int) -> int:
 	_floor_label.text = ("Floor %d cleared" % floor_num).to_upper()
+	_dont_ask_box.button_pressed = false # each prompt starts unticked
 	is_open = true
 	visible = true
 	_paused_before = get_tree().paused
@@ -125,9 +152,20 @@ func ask(floor_num: int) -> int:
 func choose(value: int) -> void:
 	_finish(value)
 
+## Ticks or unticks "Don't ask again" (same as clicking the checkbox). Used by tests.
+func set_dont_ask_again(on: bool) -> void:
+	_dont_ask_box.button_pressed = on
+
+## Called by Main when a new run starts, so the prompt is shown again on that run's floors.
+func reset_for_new_run() -> void:
+	stop_asking = false
+
 func _finish(value: int) -> void:
 	if not is_open:
 		return
+	# Only a real rating (1-5) with the box ticked stops the prompt; a skip (0) does not.
+	if value > 0 and _dont_ask_box.button_pressed:
+		stop_asking = true
 	is_open = false
 	visible = false
 	get_tree().paused = _paused_before

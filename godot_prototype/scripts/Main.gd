@@ -54,6 +54,7 @@ func _ready() -> void:
 	settings = GameSettings.new().load_from_disk()
 	telemetry_logger.consent_given = settings.consent_given
 	dungeon_generator = DungeonGenerator.new()
+	_apply_cmdline_mode()
 
 	ppo_policy = PPOPolicy.new()
 	ppo_policy.load_weights(POLICY_WEIGHTS_PATH) # falls back to rule-based heuristic if missing
@@ -91,6 +92,26 @@ func _ready() -> void:
 	player.set_physics_process(false)
 	defense_overlay.visible = false
 
+## `-- --mode=forge|static|bsp` picks the experimental condition for scripted runs (developer builds
+## only; playtest builds always run FORGE). The Defense Panel can switch it too.
+func _apply_cmdline_mode() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if not arg.begins_with("--mode="):
+			continue
+		var mode: String = arg.substr(7).to_lower()
+		if not BuildInfo.dev_tools_enabled():
+			print("[FORGE] --mode=%s ignored in the playtest build (FORGE only)" % mode)
+			return
+		if mode not in [DifficultyManager.GENERATOR_FORGE, DifficultyManager.GENERATOR_STATIC, DifficultyManager.GENERATOR_BSP]:
+			printerr("[FORGE] unknown --mode=%s (use forge, static or bsp)" % mode)
+			return
+		difficulty_manager.set_generator_mode(mode)
+		if difficulty_manager.is_baseline_mode():
+			difficulty_manager.apply_baseline(1)
+		else:
+			difficulty_manager.apply_calibration_level(1)
+		print("[FORGE] generator mode: %s (command line)" % mode)
+
 func _show_consent_screen() -> void:
 	consent_screen = ConsentScreen.new()
 	add_child(consent_screen)
@@ -127,8 +148,8 @@ func _return_to_main_menu() -> void:
 	pause_menu.close_silently()
 	_save_session_if_played()
 	telemetry_logger.start_new_session() # the next run is its own session
-	if difficulty_manager.static_baseline_mode:
-		difficulty_manager.apply_static_baseline(1)
+	if difficulty_manager.is_baseline_mode():
+		difficulty_manager.apply_baseline(1)
 	else:
 		difficulty_manager.apply_calibration_level(1)
 	defense_overlay.sync_ui_with_manager()
@@ -164,6 +185,7 @@ func _notification(what: int) -> void:
 
 func _on_start_run_requested() -> void:
 	game_started = true
+	floor_rating.reset_for_new_run() # "Don't ask again" lasts for one run only
 	player.visible = true
 	player.set_physics_process(true)
 	defense_overlay.visible = true
@@ -221,8 +243,8 @@ func build_new_dungeon(level_num: int, rebuild: bool = false) -> void:
 	
 	if is_calibrating:
 		cal_data = difficulty_manager.apply_calibration_level(level_num)
-	elif difficulty_manager.static_baseline_mode:
-		difficulty_manager.apply_static_baseline(level_num)
+	elif difficulty_manager.is_baseline_mode():
+		difficulty_manager.apply_baseline(level_num)
 	
 	defense_overlay.sync_ui_with_manager()
 	
@@ -233,7 +255,10 @@ func build_new_dungeon(level_num: int, rebuild: bool = false) -> void:
 	
 	# 1. Procedurally generate dungeon layout on grid
 	var room_count = difficulty_manager.room_count_target
+	dungeon_generator.layout_mode = difficulty_manager.layout_mode()
 	var generated_data = dungeon_generator.generate_dungeon(difficulty_manager, room_count)
+	if dungeon_generator.layout_mode == DungeonGenerator.LAYOUT_BSP:
+		difficulty_manager.room_count_target = generated_data.size() # BSP picks its own room count
 	
 	# 2. Instantiate Room scenes for each generated room
 	for pos in generated_data.keys():
@@ -351,15 +376,20 @@ func _on_dungeon_escaped() -> void:
 
 	var next_level = current_dungeon_level + 1
 
-	# Static baseline: no calibration, no PPO. Difficulty follows the fixed +8 % per floor rule.
-	if difficulty_manager.static_baseline_mode:
-		difficulty_manager.apply_static_baseline(next_level)
+	# Baselines: no calibration, no PPO. Static follows the fixed +8 % per floor rule; BSP keeps the
+	# Intermediate preset on every floor and only the BSP layout changes.
+	if difficulty_manager.is_baseline_mode():
+		difficulty_manager.apply_baseline(next_level)
 		defense_overlay.sync_ui_with_manager()
-		print("[FORGE][STATIC] Level %d cleared in %.1fs, %d deaths -> next: hp=%.0f dmg=%.0f (x%.2f)" % [
-			current_dungeon_level, completion_time_sec, deaths_this_level,
-			difficulty_manager.enemy_health, difficulty_manager.enemy_damage,
-			difficulty_manager.static_scale(next_level)
-		])
+		if difficulty_manager.bsp_baseline_mode:
+			print("[FORGE][BSP] Level %d cleared in %.1fs, %d deaths -> next: Intermediate preset, BSP layout" % [
+				current_dungeon_level, completion_time_sec, deaths_this_level])
+		else:
+			print("[FORGE][STATIC] Level %d cleared in %.1fs, %d deaths -> next: hp=%.0f dmg=%.0f (x%.2f)" % [
+				current_dungeon_level, completion_time_sec, deaths_this_level,
+				difficulty_manager.enemy_health, difficulty_manager.enemy_damage,
+				difficulty_manager.static_scale(next_level)
+			])
 		telemetry_logger.save_to_file()
 		call_deferred("build_new_dungeon", next_level)
 		return
@@ -433,7 +463,9 @@ func _on_dungeon_escaped() -> void:
 ## Shows the 1-5 "how hard did that floor feel?" prompt and stores the answer on the floor row.
 func _ask_floor_rating(floor_num: int) -> void:
 	if settings == null or floor_rating == null or not settings.should_ask_rating():
-		return
+		return # no consent, or the player turned ratings off in the menu
+	if floor_rating.stop_asking:
+		return # the player ticked "Don't ask again" on an earlier floor of this run
 	var value: int = await floor_rating.ask(floor_num)
 	if value > 0:
 		telemetry_logger.set_perceived_difficulty(floor_num, float(value))

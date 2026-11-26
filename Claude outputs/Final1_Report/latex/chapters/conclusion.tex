@@ -1,0 +1,21 @@
+\chapter{Conclusion}
+\label{chap:conclusion}
+
+This report documented Project \textbf{FORGE} (\textit{Personalized Procedural Content Generation via Reinforcement Learning}, F26-012-FORGE) at the FYP-1 Final milestone.
+
+\section*{Problem and Approach}
+Generators tuned for an average player bore strong players and overwhelm new ones, and simple difficulty multipliers feel unfair. FORGE separates two jobs: Stage 1 builds a connected dungeon layout, and Stage 2 uses a PPO policy to choose eight difficulty settings for the next floor from how the player just did. The policy runs inside the game in GDScript, and five calibration floors give it its first observation.
+
+\section*{What Final-1 Achieved}
+\begin{itemize}
+    \item Five enemy archetypes with an 8th policy output that sets their mix, new art and animation, and better map generation.
+    \item SQLite telemetry with consent and a per-floor difficulty rating, and a playtest build.
+    \item A policy retrained on simulator v3 that uses all eight outputs and beats a random policy, the heuristic and the static $+8\%$ baseline on all six simulated profiles, recovering from an abrupt skill drop in 2 floors.
+    \item A learned Judge with TreeSHAP explanations that halves the error of the old hand-weighted formula on simulated players.
+\end{itemize}
+
+\section*{What Is Not Yet Shown}
+On the one real player we have, the learned Judge does not beat the old formula, and no human comparison of the policy exists. The player model, the calibrated simulator, the retrain on it, Policy SHAP and the BSP baseline are still to be built. We therefore claim feasibility and simulated benefit only, not a benefit for real players.
+
+\section*{Path Forward}
+Finish the revised ML pipeline and the BSP comparison for the Final-1 evaluation; add the equipment shop, retrain the Judge on real ratings and run integration and performance tests for FYP-2 Mid; and run the 10-participant user study for FYP-2 Final.

@@ -226,7 +226,11 @@ def test_sync_from_schema_v1_game_db(temp_db):
         conn.execute(q["upsert_session"].split(" ON CONFLICT")[0],
                      [SESSION.get(c, 0 if c != "install_id" else "x") for c in cols])  # fmt: skip
         fl = full_floor(created_at=1)
-        v1_cols = [c for c in et.insert_columns(q["insert_floor"]) if c != "manual_override"]
+        v1_cols = [
+            c
+            for c in et.insert_columns(q["insert_floor"])
+            if c not in ("manual_override", "generator")
+        ]
         conn.execute(
             f"INSERT INTO floors ({', '.join(v1_cols)}) VALUES ({', '.join('?' * len(v1_cols))})",
             [fl.get(c) for c in v1_cols],
@@ -236,6 +240,7 @@ def test_sync_from_schema_v1_game_db(temp_db):
         assert temp_db.sync_from_game_db(path) == (1, 1)
     row = temp_db.get_all_floor_records()[0]
     assert row["manual_override"] == 0 and row["completion_time"] == 42.5
+    assert row["generator"] == "forge"
 
 
 def test_opening_v1_db_migrates_to_latest(tmp_path):
@@ -259,6 +264,6 @@ def test_opening_v1_db_migrates_to_latest(tmp_path):
     conn.close()
     db = TelemetryDatabase(db_path=str(path))
     rows = db.get_all_floor_records()
-    assert len(rows) == 1 and rows[0]["manual_override"] == 0
+    assert len(rows) == 1 and rows[0]["manual_override"] == 0 and rows[0]["generator"] == "forge"
     with db.connection() as c:
         assert c.execute("SELECT MAX(version) FROM schema_version").fetchone()[0] == migs[-1][0]

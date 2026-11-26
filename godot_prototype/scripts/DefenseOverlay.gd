@@ -49,6 +49,9 @@ var font_inter: Font = null
 
 var is_panel_open: bool = false
 var _current_floor: int = 1
+## Experimental-condition toggles (created in code). At most one is on: FORGE = both off.
+var static_btn: CheckButton
+var bsp_btn: CheckButton
 ## False in playtest builds (BuildInfo): the panel, its Tab shortcut and on-screen difficulty
 ## numbers are hidden so testers play exactly what the policy generated.
 var dev_tools: bool = true
@@ -70,11 +73,17 @@ func _ready() -> void:
 	btn_auto_kill.toggled.connect(_on_auto_kill_toggled)
 
 	# Static non-adaptive baseline toggle (created in code so the scene file stays unchanged)
-	var static_btn := CheckButton.new()
+	static_btn = CheckButton.new()
 	static_btn.text = "Static Baseline (+8% / floor)"
 	btn_auto_kill.get_parent().add_child(static_btn)
 	btn_auto_kill.get_parent().move_child(static_btn, btn_auto_kill.get_index() + 1)
 	static_btn.toggled.connect(_on_static_baseline_toggled)
+	# BSP non-adaptive baseline toggle (BSP layouts + fixed Intermediate preset)
+	bsp_btn = CheckButton.new()
+	bsp_btn.text = "BSP Baseline (fixed Intermediate)"
+	btn_auto_kill.get_parent().add_child(bsp_btn)
+	btn_auto_kill.get_parent().move_child(bsp_btn, static_btn.get_index() + 1)
+	bsp_btn.toggled.connect(_on_bsp_baseline_toggled)
 	
 	slider_hp.value_changed.connect(_on_slider_changed)
 	slider_dmg.value_changed.connect(_on_slider_changed)
@@ -159,10 +168,19 @@ func _on_auto_kill_toggled(enabled: bool) -> void:
 		minimap.set_reveal_exit(enabled)
 
 func _on_static_baseline_toggled(enabled: bool) -> void:
-	_flag_override("static baseline toggled")
-	difficulty_manager.static_baseline_mode = enabled
-	if enabled:
-		difficulty_manager.apply_static_baseline(_current_floor)
+	_set_condition(DifficultyManager.GENERATOR_STATIC if enabled else DifficultyManager.GENERATOR_FORGE,
+		"static baseline toggled")
+
+func _on_bsp_baseline_toggled(enabled: bool) -> void:
+	_set_condition(DifficultyManager.GENERATOR_BSP if enabled else DifficultyManager.GENERATOR_FORGE,
+		"bsp baseline toggled")
+
+## Switch FORGE / static / BSP and rebuild the current floor with the new condition.
+func _set_condition(mode: String, reason: String) -> void:
+	_flag_override(reason)
+	difficulty_manager.set_generator_mode(mode)
+	if difficulty_manager.is_baseline_mode():
+		difficulty_manager.apply_baseline(_current_floor)
 	elif difficulty_manager.is_in_calibration(_current_floor):
 		difficulty_manager.apply_calibration_level(_current_floor)
 	sync_ui_with_manager()
@@ -194,6 +212,10 @@ func _on_slider_changed(_val: float) -> void:
 func sync_ui_with_manager() -> void:
 	if not difficulty_manager:
 		return
+	if static_btn:
+		static_btn.set_pressed_no_signal(difficulty_manager.static_baseline_mode)
+	if bsp_btn:
+		bsp_btn.set_pressed_no_signal(difficulty_manager.bsp_baseline_mode)
 	# set_value_no_signal: setting .value fires value_changed, whose handler writes ALL
 	# sliders back into the manager -- including ones not yet synced -- which used to
 	# overwrite every calibration/PPO parameter except enemy_health with stale values.
@@ -254,6 +276,8 @@ func update_room_info(dungeon_level: int, grid_pos: Vector2i, is_calibrating: bo
 	var mode_tag = "[CALIBRATION %d/5]" % dungeon_level if is_calibrating else "[ADAPTIVE PPO]"
 	if difficulty_manager and difficulty_manager.static_baseline_mode:
 		mode_tag = "[STATIC +8%/floor]"
+	elif difficulty_manager and difficulty_manager.bsp_baseline_mode:
+		mode_tag = "[BSP BASELINE]"
 	var mix_txt := ""
 	if difficulty_manager:
 		var m: PackedFloat32Array = difficulty_manager.archetype_mix

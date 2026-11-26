@@ -1,0 +1,36 @@
+\chapter{Detailed Requirements and Specifications}
+\label{app:reqs}
+
+This appendix provides extended functional requirements specifications, user stories, and acceptance verification criteria supplementing Chapter~\ref{chap:reqs}.
+
+\section{User Stories}
+\begin{itemize}
+    \item \textbf{US-01 (Player Adaptive Progression):} As a player, I want the dungeon combat difficulty to adjust dynamically according to how cleanly and quickly I clear rooms, so that I experience a continuous state of flow without hitting sudden frustration walls or experiencing trivial boredom.
+    \item \textbf{US-02 (Player Tactical Evasion):} As a player, I want an active dodge roll with invulnerability frames, so that I can skillfully evade telegraphed enemy projectiles and hazard spikes through timed execution.
+    \item \textbf{US-03 (Player Visual Feedback):} As a player, I want clear visual tells on enemy ranged attacks and visible damage numbers on hits, so that I understand combat outcomes immediately.
+    \item \textbf{US-04 (Evaluator Telemetry Monitoring):} As a game evaluator, I want an in-engine overlay displaying live telemetry observations and active difficulty parameters, so that I can observe and verify how the AI policy responds to player actions.
+    \item \textbf{US-05 (Evaluator Baseline Comparison):} As an evaluator, I want a toggle to disable AI adaptation and run a static scaling baseline, so that I can rigorously contrast the adaptive experience against standard roguelike progression.
+    \item \textbf{US-06 (Developer Automated CI):} As a developer, I want an automated continuous integration pipeline verifying headless Godot solvability on every commit, so that broken room layouts or script errors are detected immediately before merging.
+    \item \textbf{US-07 (Playtester Consent, Final-1):} As a playtester, I want to choose whether my session is recorded and to rate how hard each floor felt, so that my data is used only with my agreement.
+    \item \textbf{US-08 (Designer Explanation, Final-1):} As a designer, I want a plain-English report of why a floor was predicted to be hard, so that I can see which settings drive difficulty.
+\end{itemize}
+
+\section{Extended Non-Functional Requirements Specifications}
+
+\begin{table}[!htbp]
+\centering
+\caption{Extended Quality Attribute Metrics and Test Conditions}
+\label{tab:extended_nfr}
+\small
+\begin{tabular}{p{0.18\textwidth}p{0.22\textwidth}p{0.32\textwidth}p{0.20\textwidth}}
+\toprule
+\textbf{Quality Attribute} & \textbf{Metric Name} & \textbf{Measurement Technique} & \textbf{Target Value} \\
+\midrule
+Performance & Frame Delta & Godot Engine Profiler (\texttt{Performance.TIME\_PROCESS}) & $\le 16.6$\,ms ($60$\,FPS) \\
+Latency & Forward Pass Time & High-resolution microsecond timer (\texttt{Time.get\_ticks\_usec}) & $\le 1000\,\mu\text{s}$ ($1.0$\,ms) \\
+Reliability & Solvability Ratio & Automated headless seed runner across 500 seeds & $100.0\%$ reachability \\
+Fault Tolerance & Weight Missing Recovery & Deletion of \texttt{policy\_weights.json} under runtime & Zero unhandled exceptions \\
+Data Governance & Telemetry Privacy & Static code audit of networking sockets & $0$ outgoing sockets \\
+\bottomrule
+\end{tabular}
+\end{table}

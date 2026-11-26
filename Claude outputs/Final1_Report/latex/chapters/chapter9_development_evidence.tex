@@ -1,0 +1,152 @@
+\chapter{Project Management and Development Evidence}
+\label{chap:mgmt}
+
+\section{Work Completed}
+Up to Final-1 (Weeks 1--14) the team completed:
+\begin{itemize}
+    \item \textbf{Research:} a structured review of 40 sources on DDA, PCGRL, flow and player-experience measures.
+    \item \textbf{Game:} a 2D action roguelike in Godot 4.7 with sword combat, dodge roll, five enemy archetypes, animated pixel art, camera shake, damage numbers, minimap, pause menu, consent screen and per-floor rating.
+    \item \textbf{Generation and adaptation:} a two-stage generator (connected layout, then PPO-driven content), five calibration floors with $CR_0$, an 8-output PPO policy running in GDScript with a heuristic fallback, and the static $+8\%$ baseline.
+    \item \textbf{ML:} simulator v3 and a policy retrained on it (3 seeds $\times$ 1M steps), an offline LightGBM Judge with TreeSHAP and Design Insight Reports.
+    \item \textbf{Data and CI:} SQLite telemetry with migrations and a JSON fallback; GitHub Actions with ruff, \texttt{pytest}, policy-file checks, 11 headless GDScript tests, a real-SQLite test, the 3,500-layout harness and a Windows export smoke test.
+\end{itemize}
+
+\section{Work Remaining}
+Before the Final-1 evaluation: the player model MLP1, the calibrated simulator, the PPO retrain on it, Policy SHAP, the BSP generator, the layout-diversity metrics and the evaluation script; asking for consent after Play; refreshing the latency and frame-rate numbers. FYP-2 work is in Chapter~\ref{chap:fyp2}.
+
+\section{Individual Responsibilities}\label{sec:ownership}
+\begin{itemize}
+    \item \textbf{Rayan Ahmed (23i-0018), Engine and Gameplay Lead:} Godot architecture, player combat, the five archetypes and their AI (\texttt{Enemy.gd}, \texttt{SlamShockwave.gd}, \texttt{ProjectileFireball.gd}), art and animation, map generation, consent and rating UI, playtest build, BSP generator.
+    \item \textbf{Rana Raza Ahmed (23i-0060), ML and PCG Lead:} training simulator and reward (\texttt{train\_ppo\_difficulty.py}), PPO training and export, \texttt{PPOPolicy.gd}, $CR_0$, the Judge and TreeSHAP (\texttt{ml\_spike/judge/}), player model, calibrated simulator, Policy SHAP.
+    \item \textbf{Uwaid Munir (23i-2574), Telemetry, CI and Evaluation Lead:} \texttt{TelemetryLogger.gd} and the SQLite backend, schema and migrations, data sync and export, CI workflow and tests, layout-diversity metrics, evaluation script, report compilation.
+\end{itemize}
+
+\section{Contribution of Each Team Member}
+\begin{table}[!htbp]
+\centering
+\caption{Individual contribution breakdown (Iteration 3)}
+\label{tab:contribution_breakdown}
+\small
+\begin{tabular}{p{0.20\textwidth}p{0.50\textwidth}p{0.22\textwidth}}
+\toprule
+\textbf{Member} & \textbf{Main Iteration 3 deliverables} & \textbf{Evidence} \\
+\midrule
+\textbf{Rayan Ahmed} & Five archetypes, asset-pack art and animation, map generation fixes, consent/rating/pause UI, playtest build & \tofill{commits / PRs} \\
+\midrule
+\textbf{Rana Raza Ahmed} & Simulator v2 and v3, PPO retrain, Judge, synthetic corpus, TreeSHAP reports & \tofill{commits / PRs} \\
+\midrule
+\textbf{Uwaid Munir} & SQLite migration (\texttt{hellsing} branch, \tofill{confirm author}), schema tests, CI updates & \tofill{commits / PRs} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\tofill{agree on an honest effort split}. The Mid-1 report listed $33.3\%$ each, while the commit history was dominated by one account. The evaluators check this (Form 2), so each member's commits, pull requests or reviewed branches should be listed above.
+
+\section{Repository and Version Control Evidence}
+Development is in the private GitHub repository \texttt{Rayan581/forge}.
+\begin{itemize}
+    \item \textbf{Branches:} \texttt{main} is the stable line; feature work happens on branches (e.g.\ \texttt{5levels}, and \texttt{hellsing} for the SQLite migration) and is merged after CI passes.
+    \item \textbf{Tags:} \tofill{list the real tags, e.g.\ \texttt{v0.1-poc}, \texttt{v0.2-mid1}; the Mid-1 report said \texttt{v0.1.0}; add a Final-1 tag}.
+    \item \textbf{Authorship note:} commit author names reflect the Git account used on each machine. Module ownership is defined in Section~\ref{sec:ownership}.
+\end{itemize}
+
+\section{Milestones and Commit Evidence}
+\begin{table}[!htbp]
+\centering
+\caption{Representative Iteration 3 commits}
+\label{tab:commit_evidence}
+\small
+\begin{tabular}{p{0.14\textwidth}p{0.18\textwidth}p{0.40\textwidth}p{0.18\textwidth}}
+\toprule
+\textbf{Commit} & \textbf{Author} & \textbf{Summary} & \textbf{Milestone} \\
+\midrule
+\texttt{c7a254f} & \tofill{} & Final-1 work merged to \texttt{main} (archetypes, SQLite, sim-v3, art) & Iteration 3 merge \\
+\texttt{24d99eb} & \tofill{} & Judge model trained at this commit (\texttt{judge\_model.json}) & Judge \\
+\texttt{e272d46} & \tofill{} & Updated TODO (21 Nov 2026), latest scanned \texttt{main} & State of record \\
+\tofill{} & \tofill{} & \tofill{add 4--6 more commits, one or more per member} & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Tools and AI-Assisted Development Disclosure}\label{sec:ai_disclosure}
+FAST runs FYPs at \textbf{Level 2: AI-Assisted Development}, and all use must be disclosed. Our use so far:
+\begin{itemize}
+    \item \textbf{AI-001 (30 Aug 2026, Google Antigravity / Gemini):} generated the first Godot prototype for the proposal defense, which the team then debugged and has since reworked.
+    \item \textbf{AI-002 (15 Oct 2026):} audit and refactor of the CI workflows. \tofill{the AI log names a different model version than the Mid-1 report; check and use the correct one}.
+    \item \textbf{Iteration 3:} most Final-1 features (new archetypes, the SQLite merge, simulator v3, the Judge, the consent and rating UI) were built in Claude (Anthropic) sessions, as recorded in \texttt{FORGE\_Final1\_Session\_Summary.md}. AI also helped review the reports against the code and draft this report. \tofill{add one AI-log entry per session; the spreadsheet currently holds fewer entries than the sessions held}.
+    \item \textbf{Human ownership:} the team set the concept, research question, requirements, success criteria and the revised architecture, reviewed every change before merging, and is responsible for the code and this report. Because a large amount of code arrived in Iteration 3, each owner will walk through their modules with the supervisor before the evaluation.
+\end{itemize}
+
+\section{External Components and Dependencies}
+\begin{table}[!htbp]
+\centering
+\caption{Third-party dependency register}
+\label{tab:dependencies}
+\small
+\begin{tabular}{p{0.25\textwidth}p{0.16\textwidth}p{0.17\textwidth}p{0.34\textwidth}}
+\toprule
+\textbf{Component} & \textbf{Version} & \textbf{Licence} & \textbf{Use} \\
+\midrule
+Godot Engine & 4.7.2 & MIT & Game engine \\
+godot-sqlite & 4.9 (CI) & MIT & SQLite telemetry \\
+Stable-Baselines3 & $\ge 2.2.0$ & MIT & PPO \\
+PyTorch & $\ge 2.0.0$ & BSD-3-Clause & Neural networks \\
+Gymnasium & $\ge 0.29.0$ & MIT & RL environment \\
+LightGBM & 4.7.0 & MIT & Judge model \\
+SHAP & 0.54.1 & MIT & TreeSHAP explanations \\
+NumPy, pandas, SciPy & pinned (requirements file) & BSD & Data handling, statistics \\
+Google Fonts (Cinzel, Inter) & -- & SIL OFL 1.1 & Typography \\
+2D Pixel Dungeon Asset Pack, Enemy Animations Set & -- & \tofill{licence} & Player, Crawler, Pyromancer, tiles \\
+0x72 sprites & -- & CC0 & Brute, Skirmisher, Swarmer \\
+AI assistants & see Section~\ref{sec:ai_disclosure} & Vendor terms & Disclosed above \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Risks and Mitigation}
+\label{sec:risk}
+\begin{table}[!htbp]
+\centering
+\caption{Risk register (updated for Final-1)}
+\label{tab:risk_matrix}
+\scriptsize
+\begin{tabular}{p{0.24\textwidth}p{0.09\textwidth}p{0.09\textwidth}p{0.50\textwidth}}
+\toprule
+\textbf{Risk} & \textbf{Severity} & \textbf{Likelihood} & \textbf{Mitigation} \\
+\midrule
+Too few real players for MLP1 and the Judge & High & High & Grey-box model on top of simulator v3; predict distributions; label every real-data number a pilot; keep collecting sessions in the background \\
+\midrule
+PPO exploits errors in the learned player model & High & Medium & Limit settings to the data range or add an OOD penalty; re-run the sensitivity audit; keep simulator v3 as ablation \\
+\midrule
+Reward circularity (Judge shapes the reward it is judged by) & Medium & Medium & Validate the Judge on held-out players; keep the linear formula and the old simulator as ablations \\
+\midrule
+ML track does not finish before Final-1 & Medium & Medium & Parallel tracks; cut order: ensembles, Godot Judge port, overlay panel (keep offline plots) \\
+\midrule
+BSP mapping onto the room grid takes too long & Medium & Medium & Simpler BSP that snaps leaves to grid cells \\
+\midrule
+Noisy ratings & Medium & High & Do not aim below the rating noise; average ratings per configuration \\
+\midrule
+Same players in training and in the UAT & Medium & Medium & Split by player; recruit UAT participants separately where possible \\
+\midrule
+Missing or corrupt policy weights & High & Low & Heuristic fallback and shape check \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Security and Privacy Considerations}
+\label{sec:ethics}
+The privacy rules are in Section~\ref{sec:ethics_intro} and NFR-07. In short: only gameplay numbers are stored; a random \texttt{install\_id} makes the data pseudonymous; consent is stored per session and only consented sessions are analysed; the game has no network code; testers send their database file by hand. Still to settle: \tofill{data holder, storage place, retention period, deletion on request, and whether ethics approval is needed}.
+
+\section{Current Limitations}
+\label{sec:limitations}
+\begin{enumerate}
+    \item \textbf{All PPO evidence is simulated.} No comparison with humans exists yet.
+    \item \textbf{Real data is one player} (29 floors). Every real-data result is a pilot.
+    \item \textbf{The Judge is trained on synthetic data} and does not beat the old formula on the real floors. It runs offline only; the game still uses the linear score.
+    \item \textbf{Part of the personalisation is in the reward,} which uses the simulated player's hidden skill, reflex and tactics.
+    \item \textbf{Simulator and game still differ:} heal size (18\% of max HP vs.\ 35\,HP), the apex champion is not simulated, hazard damage is modelled differently, and the cold-start observation is averaged differently.
+    \item \textbf{The observation is the last floor only,} and the policy does not see four of the settings it controls.
+    \item \textbf{No BSP baseline yet,} and the static baseline is weak.
+    \item \textbf{Calibration floors confound comparisons} unless all conditions get the same first five floors.
+    \item \textbf{Telemetry is logged without consent} (flagged and excluded); consent is asked at first launch, not after Play.
+    \item \textbf{The minimap may make floors too easy;} hiding it in the playtest build is planned.
+\end{enumerate}

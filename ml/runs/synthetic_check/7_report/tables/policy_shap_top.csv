@@ -1,0 +1,9 @@
+Action (setting),Top observation (new PPO),Top observation (old PPO)
+enemy_health,norm_time,enemy_hp
+enemy_damage,norm_time,enemy_hp
+enemy_speed,norm_dmg,enemy_hp
+enemy_aggro,norm_time,rooms
+hazard_density,norm_time,hazard
+resource_scarcity,norm_time,norm_time
+room_count,rooms,rooms
+archetype_complexity,rooms,enemy_hp

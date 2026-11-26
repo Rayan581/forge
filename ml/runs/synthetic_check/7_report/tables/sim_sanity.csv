@@ -1,0 +1,4 @@
+Policy,reward/floor,pace err,deaths,D_judge,D_real
+random,-0.991,0.429,0.135,0.316,0.351
+static_8pct,-1.675,0.679,0.520,0.470,0.524
+ppo_old,0.179,0.223,0.000,0.224,0.224

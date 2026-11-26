@@ -201,6 +201,8 @@ class TelemetryDatabase:
             "pickups_collected": 0,
             # Rows synced from a schema-v1 game DB have no manual_override column.
             "manual_override": int(rec.get("manual_override") or 0),
+            # Rows from a schema-v1/v2 game DB have no generator column (all were FORGE layouts).
+            "generator": rec.get("generator") or "forge",
         }
         values = [rec.get(c, not_null_defaults.get(c)) for c in cols]
         with self.connection() as conn, conn:

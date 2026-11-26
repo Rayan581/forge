@@ -1,0 +1,8 @@
+{
+  "run_name": "synthetic_check",
+  "data": {"telemetry": "synthetic", "consented_only": true, "smoke_players": 400},
+  "player_model": {"members": 5, "epochs": 120},
+  "judge": {"train_on": "synthetic", "synthetic_players": 3000},
+  "ppo": {"seeds": [0], "total_timesteps": 300000, "validation_episodes": 40, "exploit_episodes": 40},
+  "baselines": {"episodes": 30, "layouts_per_generator": 300}
+}

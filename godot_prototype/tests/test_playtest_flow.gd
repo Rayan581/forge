@@ -1,5 +1,6 @@
 # tests/test_playtest_flow.gd
-# Playtest-study plumbing: persisted consent, post-floor difficulty rating, developer-override flag,
+# Playtest-study plumbing: persisted consent, post-floor difficulty rating (and its per-run
+# "Don't ask again" checkbox), developer-override flag,
 # same-floor regeneration keeping telemetry consistent, playtest build hiding developer tools, and
 # game_version being set. Runs Main.tscn end to end with the JSON backend on scratch files, so it
 # never touches a real player's settings or telemetry.
@@ -14,7 +15,7 @@ var checks := 0
 ## A GDScript runtime error aborts the current function but not the caller, so each step counts
 ## itself as finished; a missing count fails the test instead of reporting a false PASS.
 var steps_finished := 0
-const STEPS := 5
+const STEPS := 6
 const TAG := "test_pt"
 
 func _initialize() -> void:
@@ -46,6 +47,7 @@ func _run() -> void:
 	await _test_main_flow(true)
 	await _test_main_flow(false)
 	await _test_pause_menu()
+	await _test_dont_ask_again()
 	BuildInfo.force_playtest = -1
 	_cleanup()
 	_eq("all steps ran to the end", steps_finished, STEPS)
@@ -246,6 +248,75 @@ func _test_pause_menu() -> void:
 	await _frames(6)
 	_eq("[pause] second run: floor 1 built", main.current_dungeon_level, 1)
 	_eq("[pause] second run: can pause", main._can_pause(), true)
+
+	tl.close()
+	main.queue_free()
+	await _frames(2)
+	paused = false
+	steps_finished += 1
+
+## "Don't ask again": floor 1 ticks the box but skips (still asked next floor), floor 2 ticks it and
+## rates (floor 3 shows no prompt). Starting a new run shows the prompt again (per run only).
+func _test_dont_ask_again() -> void:
+	_cleanup()
+	BuildInfo.force_playtest = 1
+	var s := GameSettings.new()
+	s.set_consent(true) # the prompt only exists for consenting players
+	var main = load("res://scenes/Main.tscn").instantiate()
+	root.add_child(main)
+	await process_frame
+	var tl = main.telemetry_logger
+	tl.backend_preference = "json"
+	tl.json_path = "user://%s_tel.json" % TAG
+	tl.db_path = "user://%s_tel.db" % TAG
+	tl.install_id_path = "user://%s_install.txt" % TAG
+	await _frames(3)
+	main.main_menu.visible = false
+	main._on_start_run_requested()
+	await _frames(6)
+
+	# Floor 1: tick the box but skip -> still asked on floor 2.
+	main._on_dungeon_escaped()
+	await _frames(2)
+	_eq("[dontask] floor 1 prompt open", main.floor_rating.is_open, true)
+	main.floor_rating.set_dont_ask_again(true)
+	main.floor_rating.choose(0)
+	await _frames(8)
+	_eq("[dontask] skip with box ticked does not stop asking", main.floor_rating.stop_asking, false)
+	_eq("[dontask] advanced to floor 2", main.current_dungeon_level, 2)
+
+	# Floor 2: tick the box and rate -> stop asking.
+	main._on_dungeon_escaped()
+	await _frames(2)
+	_eq("[dontask] floor 2 prompt open", main.floor_rating.is_open, true)
+	main.floor_rating.set_dont_ask_again(true)
+	main.floor_rating.choose(3)
+	await _frames(8)
+	_eq("[dontask] rating with box ticked stops asking", main.floor_rating.stop_asking, true)
+	_eq("[dontask] advanced to floor 3", main.current_dungeon_level, 3)
+	_eq("[dontask] floor 2 rating still stored", tl.get_floor_history()[1]["perceived_difficulty"], 3.0)
+
+	# Floor 3: no prompt, the game is not paused and goes straight to floor 4.
+	main._on_dungeon_escaped()
+	await _frames(2)
+	_eq("[dontask] floor 3: no prompt", main.floor_rating.is_open, false)
+	_eq("[dontask] floor 3: not paused", paused, false)
+	await _frames(6)
+	_eq("[dontask] advanced to floor 4", main.current_dungeon_level, 4)
+
+	# New run: the prompt comes back.
+	tl.elapsed_seconds = maxf(tl.elapsed_seconds, 1.0)
+	main._return_to_main_menu()
+	await _frames(3)
+	main.main_menu.visible = false
+	main._on_start_run_requested()
+	await _frames(6)
+	_eq("[dontask] new run resets the flag", main.floor_rating.stop_asking, false)
+	main._on_dungeon_escaped()
+	await _frames(2)
+	_eq("[dontask] new run: prompt shown again", main.floor_rating.is_open, true)
+	main.floor_rating.choose(0)
+	await _frames(4)
 
 	tl.close()
 	main.queue_free()

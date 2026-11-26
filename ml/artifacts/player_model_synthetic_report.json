@@ -1,0 +1,136 @@
+{
+  "data_source": "synthetic",
+  "split_kind": "by_player",
+  "n_train": 3360,
+  "n_val": 1140,
+  "n_players": 150,
+  "dataset_notes": {
+    "generator": "DungeonDifficultyEnv (sim-v3), random-walk actions",
+    "seed": 0
+  },
+  "accuracy": {
+    "n_rows": 1140,
+    "mae": {
+      "model": {
+        "time": 4.114295728504658,
+        "deaths": 0.052155738696455956,
+        "damage": 0.050911907106637955
+      },
+      "base_only": {
+        "time": 4.074007943272591,
+        "deaths": 0.051929840818047523,
+        "damage": 0.050883013755083084
+      },
+      "train_average": {
+        "time": 20.95394656062126,
+        "deaths": 0.10640685260295868,
+        "damage": 0.24952539801597595
+      }
+    },
+    "mixture_nll": -2.117105065195533,
+    "units": {
+      "time": "s",
+      "deaths": "deaths",
+      "damage": "ratio"
+    }
+  },
+  "calibration": {
+    "pit_hist_10_bins": {
+      "time": [
+        0.103,
+        0.089,
+        0.09,
+        0.094,
+        0.079,
+        0.084,
+        0.118,
+        0.111,
+        0.105,
+        0.128
+      ],
+      "deaths": [
+        0.195,
+        0.194,
+        0.216,
+        0.174,
+        0.179,
+        0.009,
+        0.006,
+        0.005,
+        0.011,
+        0.012
+      ],
+      "damage": [
+        0.08,
+        0.117,
+        0.126,
+        0.098,
+        0.101,
+        0.09,
+        0.096,
+        0.09,
+        0.089,
+        0.112
+      ]
+    },
+    "coverage": {
+      "time": {
+        "0.5": 0.4666666666666667,
+        "0.8": 0.769298245614035,
+        "0.9": 0.8912280701754386
+      },
+      "deaths": {
+        "0.5": 0.47368421052631576,
+        "0.8": 0.7929824561403509,
+        "0.9": 0.8912280701754386
+      },
+      "damage": {
+        "0.5": 0.4903508771929825,
+        "0.8": 0.8078947368421052,
+        "0.9": 0.9026315789473685
+      }
+    },
+    "distribution": {
+      "time": {
+        "wasserstein": 0.4758445808580568,
+        "ks": 0.0786842105263158,
+        "real_mean": 56.17056369781494,
+        "sim_mean": 56.29793643951416,
+        "real_std": 23.815159499645233,
+        "sim_std": 23.75978797674179
+      },
+      "deaths": {
+        "wasserstein": 0.009950249052759427,
+        "ks": 0.005859649122807009,
+        "real_mean": 0.07631578668951988,
+        "sim_mean": 0.08628070168197155,
+        "real_std": 0.36317380517721176,
+        "sim_std": 0.3813565671443939
+      },
+      "damage": {
+        "wasserstein": 0.008620678418691262,
+        "ks": 0.045035087719298206,
+        "real_mean": 0.3432595729827881,
+        "sim_mean": 0.34665215015411377,
+        "real_std": 0.30812790989875793,
+        "sim_std": 0.31025388836860657
+      }
+    },
+    "n_rows": 1140,
+    "note": "wasserstein / means / stds in natural units (s, deaths, damage ratio)."
+  },
+  "monotonicity": {
+    "harder_config_violations": {
+      "time": 0.015,
+      "deaths": 0.0,
+      "damage": 0.0
+    },
+    "higher_skill_violations": {
+      "time": 0.0,
+      "deaths": 0.0,
+      "damage": 0.0
+    },
+    "n_points": 200,
+    "note": "fraction of points where the mean moved the wrong way (tolerance 0.001)"
+  }
+}

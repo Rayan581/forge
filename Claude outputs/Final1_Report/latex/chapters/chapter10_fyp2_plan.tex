@@ -1,0 +1,97 @@
+\chapter{Remaining FYP Plan}
+\label{chap:fyp2}
+
+\section{Remaining Scope}
+The remaining work has three parts:
+\begin{enumerate}
+    \item \textbf{Rest of Final-1 (before the Final-1 evaluation):} player model MLP1, calibrated simulator, PPO retrain on it, Policy SHAP, the BSP baseline, layout-diversity metrics and one evaluation script.
+    \item \textbf{FYP-2 Mid (Week 26):} equipment shop, integration, non-functional benchmarks, release readiness; Judge retrained on real ratings.
+    \item \textbf{FYP-2 Final (Week 32):} 10-participant counterbalanced user study, statistics, thesis and packaging.
+\end{enumerate}
+
+\section{Remaining Modules and Features}
+\subsection{Rest of Final-1}
+Implementation order (from the revised architecture, Section~\ref{sec:revised_arch}):
+\begin{enumerate}
+    \item \textbf{Data audit and schema (done):} 29 floors, 3 sessions, 1 player, all rated. Add a skill/$CR_0$ column if needed.
+    \item \textbf{Player model MLP1:} dataset loader, grey-box model on top of simulator v3, split by player, MAE per output and a calibration check.
+    \item \textbf{Judge (done offline):} connect it to the reward; retrain on real ratings when there are enough players.
+    \item \textbf{Calibrated simulator:} a new environment that samples results from MLP1 and uses the Judge in the reward. Keep per-room pacing (it removed the room-count exploit). Keep simulator v3 for ablation.
+    \item \textbf{Retrain PPO:} same contract; check latency and file size; re-run the sensitivity audit for new exploits.
+    \item \textbf{Policy SHAP:} exact Shapley values over the 8 inputs on the actor; summary plot and per-decision attributions; optionally precomputed importances for the overlay.
+    \item \textbf{BSP baseline and evaluation:} Section~\ref{sec:bsp_plan}; then one script that fills Table~\ref{tab:baseline_plan}.
+\end{enumerate}
+
+\subsection{In-Run Equipment Shop (FYP-2 Mid; moved from Final-1)}
+Players earn currency (\textit{Forge Embers}) and buy weapons, armour and boots in shop rooms. The policy should notice the player's new power through telemetry and adjust. Doors and keys in chests, which tie into the same item system, are planned with it. This also adds the ``player powers'' the committee asked for.
+
+\subsection{Judge on Real Data and In-Game Explanations (FYP-2 Mid)}
+Collect a corpus of 25+ consented players, retrain the Judge on the rating target, refit the simulator's damage model to real outcomes, and port the trees and SHAP values to GDScript for a live explanation panel showing both Judge SHAP and Policy SHAP.
+
+\section{Remaining Iterations}
+\begin{itemize}
+    \item \textbf{Iteration 3, remainder (Final-1):} roughly 11--16 person-days on the ML track, run in parallel with the engine and evaluation tracks (estimate from the milestone plan, not measured).
+    \item \textbf{Iteration 4 (Weeks 15--26, FYP-2 Mid):} Sprint 4.1 equipment shop and items; Sprint 4.2 Judge retraining on real ratings, live explanation panel, pre-UAT pilot; Sprint 4.3 integration tests and performance benchmarks.
+    \item \textbf{Iteration 5 (Weeks 27--32, FYP-2 Final):} Sprint 5.1 user study; Sprint 5.2 analysis, thesis, public build.
+\end{itemize}
+
+\section{Implementation Plan by Role}
+\begin{table}[!htbp]
+\centering
+\caption{Implementation plan for the rest of Final-1, by role}
+\label{tab:impl_plan}
+\scriptsize
+\begin{tabular}{p{0.16\textwidth}p{0.12\textwidth}p{0.50\textwidth}p{0.12\textwidth}}
+\toprule
+\textbf{Track} & \textbf{Owner} & \textbf{Work} & \textbf{Days (est.)} \\
+\midrule
+ML / PCG & Rana Raza Ahmed & MLP1, calibrated simulator, Judge in reward, PPO retrain, Policy SHAP & 11--16 \\
+Engine & Rayan Ahmed & Consent after Play, controls hint, hide minimap in playtest build, BSP generator and mode switch & 5--6 \\
+Telemetry, CI, evaluation & Uwaid Munir & Schema v3, playtest sync, BSP tests in CI, diversity metrics, evaluation script, \texttt{CHANGES.md}, report & 8--10 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Testing and Validation Plan}
+\begin{itemize}
+    \item \textbf{Final-1:} the comparison in Table~\ref{tab:baseline_plan} (solvability, pacing error, layout diversity, recovery after a skill change) for FORGE, static $+8\%$ and BSP, plus PPO on simulator v3 vs.\ PPO on the calibrated simulator (ablation). Pilot real-data checks for MLP1 and the Judge, reported with their $n$.
+    \item \textbf{FYP-2 user study:} 10 participants stratified by gaming experience. Each plays three conditions in counterbalanced order: FORGE, static $+8\%$, and BSP. \tofill{decide which baseline is the primary comparison arm}. All conditions get the same five calibration floors, or floors 6+ are reported separately. Measures: per-floor 1--5 rating, GEQ and PENS per session (licence to be confirmed). Analysis: repeated-measures ANOVA with paired follow-ups and effect sizes. With 10 participants the power is low (about 29\% for a medium effect), so the study is exploratory.
+    \item \textbf{Leakage:} players whose data trains the Judge or MLP1 should not be UAT participants where possible.
+\end{itemize}
+
+\section{Deployment Plan}
+\begin{itemize}
+    \item \textbf{Target:} a standalone Windows 64-bit build, exported from the \texttt{Windows Desktop} preset (playtest flavour). A first deployment has been made: playtest build 0.9.0 (\texttt{dist/FORGE.exe} with \texttt{FORGE.pck} and the godot-sqlite DLL), sent to testers with \texttt{PLAYTEST.md}.
+    \item \textbf{Linux and Web:} only Windows presets exist today. A Web build would need the godot-sqlite WebAssembly path tested, so Linux and Web are ``nice to have'' for FYP-2.
+    \item \textbf{Release process:} CI builds a PCK smoke test on every push; \texttt{release.yml} builds tagged releases (its Godot version must be updated to 4.7.2).
+    \item \textbf{Rollback:} each release is a Git tag; if a new policy misbehaves, the previous \texttt{policy\_weights.json} is restored, and the heuristic fallback keeps the game playable in the worst case.
+    \item \textbf{Handover:} README, \texttt{PLAYTEST.md}, results files and the implementation reference document.
+\end{itemize}
+
+\section{Tentative Timeline}
+\begin{table}[!htbp]
+\centering
+\caption{Milestone timeline (updated: equipment shop moved to FYP-2 Mid)}
+\label{tab:gantt_plan}
+\scriptsize
+\begin{tabular}{p{0.15\textwidth}p{0.08\textwidth}p{0.58\textwidth}p{0.12\textwidth}}
+\toprule
+\textbf{Milestone} & \textbf{Week} & \textbf{Content} & \textbf{Status} \\
+\midrule
+Proposal Defense & 4 & Problem, POC spike, proposal & Completed \\
+Mid-1 & 10 & Visuals, two archetypes, cold start, static baseline, CI & Completed \\
+Final-1 & 14 & \textbf{Learned Judge + SHAP}, player model MLP1, calibrated simulator, retrained PPO, Policy SHAP, five archetypes, BSP baseline, SQLite telemetry & In progress (Table~\ref{tab:final1_status}) \\
+Mid-2 & 26 & \textbf{In-run equipment shop} (moved from Final-1), doors and keys, Judge retrained on real ratings, live explanation panel, integration, NFR benchmarks, release readiness & Planned \\
+Final-2 & 32 & 10-participant counterbalanced UAT, statistics, thesis, packaging & Planned \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Expected Final Deliverables}
+\begin{enumerate}
+    \item A playable Windows build of FORGE (Linux and Web if time allows).
+    \item The documented Godot and Python source with CI.
+    \item Trained policy weights, the Judge, the player model and their results files.
+    \item The user-study dataset and statistical findings.
+    \item The FYP thesis in the FAST-NUCES format.
+\end{enumerate}

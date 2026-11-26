@@ -11,11 +11,15 @@
 # (rooms include their 32 px wall ring), exit BFS depth == max BFS depth and >= 2 when there are
 # >= 3 rooms, every room size inside the contract bounds; and across the whole run at least
 # 6 distinct room sizes per 100 rooms.
+#
+# BSP baseline: the same checks also run on 500 seeded BSP layouts (DungeonGenerator.layout_mode =
+# "bsp", BSPGenerator.gd), whose room count (5-9) is decided by the BSP tree. Reported as "rooms=bsp".
 
 extends SceneTree
 
 const TOTAL_SEEDS: int = 500
 const ROOM_COUNTS: Array[int] = [3, 4, 5, 6, 7, 8, 9]
+const BSP_PASS: int = -1 # marker in the pass list: BSP layouts (room count chosen by the BSP tree)
 const WALL: float = 32.0
 const DOOR_W: float = 96.0
 const MIN_SIZE := Vector2(560, 400)
@@ -93,16 +97,22 @@ func _init() -> void:
 		"W": Vector2i(-1, 0)
 	}
 
-	for n_rooms in ROOM_COUNTS:
+	var passes: Array = ROOM_COUNTS.duplicate()
+	passes.append(BSP_PASS)
+	for n_rooms in passes:
 		var passed_here: int = 0
+		var is_bsp: bool = n_rooms == BSP_PASS
+		dungeon_gen.layout_mode = DungeonGenerator.LAYOUT_BSP if is_bsp else DungeonGenerator.LAYOUT_FORGE
 		for s in range(1, TOTAL_SEEDS + 1):
 			total += 1
 			seed(s)
-			var rooms: Dictionary = dungeon_gen.generate_dungeon(diff_mgr, n_rooms)
+			var rooms: Dictionary = dungeon_gen.generate_dungeon(diff_mgr, 6 if is_bsp else n_rooms)
 			var start_pos: Vector2i = dungeon_gen.start_room_pos
 			var exit_pos: Vector2i = dungeon_gen.exit_room_pos
+			var count_ok: bool = (rooms.size() >= dungeon_gen.bsp_min_rooms and rooms.size() <= dungeon_gen.bsp_max_rooms) \
+				if is_bsp else rooms.size() == n_rooms
 
-			if rooms.size() != n_rooms or not rooms.has(start_pos) or not rooms.has(exit_pos) or start_pos == exit_pos:
+			if not count_ok or not rooms.has(start_pos) or not rooms.has(exit_pos) or start_pos == exit_pos:
 				failures.append("rooms=%d seed=%d (layout)" % [n_rooms, s])
 				continue
 
@@ -114,7 +124,7 @@ func _init() -> void:
 			var exit_depth: int = depths.get(exit_pos, -1)
 			min_exit_depth = mini(min_exit_depth, exit_depth)
 			exit_depth_sum += exit_depth
-			if exit_depth != max_depth or (n_rooms >= 3 and exit_depth < 2):
+			if exit_depth != max_depth or (rooms.size() >= 3 and exit_depth < 2):
 				exit_fail += 1
 				failures.append("rooms=%d seed=%d (exit depth %d, max %d)" % [n_rooms, s, exit_depth, max_depth])
 			var geom_err: String = _geometry_ok(rooms)
@@ -162,7 +172,8 @@ func _init() -> void:
 				passed_here += 1
 			else:
 				failures.append("rooms=%d seed=%d (reachability)" % [n_rooms, s])
-		print("[FORGE CI] rooms=%d: %d / %d solvable" % [n_rooms, passed_here, TOTAL_SEEDS])
+		print("[FORGE CI] rooms=%s: %d / %d solvable" % ["bsp" if is_bsp else str(n_rooms), passed_here, TOTAL_SEEDS])
+	dungeon_gen.layout_mode = DungeonGenerator.LAYOUT_FORGE
 
 	print("--------------------------------------------------")
 	print("[FORGE CI] Solvability Results: %d / %d Solvable" % [passed_count, total])

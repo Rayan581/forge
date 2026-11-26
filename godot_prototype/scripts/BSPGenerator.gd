@@ -92,7 +92,7 @@ func _place(node: BSPNode) -> Dictionary:
 	var b: Dictionary = _place(node.right)
 	# facing edges: a's east (or south) edge, b's west (or north) edge
 	var axis: int = 0 if node.vertical else 1
-	var a_max: int = -1 << 30
+	var a_max: int = -(1 << 30)
 	var b_min: int = 1 << 30
 	for c in a.cells.keys():
 		a_max = maxi(a_max, c[axis])

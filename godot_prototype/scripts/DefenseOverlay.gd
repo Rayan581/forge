@@ -91,9 +91,21 @@ func _ready() -> void:
 	slider_aggro.value_changed.connect(_on_slider_changed)
 	slider_haz.value_changed.connect(_on_slider_changed)
 	slider_scarce.value_changed.connect(_on_slider_changed)
-	
+
+	# Mouse-only panel: a clicked button/slider must not keep keyboard focus, or Space (dodge) and
+	# Enter re-press it (a baseline toggle flips the condition and rebuilds the floor on every dodge)
+	# and the arrow keys (movement) drag a slider.
+	_disable_keyboard_focus(panel_container)
+	toggle_btn.focus_mode = Control.FOCUS_NONE
+
 	set_panel_visible(false)
 	_apply_build_flavour()
+
+func _disable_keyboard_focus(node: Node) -> void:
+	if node is BaseButton or node is Range:
+		(node as Control).focus_mode = Control.FOCUS_NONE
+	for child in node.get_children():
+		_disable_keyboard_focus(child)
 
 func _apply_build_flavour() -> void:
 	dev_tools = BuildInfo.dev_tools_enabled()

@@ -92,9 +92,34 @@ func _run() -> void:
 	main._on_start_run_requested()
 	await _frames(6)
 
-	# Switch to the BSP condition the way the Defense Panel does (rebuilds the current floor).
-	main.defense_overlay._on_bsp_baseline_toggled(true)
+	# Switch to the BSP condition by "clicking" the Defense Panel toggle (rebuilds the current floor).
+	var ov = main.defense_overlay
+	var rebuilds := [0]
+	ov.regenerate_room_requested.connect(func(): rebuilds[0] += 1)
+	ov.set_panel_visible(true) # the panel is open while the tester clicks it
+	ov.bsp_btn.button_pressed = true
 	await _frames(6)
+	_eq("BSP toggle rebuilds the floor once", rebuilds[0], 1)
+
+	# Keyboard play after the click must not touch the panel: Space is the dodge key and arrows move.
+	# A focused CheckButton / Button / slider would toggle, regenerate or change a setting on every
+	# key press (the "level restarts again and again" bug). Every panel control must refuse focus.
+	for ctl in [ov.bsp_btn, ov.static_btn, ov.btn_auto_kill, ov.btn_regen, ov.slider_hp]:
+		ctl.grab_focus()
+		_eq("panel control '%s' takes no keyboard focus" % ctl.name, ctl.has_focus(), false)
+	ov.bsp_btn.grab_focus()
+	for key in [KEY_SPACE, KEY_ENTER, KEY_LEFT, KEY_RIGHT]:
+		for pressed in [true, false]:
+			var ev := InputEventKey.new()
+			ev.keycode = key
+			ev.physical_keycode = key
+			ev.pressed = pressed
+			root.push_input(ev)
+			await process_frame
+	await _frames(6)
+	_eq("keys after the click do not rebuild the floor", rebuilds[0], 1)
+	_eq("keys after the click keep BSP on", main.difficulty_manager.generator_mode(), DifficultyManager.GENERATOR_BSP)
+	_eq("BSP toggle still shows on", ov.bsp_btn.button_pressed, true)
 
 	# Expected settings: the Intermediate preset as applied by the BSP baseline.
 	var ref := DifficultyManager.new()

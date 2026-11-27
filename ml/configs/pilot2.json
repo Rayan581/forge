@@ -1,0 +1,29 @@
+{
+  "run_name": "tel1127_pilot2",
+  "data": {
+    "telemetry": "ml/runs/tel1127_data/forge_merged.db",
+    "consented_only": true
+  },
+  "judge": {
+    "train_on": "mlp1_synth"
+  },
+  "sim": {
+    "_comment": "Pilot 2: the Judge (mapped onto the players' 1-5 ratings) leads the reward; target 3.5 stars for an average player, 3.5 + 2*(skill-0.5) stars by skill (slope 0.5 on the 0-1 scale). Chosen over slope 0/0.8 in 250k-step trials (ml/runs/tel1127_pilot2_smoke).",
+    "judge_scale": "rating",
+    "judge_target": 0.625,
+    "judge_w": 3.0,
+    "judge_tol": 0.05,
+    "adaptive_count_scale": true,
+    "pace_w": 0.3,
+    "death_w": 1.0,
+    "flow_dmg_w": 0.0,
+    "room_w": 0.0,
+    "complex_w": 0.0,
+    "sev_w": 0.0,
+    "cover_w": 0.0,
+    "balance_w": 0.05,
+    "smooth_w": 0.25,
+    "ood_w": 0.5,
+    "judge_target_skill_slope": 0.5
+  }
+}

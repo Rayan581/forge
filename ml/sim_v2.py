@@ -79,6 +79,16 @@ def sample_outcome(pm: PlayerModel, y, mix, count_scale: float, skill: float, hi
     return _finish_sample(x[None], True)[0]
 
 
+# Enemy-count rule of PPO floors (DifficultyManager.adaptive_count_scale; keep the two identical).
+COUNT_SCALE_START, COUNT_SCALE_FULL, COUNT_SCALE_MAX = 40.0, 70.0, 1.3
+
+
+def adaptive_count_scale(score: float) -> float:
+    t = (score - COUNT_SCALE_START) / (COUNT_SCALE_FULL - COUNT_SCALE_START)
+    t = float(np.clip(t, 0.0, 1.0))
+    return 1.0 + (COUNT_SCALE_MAX - 1.0) * t
+
+
 def params_from_action(action) -> tuple[dict, float]:
     a = np.clip(np.asarray(action, dtype=np.float64), -1.0, 1.0)
     p = {k: float(sim.denorm(a[i], k)) for i, k in enumerate(sim.PARAM_ORDER)}
@@ -200,6 +210,13 @@ class DungeonDifficultyEnvV2(gym.Env):
             np.clip(c["judge_target"] + c["judge_target_skill_slope"] * (skill - 0.5), 0, 1)
         )
 
+    def judge_compare(self, d_judge: float) -> float:
+        """The Judge value the reward compares with the target (measured scale, or rating scale)."""
+        c = self.cfg
+        if c.get("judge_scale", "measured") == "rating":
+            return float(np.clip(c["judge_rating_a"] * d_judge + c["judge_rating_b"], 0.0, 1.0))
+        return float(d_judge)
+
     def reward(self, out: dict, action_vec, prev_action) -> tuple[float, dict]:
         c = self.cfg
         rooms = max(1.0, out["rooms"])
@@ -212,7 +229,9 @@ class DungeonDifficultyEnvV2(gym.Env):
         parts["deaths"] -= 0.3 if (deaths == 0 and tpr < sim.TARGET_TPR * 0.5) else 0.0
         parts["deaths"] -= 0.4 if deaths >= 2 else 0.0
         parts["flow"] = -c["flow_dmg_w"] * abs(out["dmg_ratio"] - sim.FLOW_DMG_TARGET)
-        judge_err = abs(out["judge"] - out["target"])
+        # judge_scale "rating": the Judge's output mapped onto the players' own 1-5 ratings
+        # (scaled to 0..1) by a linear fit on the recorded rated floors; the target is then a rating.
+        judge_err = abs(self.judge_compare(out["judge"]) - out["target"])
         parts["judge"] = -c["judge_w"] * max(0.0, judge_err - c["judge_tol"])
         parts["ood"] = -c["ood_w"] * out["ood"]
         parts["rooms"] = -c["room_w"] * abs(rooms - (5.0 + 4.0 * out["skill"])) / 4.0
@@ -232,6 +251,12 @@ class DungeonDifficultyEnvV2(gym.Env):
         a = np.clip(np.asarray(action, dtype=np.float64), -1.0, 1.0)
         params, a7 = params_from_action(a)
         skill = self.player.skill
+        if self.cfg.get("adaptive_count_scale", False):
+            # the game scales the enemy count of PPO floors with their score (DifficultyManager)
+            cs = adaptive_count_scale(sim.difficulty_score(params))
+            mix = sim.archetype_mix(a7)
+            x = self.sample_settings(params, mix, cs, skill, (a7 + 1.0) / 2.0)
+            return self._play(params, mix, (a7 + 1.0) / 2.0, cs, x, a)
         x = self.pm.sample_from_action(a, skill, self._hist_arr(), self.rng)
         return self._play(params, sim.archetype_mix(a7), (a7 + 1.0) / 2.0, 1.0, x, a)
 
@@ -255,6 +280,7 @@ class DungeonDifficultyEnvV2(gym.Env):
         out = dict(
             time=t, deaths=d, dmg_ratio=r, rooms=params["room_count"], c=c, skill=skill,
             reflex=rho, tactics=tau, judge=d_judge, target=self.target_difficulty(skill),
+            judge_cmp=self.judge_compare(d_judge),
             measured=measured_difficulty(t, d, r, params["room_count"]),
             ood=self.judge.ood_fraction(feats),
             sev=float(params["enemy_damage"] * (np.asarray(mix) @ sim.DMG_MULT) / sim.PLAYER_HP),

@@ -3,8 +3,8 @@
 # Plays back three scripted calibration profiles through TelemetryLogger and
 # DifficultyManager (no rendering) and checks
 #   (1) CR0 against values worked out by hand from Eq. 6.1-6.5, and
-#   (2) that s0[0..2] uses the training observation scales:
-#       floor time / 90 s for a 6-room floor, deaths / 3, damage / max HP.
+#   (2) that s0[0..2] is the training simulators' calibration summary: plain mean over floors 1-5
+#       of floor time / 90 s, round(mean deaths) / 3, mean damage / max HP.
 #
 # Run:  godot --headless --path godot_prototype --script res://tests/test_cold_start.gd
 extends SceneTree
@@ -30,10 +30,10 @@ func _expected_obs(spr: Array, deaths: Array, dmg: Array) -> Array:
 	var d := 0.0
 	var m := 0.0
 	for i in range(5):
-		t += clampf(spr[i] * 6.0 / 90.0, 0.0, 1.0) * W[i]
-		d += clampf(deaths[i] / 3.0, 0.0, 1.0) * W[i]
-		m += clampf(dmg[i] / MAX_HP, 0.0, 1.0) * W[i]
-	return [t / 10.0, d / 10.0, m / 10.0]
+		t += spr[i] * ROOMS[i]
+		d += deaths[i]
+		m += dmg[i] / MAX_HP
+	return [clampf(t / 5.0 / 90.0, 0.0, 1.0), clampf(roundf(d / 5.0) / 3.0, 0.0, 1.0), clampf(m / 5.0, 0.0, 1.0)]
 
 func _run_profile(name: String, spr: Array, deaths: Array, dmg: Array, want_cr0: float) -> void:
 	print("[FORGE TEST] Profile: %s" % name)
@@ -53,13 +53,14 @@ func _run_profile(name: String, spr: Array, deaths: Array, dmg: Array, want_cr0:
 	if s0.size() != 8:
 		failures.append(name + ": s0 has %d dims" % s0.size())
 
-	# The PPO step that follows must not keep the calibration-only enemy count multiplier.
+	# The PPO step that follows must not keep Floor 5's count multiplier: it follows the PPO floor's score.
 	var pol = load("res://scripts/PPOPolicy.gd").new()
 	pol.load_weights("res://ai/policy_weights.json")
 	dm.apply_ppo_action(pol.predict(s0))
 	checks_run += 1
-	if absf(dm.enemy_count_scale - 1.0) > 0.0001:
-		failures.append(name + ": enemy_count_scale %.2f carried into PPO floors" % dm.enemy_count_scale)
+	var want_cs: float = dm.adaptive_count_scale(dm.calculate_difficulty_score().score)
+	if absf(dm.enemy_count_scale - want_cs) > 0.0001:
+		failures.append(name + ": enemy_count_scale %.2f, expected %.2f" % [dm.enemy_count_scale, want_cs])
 
 func _init() -> void:
 	# Same three profiles as Section 7.4 of the report.

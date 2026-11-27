@@ -186,3 +186,21 @@ def test_missing_stage_gives_clear_error(tmp_path):
 
     with pytest.raises(SystemExit, match="has not been run"):
         P.main(["sim", "--set", f"runs_root={tmp_path.as_posix()}", "--set", "run_name=empty"])
+
+
+def test_rating_scale_judge_term_and_count_scale(env):
+    """Pilot 2: the Judge is compared with a rating target after the linear rating map."""
+    base = dict(time=45.0, deaths=0, dmg_ratio=0.35, rooms=6, c=0.5, skill=0.5, reflex=0.5,
+                tactics=0.5, judge=0.45, target=0.625, ood=0.0, sev=0.2, cover=2.5)  # fmt: skip
+    old = dict(env.cfg)
+    try:
+        env.cfg.update(judge_scale="rating", judge_rating_a=1.3, judge_rating_b=0.04)
+        assert abs(env.judge_compare(0.45) - (1.3 * 0.45 + 0.04)) < 1e-9
+        r_hit, _ = env.reward(base, np.zeros(8), None)  # 0.625 vs target 0.625
+        r_far, _ = env.reward(dict(base, judge=0.20), np.zeros(8), None)
+        assert r_far < r_hit
+    finally:
+        env.cfg.clear()
+        env.cfg.update(old)
+    assert S.adaptive_count_scale(30) == 1.0 and S.adaptive_count_scale(90) == 1.3
+    assert abs(S.adaptive_count_scale(55) - 1.15) < 1e-9

@@ -84,6 +84,7 @@ func start_new_session() -> void:
 	pickups_collected = 0
 	hazard_hits = 0
 	floor_history = []
+	calibration_records = [] # a new run calibrates again (before: records of earlier runs leaked into CR0)
 	_reset_floor_state(1, 0)
 
 func update_time(delta: float) -> void:
@@ -160,17 +161,25 @@ func compute_cr0_baseline(player_max_health: float = 100.0) -> Dictionary:
 	var weighted_pace_score: float = 0.0
 	var weighted_death_score: float = 0.0
 	var weighted_dmg_score: float = 0.0
-	# Weighted averages of the three player signals on the SAME scales the PPO policy
-	# was trained on (train_ppo_difficulty.py::_get_obs): floor time / 90 s for a
-	# 6-room floor, deaths / 3, damage taken / player max health.
-	var weighted_obs_time: float = 0.0
-	var weighted_obs_deaths: float = 0.0
-	var weighted_obs_dmg: float = 0.0
+	# PPO seed observation s0: the SAME summary the training simulators use (DungeonDifficultyEnv /
+	# DungeonDifficultyEnvV2 ._calibrate): plain mean over floors 1-5 of the raw floor time / 90 s,
+	# round(mean deaths) / 3 and mean damage / max HP. The old weighted, 6-room-scaled summary leaned
+	# on the hardest floors and made every player look weaker than the policy was trained to expect.
+	var sum_time: float = 0.0
+	var sum_deaths: float = 0.0
+	var sum_dmg: float = 0.0
+	var n_obs: int = 0
 	
 	for i in range(calibration_records.size()):
 		var rec = calibration_records[i]
+		if int(rec.get("floor", i + 1)) > 5:
+			continue # the optional Apex Trial (floor 6) is data only, not part of CR0 / s0
 		var w = weights[clampi(i, 0, weights.size() - 1)]
 		total_weight += w
+		sum_time += float(rec.time)
+		sum_deaths += float(rec.deaths)
+		sum_dmg += rec.damage / maxf(1.0, player_max_health)
+		n_obs += 1
 		
 		# Ideal pace per room is ~7.5 seconds
 		# Fast clear (< 5s/room) scores high (0.8-1.0), Slow (> 15s/room) scores low (0.0-0.3)
@@ -185,10 +194,8 @@ func compute_cr0_baseline(player_max_health: float = 100.0) -> Dictionary:
 		var dmg_ratio = clampf(1.0 - (rec.damage / 120.0), 0.0, 1.0)
 		weighted_dmg_score += dmg_ratio * w
 
-		weighted_obs_time += clampf(rec.sec_per_room * 6.0 / 90.0, 0.0, 1.0) * w
-		weighted_obs_deaths += clampf(float(rec.deaths) / 3.0, 0.0, 1.0) * w
-		weighted_obs_dmg += clampf(rec.damage / maxf(1.0, player_max_health), 0.0, 1.0) * w
-		
+
+	total_weight = maxf(total_weight, 1.0)
 	var avg_pace = weighted_pace_score / total_weight
 	var avg_survival = weighted_death_score / total_weight
 	var avg_dmg_defense = weighted_dmg_score / total_weight
@@ -208,9 +215,9 @@ func compute_cr0_baseline(player_max_health: float = 100.0) -> Dictionary:
 		
 	return {
 		"cr0_score": cr0,
-		"obs_time": weighted_obs_time / total_weight,
-		"obs_deaths": weighted_obs_deaths / total_weight,
-		"obs_dmg_ratio": weighted_obs_dmg / total_weight,
+		"obs_time": clampf(sum_time / maxf(1.0, n_obs) / 90.0, 0.0, 1.0),
+		"obs_deaths": clampf(roundf(sum_deaths / maxf(1.0, n_obs)) / 3.0, 0.0, 1.0),
+		"obs_dmg_ratio": clampf(sum_dmg / maxf(1.0, n_obs), 0.0, 1.0),
 		"weighted_time_ratio": clampf(1.0 - avg_pace, 0.0, 1.0),
 		"weighted_death_ratio": clampf(1.0 - avg_survival, 0.0, 1.0),
 		"weighted_damage_ratio": clampf(1.0 - avg_dmg_defense, 0.0, 1.0),

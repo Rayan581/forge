@@ -296,6 +296,14 @@ def stage_sim(cfg, man: Manifest, out: Path):
 
     pm, jd = _abs(man.get("player")["model"]), _abs(man.get("judge")["model"])
     out.mkdir(parents=True, exist_ok=True)
+    rating_map = None
+    if cfg["sim"].get("judge_scale", "measured") == "rating":
+        consented = bool(cfg["data"]["consented_only"])
+        rating_map = fit_rating_map(jd, telemetry_path(cfg, man), consented)
+        cfg["sim"].update(judge_rating_a=rating_map["a"], judge_rating_b=rating_map["b"])
+        print(f"[sim] Judge -> rating map: rating01 = {rating_map['a']:.3f} * D + {rating_map['b']:.3f} "
+              f"(n={rating_map['n']} rated floors, Spearman {rating_map['spearman']:.2f}); "
+              f"target {cfg['sim']['judge_target']:.3f} = {1 + 4 * cfg['sim']['judge_target']:.2f} stars")  # fmt: skip
     env = S.DungeonDifficultyEnvV2(pm, jd, cfg["sim"])
     pols = {"random": P.random_policy(0), "static_8pct": ("params", S.static_schedule)}
     old = _old_policy(cfg)
@@ -314,8 +322,42 @@ def stage_sim(cfg, man: Manifest, out: Path):
     for name, s in rep["policies"].items():
         print(f"  {name:12s} reward/floor {s['reward']:+.3f}  pace {s['pace_err']:.3f}  "
               f"deaths {s['deaths']:.2f}  D_judge {s['judge']:.3f}  D_real {s['measured']:.3f}")  # fmt: skip
-    return {"sim_config": _rel(out / "sim_config.json"), "report": _rel(out / "sim_report.json"),
-            "player_model": _rel(pm), "judge": _rel(jd), "checks_failed": bad}  # fmt: skip
+    res = {"sim_config": _rel(out / "sim_config.json"), "report": _rel(out / "sim_report.json"),
+           "player_model": _rel(pm), "judge": _rel(jd), "checks_failed": bad}  # fmt: skip
+    if rating_map is not None:
+        res["rating_map"] = rating_map
+    return res
+
+
+def fit_rating_map(judge_path: Path, telemetry: Path | None, consented_only: bool) -> dict:
+    """Least-squares line rating01 = a * D_judge + b on the recorded rated floors.
+
+    The Judge is trained on measured difficulty; this puts its output on the scale of the players'
+    own 1-5 ratings ((rating - 1) / 4) so the PPO target can be a rating."""
+    from ml_spike.judge import common as C
+
+    from .judge_bridge import JudgeScorer
+
+    if telemetry is None:
+        raise SystemExit("sim.judge_scale=rating needs real telemetry with ratings")
+    df, _ = C.prepare(C.read_corpus(telemetry, consented_only), "measured")
+    r = C.rating_difficulty(df["perceived_difficulty"])
+    ok = ~np.isnan(r)
+    if ok.sum() < 10:
+        raise SystemExit(f"sim.judge_scale=rating: only {int(ok.sum())} rated floors")
+    pred = JudgeScorer(judge_path).predict(C.feature_matrix(df))[ok]
+    a, b = np.polyfit(pred, r[ok], 1)
+    resid = r[ok] - (a * pred + b)
+    return dict(a=float(a), b=float(b), n=int(ok.sum()), mae=float(np.mean(np.abs(resid))),
+                spearman=float(C.spearman(pred, r[ok])), note="fitted on ALL recorded rated floors "
+                "(in-sample); the leave-one-player-out check is in ml/runs/tel1127_lopo")  # fmt: skip
+
+
+def _sim_cfg_from_manifest(cfg, man: Manifest):
+    """Later stages use the Judge->rating map that stage 'sim' fitted."""
+    if man.has("sim") and "rating_map" in man.get("sim"):
+        m = man.get("sim")["rating_map"]
+        cfg["sim"].update(judge_rating_a=m["a"], judge_rating_b=m["b"])
 
 
 def stage_ppo(cfg, man: Manifest, out: Path):
@@ -371,6 +413,8 @@ def run_stage(stage: str, cfg: dict) -> dict:
         shutil.rmtree(out)
     print(f"=== stage {STAGES.index(stage)}: {stage}  (run folder {_rel(rd)}) ===")
     np.random.seed(int(cfg["seed"]))
+    if stage in ("ppo", "policy-shap", "baselines"):
+        _sim_cfg_from_manifest(cfg, man)
     outputs = RUNNERS[stage](cfg, man, out)
     man.put(stage, outputs, cfg)
     return outputs

@@ -148,6 +148,7 @@ func _return_to_main_menu() -> void:
 	pause_menu.close_silently()
 	_save_session_if_played()
 	telemetry_logger.start_new_session() # the next run is its own session
+	difficulty_manager.reset_run_state() # the Apex Trial is earned per run
 	if difficulty_manager.is_baseline_mode():
 		difficulty_manager.apply_baseline(1)
 	else:
@@ -405,8 +406,13 @@ func _on_dungeon_escaped() -> void:
 			diff_report.score
 		)
 
-	# Special milestone: Exiting Floor 5 finishes Cold-Start calibration!
-	if current_dungeon_level == 5:
+	# A clean Floor 5 unlocks the optional Apex Trial (a 6th, harder calibration floor; data only).
+	if current_dungeon_level == 5 and not difficulty_manager.apex_trial_active and difficulty_manager.qualifies_for_apex_trial(deaths_this_level, damage_taken_this_level, player.max_health):
+		difficulty_manager.begin_apex_trial()
+		print("[FORGE][COLD-START] Clean Floor 5 -> Apex Trial unlocked (Floor 6, calibration)")
+
+	# Special milestone: the last calibration floor (5, or 6 with the Apex Trial) finishes Cold-Start!
+	if difficulty_manager.is_in_calibration(current_dungeon_level) and current_dungeon_level == difficulty_manager.last_calibration_level():
 		var cr0_profile = telemetry_logger.compute_cr0_baseline(player.max_health)
 		print("[FORGE][COLD-START] All 5 calibration floors complete!")
 		print("[FORGE][COLD-START] Composite Initial Combat Rating CR0: %.1f/100 (%s)" % [
@@ -422,21 +428,23 @@ func _on_dungeon_escaped() -> void:
 			# Allow player to read the activation message before loading floor 6
 			await get_tree().create_timer(2.4).timeout
 
-		# Seed Floor 6 difficulty from the 5-level weighted CR0 profile
+		# Seed the first PPO floor from the floors 1-5 summary. The observation's settings part is
+		# Floor 5's, as in training (the Apex Trial is not part of the policy's input).
+		difficulty_manager.apply_calibration_level(5)
 		var obs_s0 = difficulty_manager.build_observation_from_cr0(cr0_profile, 6)
 		var initial_action = ppo_policy.predict(obs_s0)
 		telemetry_logger.note_policy_step(obs_s0, initial_action) # [telemetry] obs/action behind floor 6
 		difficulty_manager.apply_ppo_action(initial_action)
 		defense_overlay.sync_ui_with_manager()
 
-		print("[FORGE][PPO] Floor 6 seeded from CR0: rooms=%d hp=%.0f dmg=%.0f spd=%.0f haz=%.2f" % [
-			difficulty_manager.room_count_target, difficulty_manager.enemy_health,
+		print("[FORGE][PPO] Floor %d seeded from CR0: rooms=%d hp=%.0f dmg=%.0f spd=%.0f haz=%.2f" % [
+			next_level, difficulty_manager.room_count_target, difficulty_manager.enemy_health,
 			difficulty_manager.enemy_damage, difficulty_manager.enemy_speed,
 			difficulty_manager.hazard_density
 		])
 
 	# 2. PPO adaptation step for Floor 7 onward (online step-by-step rolling adaptation)
-	elif next_level >= 7:
+	elif next_level >= 7 and not difficulty_manager.is_in_calibration(next_level):
 		var obs = difficulty_manager.build_observation(
 			completion_time_sec, deaths_this_level, damage_taken_this_level,
 			player.max_health, current_dungeon_level

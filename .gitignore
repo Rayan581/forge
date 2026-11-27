@@ -36,3 +36,12 @@ godot_prototype/dist_dev/
 *.dll~*
 # Judge: synthetic corpus is regenerated deterministically (python -m ml_spike.judge.make_synthetic_corpus)
 ml_spike/judge/data/
+
+# Local agent skills and MCP configurations
+.agents/
+.claude/
+.mcp.json
+
+
+ml/runs/
+.venv-gpu/

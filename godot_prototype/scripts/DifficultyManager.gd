@@ -189,11 +189,47 @@ const CALIBRATION_LEVELS = {
 	}
 }
 
+# Optional 6th calibration floor ("Apex Trial", score ~86) for players who clear Floor 5 cleanly.
+# Floor 5 tops out at 68/100, so without it no player is ever measured on the hardest settings.
+# It is DATA ONLY: CR0 / the PPO seed use floors 1-5 (the training simulators calibrate on 5),
+# and PPO starts one floor later. Main turns it on per run (begin_apex_trial / reset_run_state).
+const APEX_TRIAL_LEVEL: int = 6
+const APEX_TRIAL = {
+	"title": "Level 6: Apex Trial",
+	"subtitle": "Bonus Calibration · You cleared the Gauntlet, now the real test",
+	"rooms": 6,
+	"health": 110.0,
+	"damage": 40.0,
+	"speed": 200.0,
+	"aggro": 400.0,
+	"hazard": 0.75,
+	"scarcity": 0.80,
+	"count_scale": 1.4,
+	"archetype_mix": [0.05, 0.25, 0.35, 0.25, 0.10],
+	"description": "Unlocked by a clean Floor 5: elite brutes, fast skirmishers and caster volleys."
+}
+var apex_trial_enabled: bool = true # feature switch (tests and studies can turn it off)
+var apex_trial_active: bool = false # true for this run once Floor 5 was cleared cleanly
+
+## True when Floor 5 was clean enough to unlock the Apex Trial (no death, lost less than max HP).
+func qualifies_for_apex_trial(deaths: int, damage_taken: float, player_max_hp: float) -> bool:
+	return apex_trial_enabled and not is_baseline_mode() and deaths == 0 and damage_taken < player_max_hp
+
+func begin_apex_trial() -> void:
+	apex_trial_active = true
+
+## Call when a new run starts.
+func reset_run_state() -> void:
+	apex_trial_active = false
+
+func last_calibration_level() -> int:
+	return APEX_TRIAL_LEVEL if apex_trial_active else 5
+
 func is_in_calibration(level_num: int) -> bool:
 	# The static and BSP baselines have no calibration phase and no PPO phase.
 	if static_baseline_mode or bsp_baseline_mode:
 		return false
-	return level_num >= 1 and level_num <= 5
+	return level_num >= 1 and level_num <= last_calibration_level()
 
 # --- Static non-adaptive roguelike baseline (comparison condition) ---
 # When enabled, PPO adaptation and cold-start calibration are bypassed. Enemy
@@ -270,8 +306,11 @@ func apply_baseline(level_num: int) -> void:
 		apply_static_baseline(level_num)
 
 func apply_calibration_level(level_num: int) -> Dictionary:
-	if CALIBRATION_LEVELS.has(level_num):
-		var cal = CALIBRATION_LEVELS[level_num]
+	var cal_table: Dictionary = CALIBRATION_LEVELS
+	if level_num == APEX_TRIAL_LEVEL and apex_trial_active:
+		cal_table = {APEX_TRIAL_LEVEL: APEX_TRIAL}
+	if cal_table.has(level_num):
+		var cal = cal_table[level_num]
 		current_profile = ProfileTier.CUSTOM
 		enemy_health = cal.health
 		enemy_damage = cal.damage
@@ -364,10 +403,7 @@ func apply_ppo_action(action: PackedFloat32Array) -> void:
 	hazard_density = _denormalize(action[4], "hazard_density")
 	resource_scarcity = _denormalize(action[5], "resource_scarcity")
 	room_count_target = int(round(_denormalize(action[6], "room_count")))
-	# The training simulator assumes the default enemy count per room, so the
-	# calibration-only count multiplier (up to 1.3 on Floor 5) must not carry over.
-	enemy_count_scale = 1.0
-	
+
 	var a7: float
 	if action.size() >= 8:
 		a7 = action[7]
@@ -376,6 +412,26 @@ func apply_ppo_action(action: PackedFloat32Array) -> void:
 		var ppo_challenge: float = calculate_difficulty_score().score / 100.0
 		a7 = 2.0 * ppo_challenge - 1.0
 	set_archetype_from_a7(a7)
+	# More enemies on harder PPO floors (before: always 1.0, so no adaptive floor ever had the
+	# crowd of Floor 4-5). Same rule in ml/sim_v2.py adaptive_count_scale (keep them identical).
+	enemy_count_scale = adaptive_count_scale(calculate_difficulty_score().score)
+
+## Enemy count multiplier of a PPO floor from its 0-100 score: 1.0 up to 40, rising linearly to
+## 1.3 at 70 and above (1.3 = Floor 5, the largest count the recorded players have faced).
+const COUNT_SCALE_START: float = 40.0
+const COUNT_SCALE_FULL: float = 70.0
+const COUNT_SCALE_MAX: float = 1.3
+static func adaptive_count_scale(score: float) -> float:
+	var t: float = clampf((score - COUNT_SCALE_START) / (COUNT_SCALE_FULL - COUNT_SCALE_START), 0.0, 1.0)
+	return 1.0 + (COUNT_SCALE_MAX - 1.0) * t
+
+## Exit-room champion (buffed brute): Floor 5 / Apex Trial (enemy health >= 85) as before, and now
+## also any FORGE floor scoring >= 60 (before, PPO floors never reached 85 health, so no champion).
+const CHAMPION_MIN_SCORE: int = 60
+func champion_enabled() -> bool:
+	if enemy_health >= 85.0:
+		return true
+	return not is_baseline_mode() and calculate_difficulty_score().score >= CHAMPION_MIN_SCORE
 
 # Calculates a 0-100 predicted difficulty score
 func calculate_difficulty_score() -> Dictionary:

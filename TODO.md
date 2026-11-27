@@ -37,9 +37,123 @@
 
 # Supervisor Meeting
 - 18/11/2026 - Show a consent screen after the user clicks on the Play button. If the user wants to record this session, show the level difficulty screen only then. 
+- 25/11/2026 - Train the judge and improved ppo model and show on Friday.
 
 # Off the Head
-- Show controls while playing the game on the level. 
+- Show controls while playing the game on the level like tutorial controls. 
 - Have doors between some rooms and the key should be in one of the rooms in chest. That chest can also contain credits once we implement the credits and items system. 
 - Don't show the map overlay, as it helps the player a little too much. 
 - The difficulty isn't very well tuned and trained. 
+
+# ChatGPT's suggestions
+- Improve the gameplay first
+    - Better melee combat
+        - Directional attack animations.
+        - Hit-stop on successful hits.
+        - Impact particles.
+        - Knockback and enemy hit reactions.
+    - Better dodge mechanics
+        - Visible dodge trail.
+        - Clear invincibility feedback.
+        - Enemy attacks that can be dodged.
+        - More deliberate cooldown and timing.
+    - Combat feedback
+        - Damage flashes.
+        - Screen shake.
+        - Floating damage numbers.
+        - Death animations and sound effects.
+    - Enemy attack patterns
+        - Telegraph before attacks.
+        - Different attack ranges.
+        - Recovery windows.
+        - More distinct archetype behaviors.
+- Make enemy composition depend on dungeon difficulty and room type, not just enemy count.
+- Your random-walk generator creates connected rooms, but connectivity alone doesn't guarantee interesting level design. I'd add a room-generation system with reusable templates.
+    - Room types I'd introduce:
+        - Combat arena: waves of enemies, limited escape routes.
+        - Treasure room: rewards, optional risk.
+        - Trap room: environmental hazards and movement challenges.
+        - Elite room: stronger enemies with better rewards.
+        - Rest room: healing or resource recovery.
+        - Challenge room: optional encounter with a special condition.
+- Guarantee a minimum path length.
+- Introduce optional branches.
+- Add loops so the dungeon isn't always a simple branching tree.
+- Control how frequently special rooms appear.
+- Make room placement respect difficulty and pacing.
+- Currently, your documented observations include completion time, deaths, damage taken, enemy stats, hazard density, room count and floor depth. Consider adding:
+    - New metric	What it reveals
+    - Dodge success rate	Whether the player understands enemy attacks
+    - Attack accuracy	Whether the player is landing attacks
+    - Damage dealt per minute	Combat effectiveness
+    - Health remaining at floor end	How much pressure the player experienced
+    - Healing utilization	Whether resource scarcity is appropriate
+    - Damage avoided	Defensive skill
+    - Exploration percentage	Whether the player explores optional areas
+- Research caution: distinguish a player's mechanical skill from their playstyle. A player who takes their time exploring shouldn't automatically be classified as less skilled.
+
+- Give FORGE a proper visual identity
+Your assets are already pixel-art oriented, so I'd lean into that rather than introducing realistic 3D assets or a completely different art direction.
+Specific improvements:
+    Environment
+        - Multiple wall and floor variants.
+        - Decorative props like barrels, bones, chains and torches.
+        - Animated environmental objects.
+        - More deliberate room-specific color palettes.
+    Lighting and atmosphere
+        - Animated torch lights.
+        - Subtle ambient lighting.
+        - Glowing portals.
+        - Particles around magical objects.
+        - Darker corners and environmental shadows.
+    Animations
+        - Idle, walking and attack animations for all enemies.
+        - Enemy hit and death animations.
+        - Chest-opening animations.
+        - Portal activation animations.
+    Audio
+        - Different sounds for each weapon and enemy.
+        - Footsteps.
+        - Ambient dungeon sounds.
+        - Room-clear feedback.
+        - Floor transition effects.
+- Improve the UI and player experience
+
+## FORGE improvement roadmap
+1. Phase 1: Combat polish
+   - Hit-stop, knockback and screen shake.
+   - Enemy attack telegraphs.
+   - Better attack and dodge animations.
+   - Sound effects and combat feedback.
+   Start here
+2. Phase 2: Dungeon variety
+   - Room templates and modifiers.
+   - Branching paths and loops.
+   - Better room placement.
+   - More interesting enemy compositions.
+3. Phase 3: Progression
+   - Credits and inventory.
+   - Chests, keys and locked doors.
+   - Equipment and upgrades.
+   - Meaningful rewards for optional rooms.
+4. Phase 4: Visual and audio polish
+   - Consistent lighting and color palettes.
+   - Environmental animations.
+   - Better menus and HUD.
+   - Music and ambient audio.
+5. Phase 5: RL improvements
+   - Additional telemetry metrics.
+   - Player skill and playstyle profiling.
+   - Smoother difficulty transitions.
+   - More rigorous policy evaluation.
+6. Phase 6: Research-ready release
+   - Consent and recording workflow.
+   - Playtesting with actual participants.
+   - PPO vs baseline comparisons.
+   - Final performance and usability testing.
+
+# Useful github repos
+- https://github.com/bgrenat/godot-game-dev-studio.git
+- https://github.com/Coding-Solo/godot-mcp.git
+- https://github.com/setcodes/gamedev-skills.git
+- https://github.com/grndctrl/godot-skills.git

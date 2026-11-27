@@ -173,7 +173,7 @@ func spawn_entities(p_diff: DifficultyManager) -> void:
 	for i in range(room_data.enemies_count):
 		var arch: int = p_diff.sample_archetype(randf())
 		var is_apex: bool = (room_data.room_type == DungeonGenerator.RoomType.EXIT and i == 0 \
-				and p_diff.enemy_health >= 85.0)
+				and p_diff.champion_enabled())
 		if is_apex:
 			arch = Enemy.Archetype.HEAVY_BRUTE # Floor 5 exit-room champion
 		var bodies: int = 3 if arch == Enemy.Archetype.SWARMER else 1

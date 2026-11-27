@@ -70,6 +70,16 @@ DEFAULTS: dict = {
         "judge_target": 0.27,  # measured difficulty of an on-pace, 0-death, 35 %-damage floor
         "judge_target_skill_slope": 0.0,  # D_target = judge_target + slope * (skill - 0.5)
         "judge_tol": 0.03,
+        # "measured" = Judge output as is (target in measured-difficulty units); "rating" = Judge
+        # output mapped onto the players' 1-5 ratings ((rating-1)/4) by a linear fit on the recorded
+        # rated floors (stage 'sim' fits judge_rating_a/b), and judge_target is then a rating too
+        # (3.5 stars -> 0.625). Pilot 2 (ml/configs/pilot2.json) uses "rating".
+        "judge_scale": "measured",
+        "judge_rating_a": 1.0,
+        "judge_rating_b": 0.0,
+        # the game scales the enemy count of PPO floors with their score (since 2026-11-27);
+        # true = the simulator does the same (DifficultyManager.adaptive_count_scale)
+        "adaptive_count_scale": False,
         # Penalty for settings outside the range the Judge / MLP1 were trained on (anti-exploit)
         "ood_w": 0.5,
         # Old-reward terms kept from sim-v3 (weights; 0 switches a term off)

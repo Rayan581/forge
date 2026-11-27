@@ -44,6 +44,8 @@
 - Have doors between some rooms and the key should be in one of the rooms in chest. That chest can also contain credits once we implement the credits and items system. 
 - Don't show the map overlay, as it helps the player a little too much. 
 - The difficulty isn't very well tuned and trained. 
+- Sometimes the enemies from the final room may wander and go outside the room. As it is necessary to kill all the enemies in the final room to open the finish portal, it might be hectic and confusing. 
+- Even though the apex has high health and damage, it is very easy to beat him. Just dodge his attacks and attack him afterwards.
 
 # ChatGPT's suggestions
 - Improve the gameplay first
